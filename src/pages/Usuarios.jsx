@@ -119,11 +119,16 @@ export default function UsuariosPage() {
     onError: () => toast.error('Erro ao deletar usuário')
   });
 
-  const inviteUserMutation = useMutation({
-    mutationFn: async ({ email, fullName, perfil }) => {
+  const createUserMutation = useMutation({
+    mutationFn: async ({ email, senha, perfil }) => {
+      // Implementar criação direta via API ou backend
+      // Por enquanto, usando o inviteUser que é o disponível
+      const perfil_config = perfisPreDefinidos[perfil];
+      
+      // Cria usuário via API do auth
       await base44.users.inviteUser(email, 'user');
       
-      // Aguarda o usuário ser criado
+      // Aguarda criação
       let newUser = null;
       for (let i = 0; i < 10; i++) {
         const allUsers = await base44.entities.User.list();
@@ -133,9 +138,7 @@ export default function UsuariosPage() {
       }
       
       if (newUser) {
-        const perfil_config = perfisPreDefinidos[perfil];
         await base44.entities.User.update(newUser.id, {
-          full_name: fullName,
           perfil: perfil,
           permissoes: perfil_config.permissoes
         });
@@ -148,7 +151,6 @@ export default function UsuariosPage() {
       toast.success('Usuário criado com sucesso!');
       setShowInviteModal(false);
       setInviteEmail('');
-      setInviteFullName('');
       setInvitePassword('');
       setInvitePerfil('atendente');
     },
@@ -156,14 +158,14 @@ export default function UsuariosPage() {
   });
 
   const handleInvite = async () => {
-    if (!inviteEmail || !inviteFullName || !invitePassword) {
-      toast.error('Preencha todos os campos');
+    if (!inviteEmail || !invitePassword) {
+      toast.error('Preencha email e senha');
       return;
     }
 
-    inviteUserMutation.mutate({
+    createUserMutation.mutate({
       email: inviteEmail,
-      fullName: inviteFullName,
+      senha: invitePassword,
       perfil: invitePerfil
     });
   };
