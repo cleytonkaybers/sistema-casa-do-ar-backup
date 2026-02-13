@@ -49,32 +49,34 @@
  */
 import Atendimentos from './pages/Atendimentos';
 import BackupRestaurer from './pages/BackupRestaurer';
-import Clientes from './pages/Clientes';
-import Dashboard from './pages/Dashboard';
-import PreventivasFuturas from './pages/PreventivasFuturas';
-import Servicos from './pages/Servicos';
-import Usuarios from './pages/Usuarios';
-import Suporte from './pages/Suporte';
-import Relatorios from './pages/Relatorios';
-import Configuracoes from './pages/Configuracoes';
-import PreferencesNotificacao from './pages/PreferencesNotificacao';
 import ClienteDetalhes from './pages/ClienteDetalhes';
+import Clientes from './pages/Clientes';
+import Configuracoes from './pages/Configuracoes';
+import Dashboard from './pages/Dashboard';
+import PreferencesNotificacao from './pages/PreferencesNotificacao';
+import PreventivasFuturas from './pages/PreventivasFuturas';
+import Relatorios from './pages/Relatorios';
+import Servicos from './pages/Servicos';
+import Suporte from './pages/Suporte';
+import Usuarios from './pages/Usuarios';
+import HistoricoClientes from './pages/HistoricoClientes';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Atendimentos": Atendimentos,
     "BackupRestaurer": BackupRestaurer,
-    "Clientes": Clientes,
-    "Dashboard": Dashboard,
-    "PreventivasFuturas": PreventivasFuturas,
-    "Servicos": Servicos,
-    "Usuarios": Usuarios,
-    "Suporte": Suporte,
-    "Relatorios": Relatorios,
-    "Configuracoes": Configuracoes,
-    "PreferencesNotificacao": PreferencesNotificacao,
     "ClienteDetalhes": ClienteDetalhes,
+    "Clientes": Clientes,
+    "Configuracoes": Configuracoes,
+    "Dashboard": Dashboard,
+    "PreferencesNotificacao": PreferencesNotificacao,
+    "PreventivasFuturas": PreventivasFuturas,
+    "Relatorios": Relatorios,
+    "Servicos": Servicos,
+    "Suporte": Suporte,
+    "Usuarios": Usuarios,
+    "HistoricoClientes": HistoricoClientes,
 }
 
 export const pagesConfig = {

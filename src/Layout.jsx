@@ -78,6 +78,7 @@ export default function Layout({ children }) {
     { name: 'Relatórios', href: createPageUrl('Relatorios'), icon: BarChart3 },
     { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
     { name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users },
+    { name: 'Histórico de Clientes', href: createPageUrl('HistoricoClientes'), icon: BarChart3 },
     { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
     { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
   ];
