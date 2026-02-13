@@ -69,6 +69,35 @@ export default function ConfiguracoesPage() {
     onError: () => toast.error('Erro ao salvar configurações'),
   });
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setFormData({ ...formData, company_logo_url: file_url });
+      toast.success('Logo carregado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao carregar a imagem');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownloadLogo = () => {
+    if (!formData.company_logo_url) return;
+    const link = document.createElement('a');
+    link.href = formData.company_logo_url;
+    link.download = `logo-${formData.company_name}.png`;
+    link.click();
+  };
+
   const handleSave = () => {
     if (!formData.company_name.trim()) {
       toast.error('Nome da empresa é obrigatório');
