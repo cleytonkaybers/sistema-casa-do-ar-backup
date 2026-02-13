@@ -12,13 +12,39 @@ import {
   MessageCircle,
   BarChart3,
   Settings,
-  Bell
+  Bell,
+  Snowflake,
+  Wind,
+  Zap,
+  Wrench,
+  Thermometer,
+  Cloud,
+  Droplets
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ChatWidget from '@/components/ChatWidget/ChatWidget';
 import NotificationCenter from '@/components/NotificationCenter';
+
+// Icon mapping for company icons
+const ICON_MAP = {
+  Snowflake,
+  Wind,
+  Zap,
+  Wrench,
+  Thermometer,
+  Cloud,
+  Droplets,
+  Settings,
+  Database,
+  Users,
+  LayoutDashboard,
+  ClipboardList,
+  MessageCircle,
+  BarChart3,
+  Bell
+};
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
