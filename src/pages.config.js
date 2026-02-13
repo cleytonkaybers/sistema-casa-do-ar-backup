@@ -56,6 +56,7 @@ import Servicos from './pages/Servicos';
 import Usuarios from './pages/Usuarios';
 import Suporte from './pages/Suporte';
 import Relatorios from './pages/Relatorios';
+import Configuracoes from './pages/Configuracoes';
 import __Layout from './Layout.jsx';
 
 
@@ -69,6 +70,7 @@ export const PAGES = {
     "Usuarios": Usuarios,
     "Suporte": Suporte,
     "Relatorios": Relatorios,
+    "Configuracoes": Configuracoes,
 }
 
 export const pagesConfig = {

@@ -1,0 +1,153 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Loader2, Settings } from 'lucide-react';
+import { toast } from 'sonner';
+
+const LUCIDE_ICONS = [
+  'Snowflake', 'Settings', 'Home', 'Briefcase', 'Zap', 'Star', 'Heart',
+  'Clock', 'Calendar', 'Users', 'Shield', 'Lock', 'AlertCircle', 'CheckCircle',
+  'XCircle', 'HelpCircle', 'Info', 'Trash2', 'Edit', 'Plus', 'Minus'
+];
+
+export default function ConfiguracoesPage() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    base44.auth.me().then(user => {
+      setCurrentUser(user);
+      setIsLoading(false);
+    }).catch(() => {
+      setIsLoading(false);
+    });
+  }, []);
+
+  const { data: settings = null } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: async () => {
+      const result = await base44.entities.CompanySettings.list();
+      return result.length > 0 ? result[0] : null;
+    },
+  });
+
+  const [formData, setFormData] = useState({
+    company_name: '',
+    company_icon: 'Snowflake',
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        company_name: settings.company_name || '',
+        company_icon: settings.company_icon || 'Snowflake',
+      });
+    }
+  }, [settings]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (data) => {
+      if (settings?.id) {
+        return base44.entities.CompanySettings.update(settings.id, data);
+      } else {
+        return base44.entities.CompanySettings.create(data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companySettings'] });
+      toast.success('Configurações salvas com sucesso!');
+    },
+    onError: () => toast.error('Erro ao salvar configurações'),
+  });
+
+  const handleSave = () => {
+    if (!formData.company_name.trim()) {
+      toast.error('Nome da empresa é obrigatório');
+      return;
+    }
+    updateMutation.mutate(formData);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (currentUser?.role !== 'admin') {
+    return (
+      <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
+        <p className="text-gray-500">Acesso restrito a administradores</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-3 mb-8">
+        <Settings className="w-8 h-8 text-blue-600" />
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Configurações</h1>
+          <p className="text-gray-500 mt-1">Personalize as informações da sua empresa</p>
+        </div>
+      </div>
+
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle>Informações da Empresa</CardTitle>
+          <CardDescription>Atualize o nome e ícone da empresa</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="company_name">Nome da Empresa</Label>
+            <Input
+              id="company_name"
+              placeholder="Ex: Casa do Ar"
+              value={formData.company_name}
+              onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+              className="h-11"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company_icon">Ícone</Label>
+            <Select value={formData.company_icon} onValueChange={(value) => setFormData({ ...formData, company_icon: value })}>
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LUCIDE_ICONS.map(icon => (
+                  <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-2">Selecione um ícone para representar sua empresa</p>
+          </div>
+
+          <Button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="w-full bg-blue-600 hover:bg-blue-700 h-11"
+          >
+            {updateMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Salvar Configurações'
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
