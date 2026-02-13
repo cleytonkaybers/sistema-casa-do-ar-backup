@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, Settings } from 'lucide-react';
+import { Loader2, Settings, Upload, Download, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const LUCIDE_ICONS = [
