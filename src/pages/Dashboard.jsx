@@ -188,7 +188,7 @@ export default function Dashboard() {
 
       {/* Manutenções Vencidas - Alerta Destaque */}
       {manutencoesVencidas.length > 0 && (
-        <Card className="bg-gradient-to-r from-red-500 to-red-600 border-0 shadow-xl">
+        <Card className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 border-0 shadow-2xl shadow-red-500/40">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -254,12 +254,12 @@ export default function Dashboard() {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Manutenções Pendentes */}
-        <Card className="bg-white border-0 shadow-lg">
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold text-gray-800">
+            <CardTitle className="text-lg font-semibold text-white">
               Manutenções Pendentes
             </CardTitle>
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <AlertTriangle className="w-5 h-5 text-orange-400" />
           </CardHeader>
           <CardContent>
             {manutencoesPendentes.length === 0 ? (
@@ -291,15 +291,15 @@ export default function Dashboard() {
                             <Snowflake className={`w-5 h-5 ${isOverdue ? 'text-red-600' : 'text-amber-600'}`} />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-800">{cliente.nome}</p>
-                            <p className="text-xs text-gray-500">{cliente.tipo_equipamento || 'Não especificado'}</p>
+                            <p className="font-medium text-white">{cliente.nome}</p>
+                            <p className="text-xs text-gray-400">{cliente.tipo_equipamento || 'Não especificado'}</p>
                           </div>
                         </div>
-                        <div className={`text-right ${isOverdue ? 'text-red-600' : 'text-amber-600'}`}>
+                        <div className={`text-right ${isOverdue ? 'text-red-400' : 'text-orange-400'}`}>
                           <p className="text-sm font-medium">
                             {isOverdue ? `${Math.abs(daysUntil)} dias atrasado` : `em ${daysUntil} dias`}
                           </p>
-                          <p className="text-xs">
+                          <p className="text-xs text-gray-400">
                             {format(new Date(cliente.proxima_manutencao), "dd/MM/yyyy")}
                           </p>
                         </div>
@@ -313,9 +313,9 @@ export default function Dashboard() {
         </Card>
 
         {/* Últimos Clientes */}
-        <Card className="bg-white border-0 shadow-lg">
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold text-gray-800">
+            <CardTitle className="text-lg font-semibold text-white">
               Últimos Clientes
             </CardTitle>
             <Link to={createPageUrl('Clientes')}>
@@ -345,18 +345,18 @@ export default function Dashboard() {
                     to={createPageUrl('Clientes')}
                     className="block"
                   >
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 hover:shadow-md transition-all cursor-pointer group">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-purple-900/40 hover:bg-purple-800/50 hover:shadow-md hover:shadow-purple-500/20 transition-all cursor-pointer group border border-purple-700/30">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white font-semibold group-hover:scale-110 transition-transform shadow-md">
+                        <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-semibold group-hover:scale-110 transition-transform shadow-md">
                           {cliente.nome?.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">{cliente.nome}</p>
-                          <p className="text-xs text-gray-500">{cliente.cidade || 'Sem cidade'}</p>
+                          <p className="font-medium text-white group-hover:text-cyan-400 transition-colors">{cliente.nome}</p>
+                          <p className="text-xs text-gray-400">{cliente.cidade || 'Sem cidade'}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-400">
                           {format(new Date(cliente.created_date), "dd/MM/yyyy")}
                         </p>
                       </div>
