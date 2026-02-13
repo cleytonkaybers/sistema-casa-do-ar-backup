@@ -1,0 +1,326 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format, addMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, Loader2, MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const TIPOS_EQUIPAMENTO = ['Split', 'Inverter', 'Janela', 'Cassete', 'Piso-Teto', 'Multi-Split', 'Outro'];
+const STATUS_OPTIONS = ['Ativo', 'Inativo', 'Pendente'];
+
+export default function ClienteForm({ open, onClose, onSave, cliente, isLoading }) {
+  const [formData, setFormData] = useState({
+    nome: '',
+    telefone: '',
+    endereco: '',
+    cidade: '',
+    bairro: '',
+    latitude: null,
+    longitude: null,
+    observacoes: '',
+    tipo_equipamento: '',
+    ultima_manutencao: '',
+    proxima_manutencao: '',
+    status: 'Ativo'
+  });
+
+  useEffect(() => {
+    if (cliente) {
+      setFormData({
+        nome: cliente.nome || '',
+        telefone: cliente.telefone || '',
+        endereco: cliente.endereco || '',
+        cidade: cliente.cidade || '',
+        bairro: cliente.bairro || '',
+        latitude: cliente.latitude || null,
+        longitude: cliente.longitude || null,
+        observacoes: cliente.observacoes || '',
+        tipo_equipamento: cliente.tipo_equipamento || '',
+        ultima_manutencao: cliente.ultima_manutencao || '',
+        proxima_manutencao: cliente.proxima_manutencao || '',
+        status: cliente.status || 'Ativo'
+      });
+    } else {
+      setFormData({
+        nome: '',
+        telefone: '',
+        endereco: '',
+        cidade: '',
+        bairro: '',
+        latitude: null,
+        longitude: null,
+        observacoes: '',
+        tipo_equipamento: '',
+        ultima_manutencao: '',
+        proxima_manutencao: '',
+        status: 'Ativo'
+      });
+    }
+  }, [cliente, open]);
+
+  const formatPhoneInput = (value) => {
+    const cleaned = value.replace(/\D/g, '');
+    let formatted = cleaned;
+    
+    if (cleaned.length > 0) {
+      formatted = `(${cleaned.slice(0, 2)}`;
+      if (cleaned.length > 2) {
+        formatted += `) ${cleaned.slice(2, 7)}`;
+      }
+      if (cleaned.length > 7) {
+        formatted += `-${cleaned.slice(7, 11)}`;
+      }
+    }
+    return formatted;
+  };
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneInput(e.target.value);
+    setFormData({ ...formData, telefone: formatted });
+  };
+
+  const handleUltimaManutencaoChange = (date) => {
+    const formattedDate = date ? format(date, 'yyyy-MM-dd') : '';
+    const proximaDate = date ? format(addMonths(date, 6), 'yyyy-MM-dd') : '';
+    
+    setFormData({
+      ...formData,
+      ultima_manutencao: formattedDate,
+      proxima_manutencao: proximaDate
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-gray-800">
+            {cliente ? 'Editar Cliente' : 'Novo Cliente'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Nome e Telefone */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome Completo *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                placeholder="Nome do cliente"
+                required
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone *</Label>
+              <Input
+                id="telefone"
+                value={formData.telefone}
+                onChange={handlePhoneChange}
+                placeholder="(00) 00000-0000"
+                required
+                className="h-11"
+                maxLength={15}
+              />
+            </div>
+          </div>
+
+          {/* Endereço */}
+          <div className="space-y-2">
+            <Label htmlFor="endereco">Endereço Completo</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="endereco"
+                value={formData.endereco}
+                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                placeholder="Rua, número, complemento"
+                className="h-11 pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Cidade e Bairro */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input
+                id="cidade"
+                value={formData.cidade}
+                onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                placeholder="Cidade"
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input
+                id="bairro"
+                value={formData.bairro}
+                onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                placeholder="Bairro"
+                className="h-11"
+              />
+            </div>
+          </div>
+
+          {/* Tipo Equipamento e Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Tipo de Equipamento</Label>
+              <Select
+                value={formData.tipo_equipamento}
+                onValueChange={(value) => setFormData({ ...formData, tipo_equipamento: value })}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIPOS_EQUIPAMENTO.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Datas de Manutenção */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Última Manutenção</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-11 justify-start text-left font-normal",
+                      !formData.ultima_manutencao && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.ultima_manutencao ? (
+                      format(new Date(formData.ultima_manutencao), "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      "Selecione a data"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.ultima_manutencao ? new Date(formData.ultima_manutencao) : undefined}
+                    onSelect={handleUltimaManutencaoChange}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label>Próxima Manutenção (Auto: +6 meses)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-11 justify-start text-left font-normal",
+                      !formData.proxima_manutencao && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.proxima_manutencao ? (
+                      format(new Date(formData.proxima_manutencao), "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      "Selecione a data"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.proxima_manutencao ? new Date(formData.proxima_manutencao) : undefined}
+                    onSelect={(date) => setFormData({ ...formData, proxima_manutencao: date ? format(date, 'yyyy-MM-dd') : '' })}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Observações */}
+          <div className="space-y-2">
+            <Label htmlFor="observacoes">Observações</Label>
+            <Textarea
+              id="observacoes"
+              value={formData.observacoes}
+              onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+              placeholder="Observações sobre o cliente..."
+              rows={3}
+            />
+          </div>
+
+          {/* Botões */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                cliente ? 'Salvar Alterações' : 'Cadastrar Cliente'
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

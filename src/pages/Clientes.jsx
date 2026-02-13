@@ -1,0 +1,322 @@
+import React, { useState, useMemo } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { 
+  Plus, 
+  Search, 
+  Users, 
+  Filter,
+  Loader2,
+  X
+} from 'lucide-react';
+
+import ClienteCard from '@/components/clientes/ClienteCard';
+import ClienteForm from '@/components/clientes/ClienteForm';
+import DeleteConfirmDialog from '@/components/clientes/DeleteConfirmDialog';
+import HistoricoModal from '@/components/atendimentos/HistoricoModal';
+import AtendimentoForm from '@/components/atendimentos/AtendimentoForm';
+
+export default function Clientes() {
+  const queryClient = useQueryClient();
+  
+  // Estados
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCity, setFilterCity] = useState('all');
+  const [filterBairro, setFilterBairro] = useState('all');
+  
+  // Modais
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingCliente, setDeletingCliente] = useState(null);
+  const [historicoOpen, setHistoricoOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
+
+  // Queries
+  const { data: clientes = [], isLoading } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => base44.entities.Cliente.list('-created_date'),
+  });
+
+  const { data: atendimentos = [] } = useQuery({
+    queryKey: ['atendimentos'],
+    queryFn: () => base44.entities.Atendimento.list('-created_date'),
+  });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Cliente.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      setFormOpen(false);
+      toast.success('Cliente cadastrado com sucesso!');
+    },
+    onError: () => toast.error('Erro ao cadastrar cliente'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      setFormOpen(false);
+      setEditingCliente(null);
+      toast.success('Cliente atualizado com sucesso!');
+    },
+    onError: () => toast.error('Erro ao atualizar cliente'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Cliente.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      setDeleteDialogOpen(false);
+      setDeletingCliente(null);
+      toast.success('Cliente excluído com sucesso!');
+    },
+    onError: () => toast.error('Erro ao excluir cliente'),
+  });
+
+  const createAtendimentoMutation = useMutation({
+    mutationFn: (data) => base44.entities.Atendimento.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
+      setAtendimentoFormOpen(false);
+      toast.success('Atendimento registrado com sucesso!');
+    },
+    onError: () => toast.error('Erro ao registrar atendimento'),
+  });
+
+  // Filtros
+  const cidades = useMemo(() => {
+    const cidadesSet = new Set(clientes.map(c => c.cidade).filter(Boolean));
+    return Array.from(cidadesSet).sort();
+  }, [clientes]);
+
+  const bairros = useMemo(() => {
+    let filtered = clientes;
+    if (filterCity !== 'all') {
+      filtered = clientes.filter(c => c.cidade === filterCity);
+    }
+    const bairrosSet = new Set(filtered.map(c => c.bairro).filter(Boolean));
+    return Array.from(bairrosSet).sort();
+  }, [clientes, filterCity]);
+
+  const filteredClientes = useMemo(() => {
+    return clientes.filter(cliente => {
+      const matchesSearch = 
+        cliente.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cliente.telefone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
+      
+      const matchesCity = filterCity === 'all' || cliente.cidade === filterCity;
+      const matchesBairro = filterBairro === 'all' || cliente.bairro === filterBairro;
+      
+      return matchesSearch && matchesCity && matchesBairro;
+    });
+  }, [clientes, searchTerm, filterCity, filterBairro]);
+
+  // Handlers
+  const handleSave = (data) => {
+    if (editingCliente) {
+      updateMutation.mutate({ id: editingCliente.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (cliente) => {
+    setEditingCliente(cliente);
+    setFormOpen(true);
+  };
+
+  const handleDelete = (cliente) => {
+    setDeletingCliente(cliente);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleViewHistory = (cliente) => {
+    setSelectedCliente(cliente);
+    setHistoricoOpen(true);
+  };
+
+  const handleNewAtendimento = () => {
+    setAtendimentoFormOpen(true);
+  };
+
+  const handleSaveAtendimento = (data) => {
+    createAtendimentoMutation.mutate(data);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterCity('all');
+    setFilterBairro('all');
+  };
+
+  const hasActiveFilters = searchTerm || filterCity !== 'all' || filterBairro !== 'all';
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Clientes</h1>
+          <p className="text-gray-500 mt-1">{clientes.length} clientes cadastrados</p>
+        </div>
+        <Button 
+          onClick={() => { setEditingCliente(null); setFormOpen(true); }}
+          className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/30"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Adicionar Cliente
+        </Button>
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 space-y-4">
+        <div className="flex items-center gap-2 text-gray-700 mb-2">
+          <Filter className="w-5 h-5" />
+          <span className="font-medium">Filtros</span>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="ml-auto text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Limpar
+            </Button>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Busca */}
+          <div className="sm:col-span-2 lg:col-span-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Buscar por nome ou telefone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 bg-gray-50 border-gray-200 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Filtro Cidade */}
+          <Select value={filterCity} onValueChange={(value) => { setFilterCity(value); setFilterBairro('all'); }}>
+            <SelectTrigger className="h-11 bg-gray-50 border-gray-200">
+              <SelectValue placeholder="Cidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as cidades</SelectItem>
+              {cidades.map(cidade => (
+                <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtro Bairro */}
+          <Select value={filterBairro} onValueChange={setFilterBairro}>
+            <SelectTrigger className="h-11 bg-gray-50 border-gray-200">
+              <SelectValue placeholder="Bairro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os bairros</SelectItem>
+              {bairros.map(bairro => (
+                <SelectItem key={bairro} value={bairro}>{bairro}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Lista de Clientes */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      ) : filteredClientes.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">
+            {hasActiveFilters ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {hasActiveFilters 
+              ? 'Tente ajustar os filtros de busca'
+              : 'Comece cadastrando seu primeiro cliente'
+            }
+          </p>
+          {!hasActiveFilters && (
+            <Button 
+              onClick={() => { setEditingCliente(null); setFormOpen(true); }}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Cadastrar Cliente
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+          {filteredClientes.map(cliente => (
+            <ClienteCard
+              key={cliente.id}
+              cliente={cliente}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onViewHistory={handleViewHistory}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Modais */}
+      <ClienteForm
+        open={formOpen}
+        onClose={() => { setFormOpen(false); setEditingCliente(null); }}
+        onSave={handleSave}
+        cliente={editingCliente}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => { setDeleteDialogOpen(false); setDeletingCliente(null); }}
+        onConfirm={() => deleteMutation.mutate(deletingCliente?.id)}
+        clienteName={deletingCliente?.nome}
+        isLoading={deleteMutation.isPending}
+      />
+
+      <HistoricoModal
+        open={historicoOpen}
+        onClose={() => { setHistoricoOpen(false); setSelectedCliente(null); }}
+        cliente={selectedCliente}
+        atendimentos={atendimentos}
+        onNewAtendimento={handleNewAtendimento}
+      />
+
+      <AtendimentoForm
+        open={atendimentoFormOpen}
+        onClose={() => setAtendimentoFormOpen(false)}
+        onSave={handleSaveAtendimento}
+        cliente={selectedCliente}
+        isLoading={createAtendimentoMutation.isPending}
+      />
+    </div>
+  );
+}
