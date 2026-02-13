@@ -35,7 +35,7 @@ const TIPOS_SERVICO = [
   'Outro'
 ];
 
-const STATUS_OPTIONS = ['Agendado', 'Em Andamento', 'Concluído', 'Cancelado'];
+const STATUS_OPTIONS = ['Aberto', 'Em Andamento', 'Pausado', 'Concluído'];
 
 export default function AtendimentoForm({ open, onClose, onSave, atendimento, cliente, isLoading }) {
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ export default function AtendimentoForm({ open, onClose, onSave, atendimento, cl
     tipo_servico: '',
     descricao: '',
     valor: '',
-    status: 'Agendado',
+    status: 'Aberto',
     observacoes: ''
   });
 
@@ -58,7 +58,7 @@ export default function AtendimentoForm({ open, onClose, onSave, atendimento, cl
         tipo_servico: atendimento.tipo_servico || '',
         descricao: atendimento.descricao || '',
         valor: atendimento.valor || '',
-        status: atendimento.status || 'Agendado',
+        status: atendimento.status || 'Aberto',
         observacoes: atendimento.observacoes || ''
       });
     } else if (cliente) {
@@ -69,7 +69,7 @@ export default function AtendimentoForm({ open, onClose, onSave, atendimento, cl
         tipo_servico: '',
         descricao: '',
         valor: '',
-        status: 'Agendado',
+        status: 'Aberto',
         observacoes: ''
       });
     }
