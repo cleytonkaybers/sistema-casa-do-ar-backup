@@ -303,12 +303,11 @@ export default function UsuariosPage() {
          </DialogHeader>
          <div className="space-y-4 mt-4">
            <div className="space-y-2">
-             <Label>Email</Label>
+             <Label>ID/Usuário</Label>
              <Input
-               type="email"
-               placeholder="usuario@example.com"
-               value={inviteEmail}
-               onChange={(e) => setInviteEmail(e.target.value)}
+               placeholder="usuario123"
+               value={userId}
+               onChange={(e) => setUserId(e.target.value)}
              />
            </div>
            <div className="space-y-2">
