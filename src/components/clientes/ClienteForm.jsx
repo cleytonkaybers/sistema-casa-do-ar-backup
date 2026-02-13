@@ -155,40 +155,75 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         return;
       }
 
-      // Verifica se é um link do Google Maps e tenta extrair coordenadas
-      const isGoogleMapsLink = input.includes('google.com/maps') || input.includes('maps.app.goo.gl') || input.includes('goo.gl/maps');
+      // Verifica se é um link do Google Maps (incluindo links encurtados goo.gl)
+      const isGoogleMapsLink = input.includes('google.com/maps') || 
+                               input.includes('maps.app.goo.gl') || 
+                               input.includes('goo.gl/maps') ||
+                               input.includes('maps.google.com');
       
       if (isGoogleMapsLink) {
+        // Tenta extrair coordenadas direto da URL primeiro
+        const coordMatch = input.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        
+        if (coordMatch) {
+          const lat = parseFloat(coordMatch[1]);
+          const lng = parseFloat(coordMatch[2]);
+          
+          if (lat >= -34 && lat <= 5 && lng >= -74 && lng <= -34) {
+            const result = await base44.integrations.Core.InvokeLLM({
+              prompt: `Busca reversa para coordenadas ${lat}, ${lng} no Brasil. Retorne o endereço completo.`,
+              add_context_from_internet: true,
+              response_json_schema: {
+                type: "object",
+                properties: {
+                  endereco_completo: { type: "string" },
+                  cidade: { type: "string" },
+                  estado: { type: "string" }
+                }
+              }
+            });
+            
+            setFormData(prev => ({
+              ...prev,
+              endereco: result?.endereco_completo || `${result?.cidade || ''} - ${result?.estado || ''}`,
+              latitude: lat,
+              longitude: lng
+            }));
+            toast.success(`Localização vinculada: ${lat}, ${lng}`);
+            return;
+          }
+        }
+        
+        // Se não encontrou na URL, acessa o link
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `TAREFA: Extrair coordenadas precisas deste link do Google Maps: "${input}"
+          prompt: `TAREFA CRÍTICA: Acesse este link do Google Maps e extraia as coordenadas EXATAS mostradas: "${input}"
                    
-                   INSTRUÇÕES:
-                   1. Se a URL contém "@" seguido de coordenadas (ex: @-10.123,-59.456), extraia esses valores EXATOS
-                   2. Se não, acesse o link e copie as coordenadas que o Google Maps mostra
-                   3. Verifique se as coordenadas são do BRASIL (latitude entre -34 e 5, longitude entre -74 e -34)
+                   PASSOS:
+                   1. Abra o link (pode ser um link encurtado goo.gl - ele vai redirecionar)
+                   2. Na página do Google Maps, localize as coordenadas exatas do pin/marcador
+                   3. As coordenadas aparecem na URL após o "@" ou na interface do Maps
+                   4. Copie EXATAMENTE os valores de latitude e longitude
                    
-                   ATENÇÃO: 
-                   - Aripuanã-MT fica em aproximadamente: latitude -10.17, longitude -59.45
-                   - São Paulo-SP fica em aproximadamente: latitude -23.55, longitude -46.63
-                   - NÃO CONFUNDA as coordenadas!
+                   VALIDAÇÃO:
+                   - Para locais no Brasil: latitude entre -34 e 5, longitude entre -74 e -34
+                   - Exemplo Aripuanã-MT: lat ≈ -10.17, lng ≈ -59.45
                    
-                   Retorne o endereço completo e as coordenadas EXATAS do local no link.`,
+                   RETORNE: Endereço completo, cidade, estado e coordenadas PRECISAS do local.`,
           add_context_from_internet: true,
           response_json_schema: {
             type: "object",
             properties: {
-              endereco_completo: { type: "string", description: "Endereço completo formatado" },
+              endereco_completo: { type: "string", description: "Endereço completo do local" },
               cidade: { type: "string", description: "Nome da cidade" },
-              estado: { type: "string", description: "Sigla do estado (ex: MT, SP)" },
-              latitude: { type: "number", description: "Latitude exata em formato decimal" },
-              longitude: { type: "number", description: "Longitude exata em formato decimal" }
+              estado: { type: "string", description: "Sigla do estado" },
+              latitude: { type: "number", description: "Latitude exata" },
+              longitude: { type: "number", description: "Longitude exata" }
             },
-            required: ["latitude", "longitude", "cidade", "estado"]
+            required: ["latitude", "longitude"]
           }
         });
 
         if (result && result.latitude && result.longitude) {
-          // Validação para Brasil
           if (result.latitude < -34 || result.latitude > 5 || result.longitude < -74 || result.longitude > -34) {
             toast.error('Coordenadas inválidas para Brasil. Verifique o link.');
             setLoadingLocation(false);
@@ -197,11 +232,11 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
           
           setFormData(prev => ({
             ...prev,
-            endereco: result.endereco_completo || `${result.cidade} - ${result.estado}`,
+            endereco: result.endereco_completo || `${result.cidade || ''} - ${result.estado || ''}`,
             latitude: result.latitude,
             longitude: result.longitude
           }));
-          toast.success(`${result.cidade}-${result.estado}: ${result.latitude}, ${result.longitude}`);
+          toast.success(`${result.cidade || 'Localização'} vinculada: ${result.latitude}, ${result.longitude}`);
         } else {
           toast.error('Não foi possível extrair as coordenadas do link');
         }
@@ -236,7 +271,6 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         });
 
         if (result && result.latitude && result.longitude) {
-          // Validação para Brasil
           if (result.latitude < -34 || result.latitude > 5 || result.longitude < -74 || result.longitude > -34) {
             toast.error('Coordenadas fora do Brasil. Verifique o endereço.');
             setLoadingLocation(false);
