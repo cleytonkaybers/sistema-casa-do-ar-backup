@@ -94,7 +94,7 @@ export default function UsuariosPage() {
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
-    enabled: !authLoading && isAdmin
+    enabled: !authLoading
   });
 
   const updateUserMutation = useMutation({
