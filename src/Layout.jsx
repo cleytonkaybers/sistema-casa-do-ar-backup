@@ -17,6 +17,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ChatWidget from '@/components/ChatWidget/ChatWidget';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
