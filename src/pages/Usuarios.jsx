@@ -139,6 +139,7 @@ export default function UsuariosPage() {
       setUserId('');
       setInvitePassword('');
       setInvitePerfil('atendente');
+      inviteEmail && setInviteEmail('');
     },
     onError: () => toast.error('Erro ao criar usuário')
   });
