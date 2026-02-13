@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Loader2, MapPin, Search, ExternalLink, Contact } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function ServicoForm({ open, onClose, onSave, servico, isLoading, prefilledData }) {
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -249,8 +251,18 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Calcular dia da semana automaticamente a partir da data programada
+    let diaSemana = '';
+    if (formData.data_programada) {
+      const data = parseISO(formData.data_programada);
+      const diaSemanaFormatado = format(data, 'EEEE', { locale: ptBR });
+      diaSemana = diaSemanaFormatado.charAt(0).toUpperCase() + diaSemanaFormatado.slice(1);
+    }
+    
     const dataToSave = {
       ...formData,
+      dia_semana: diaSemana,
       valor: formData.valor ? parseFloat(formData.valor) : 0
     };
     onSave(dataToSave);
