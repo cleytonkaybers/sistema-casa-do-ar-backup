@@ -19,6 +19,14 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useState(() => {
+    base44.auth.me().then(user => setCurrentUser(user)).catch(() => setCurrentUser(null));
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
+
   const navigation = [
     { name: 'Dashboard', href: createPageUrl('Dashboard'), icon: LayoutDashboard },
     { name: 'Clientes', href: createPageUrl('Clientes'), icon: Users },
@@ -26,6 +34,7 @@ export default function Layout({ children }) {
     { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
     { name: 'Atendimentos', href: createPageUrl('Atendimentos'), icon: ClipboardList },
     { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
+    ...(isAdmin ? [{ name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users }] : []),
   ];
 
   const isActive = (href) => {

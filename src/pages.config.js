@@ -53,6 +53,7 @@ import Clientes from './pages/Clientes';
 import Dashboard from './pages/Dashboard';
 import PreventivasFuturas from './pages/PreventivasFuturas';
 import Servicos from './pages/Servicos';
+import Usuarios from './pages/Usuarios';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +64,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "PreventivasFuturas": PreventivasFuturas,
     "Servicos": Servicos,
+    "Usuarios": Usuarios,
 }
 
 export const pagesConfig = {
