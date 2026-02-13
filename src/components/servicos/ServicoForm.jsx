@@ -9,7 +9,7 @@ import { Loader2, MapPin, Search, ExternalLink, Contact } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 
-export default function ServicoForm({ open, onClose, onSave, servico, isLoading }) {
+export default function ServicoForm({ open, onClose, onSave, servico, isLoading, prefilledData }) {
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [formData, setFormData] = useState({

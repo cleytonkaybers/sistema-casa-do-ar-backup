@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Phone, MapPin, Calendar, MessageCircle, Navigation, Search, Loader2, Clock, Wrench, Share2 } from 'lucide-react';
+import { Phone, MapPin, Calendar, MessageCircle, Navigation, Search, Loader2, Clock, Wrench, Share2, Eye, Plus } from 'lucide-react';
 import { 
   Table,
   TableBody,
@@ -14,12 +14,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { format, differenceInDays, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ServicoForm from '../components/servicos/ServicoForm';
 
 export default function PreventivasFuturasPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showServicoForm, setShowServicoForm] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: clientes = [], isLoading: loadingClientes } = useQuery({
     queryKey: ['clientes'],
@@ -130,6 +141,30 @@ export default function PreventivasFuturasPage() {
     .sort((a, b) => (a.status?.priority || 99) - (b.status?.priority || 99));
 
   const isLoading = loadingClientes || loadingServicos;
+
+  const createServicoMutation = useMutation({
+    mutationFn: (servicoData) => base44.entities.Servico.create(servicoData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['servicos'] });
+      setShowServicoForm(false);
+      setSelectedItem(null);
+      toast.success('Serviço agendado com sucesso!');
+    },
+  });
+
+  const handleViewDetails = (item) => {
+    setSelectedItem(item);
+    setShowDetails(true);
+  };
+
+  const handleCreateServico = (item) => {
+    setSelectedItem(item);
+    setShowServicoForm(true);
+  };
+
+  const handleSaveServico = async (servicoData) => {
+    createServicoMutation.mutate(servicoData);
+  };
 
   const handleShare = async (item) => {
     const isCliente = item.tipo === 'cliente';
@@ -281,7 +316,25 @@ export default function PreventivasFuturasPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewDetails(item)}
+                            className="text-gray-600 hover:text-blue-600"
+                            title="Ver Detalhes"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCreateServico(item)}
+                            className="text-gray-600 hover:text-purple-600"
+                            title="Agendar Serviço"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -295,7 +348,7 @@ export default function PreventivasFuturasPage() {
                             href={getWhatsAppLink(item.telefone)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center h-8 px-3 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md transition-colors"
+                            className="inline-flex items-center justify-center h-8 px-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md transition-colors"
                             title="WhatsApp"
                           >
                             <MessageCircle className="w-4 h-4" />
@@ -305,7 +358,7 @@ export default function PreventivasFuturasPage() {
                               href={mapsLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center h-8 px-3 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-colors"
+                              className="inline-flex items-center justify-center h-8 px-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-colors"
                               title="Google Maps"
                             >
                               <Navigation className="w-4 h-4" />
@@ -320,6 +373,154 @@ export default function PreventivasFuturasPage() {
             </Table>
           </div>
         </div>
+      )}
+
+      {/* Modal de Detalhes */}
+      {selectedItem && (
+        <Dialog open={showDetails} onOpenChange={setShowDetails}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                Detalhes {selectedItem.tipo === 'cliente' ? 'do Cliente' : 'do Serviço'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 mt-4">
+              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-4 rounded-lg">
+                <h3 className="text-lg font-semibold">
+                  {selectedItem.tipo === 'cliente' ? selectedItem.nome : selectedItem.cliente_nome}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-white/20 text-white border-white/30">
+                    {selectedItem.tipo === 'cliente' ? 'Cliente' : 'Serviço Ativo'}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Telefone</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-800">{formatPhone(selectedItem.telefone)}</span>
+                  </div>
+                </div>
+
+                {selectedItem.cpf && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">CPF</label>
+                    <p className="text-gray-800 mt-1">{selectedItem.cpf}</p>
+                  </div>
+                )}
+
+                {selectedItem.tipo !== 'cliente' && selectedItem.tipo_servico && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Tipo de Serviço</label>
+                    <p className="text-gray-800 mt-1">{selectedItem.tipo_servico}</p>
+                  </div>
+                )}
+
+                {selectedItem.dia_semana && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Dia da Semana</label>
+                    <p className="text-gray-800 mt-1">{selectedItem.dia_semana}</p>
+                  </div>
+                )}
+
+                {selectedItem.horario && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Horário</label>
+                    <p className="text-gray-800 mt-1">{selectedItem.horario}</p>
+                  </div>
+                )}
+
+                {selectedItem.valor && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Valor</label>
+                    <p className="text-gray-800 mt-1">R$ {selectedItem.valor.toFixed(2)}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedItem.endereco && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Endereço</label>
+                  <div className="flex items-start gap-2 mt-1">
+                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <span className="text-gray-800">{selectedItem.endereco}</span>
+                  </div>
+                </div>
+              )}
+
+              {selectedItem.tipo === 'cliente' && selectedItem.proximaManutencao && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Próxima Manutenção</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-800">
+                      {format(new Date(selectedItem.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <Badge className={`${selectedItem.status.color} mt-2`}>
+                    {selectedItem.status.label}
+                  </Badge>
+                </div>
+              )}
+
+              {(selectedItem.observacoes || selectedItem.descricao) && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">
+                    {selectedItem.tipo === 'cliente' ? 'Observações' : 'Descrição'}
+                  </label>
+                  <p className="text-gray-800 bg-gray-50 p-3 rounded-lg mt-1">
+                    {selectedItem.observacoes || selectedItem.descricao}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={() => {
+                    setShowDetails(false);
+                    handleCreateServico(selectedItem);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agendar Novo Serviço
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDetails(false)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal de Criar Serviço */}
+      {selectedItem && (
+        <ServicoForm
+          open={showServicoForm}
+          onClose={() => {
+            setShowServicoForm(false);
+            setSelectedItem(null);
+          }}
+          onSave={handleSaveServico}
+          servico={null}
+          isLoading={createServicoMutation.isPending}
+          prefilledData={{
+            cliente_nome: selectedItem.tipo === 'cliente' ? selectedItem.nome : selectedItem.cliente_nome,
+            telefone: selectedItem.telefone,
+            cpf: selectedItem.cpf || '',
+            endereco: selectedItem.endereco || '',
+            latitude: selectedItem.latitude,
+            longitude: selectedItem.longitude
+          }}
+        />
       )}
     </div>
   );
