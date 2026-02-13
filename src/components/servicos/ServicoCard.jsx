@@ -2,8 +2,14 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Phone, MapPin, Calendar, Pencil, Trash2, MessageCircle, Navigation, Clock, DollarSign, Share2, CreditCard } from 'lucide-react';
+import { Phone, MapPin, Calendar, Pencil, Trash2, MessageCircle, Navigation, Clock, DollarSign, Share2, CreditCard, CheckCircle, Pause, Play } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange, compact = false }) {
   const formatPhone = (phone) => {
@@ -63,6 +69,22 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
     return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
+  const getStatusConfig = (status) => {
+    switch(status) {
+      case 'concluido':
+        return { label: 'Concluído', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle };
+      case 'andamento':
+        return { label: 'Em Andamento', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Play };
+      case 'pausado':
+        return { label: 'Pausado', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Pause };
+      default:
+        return { label: 'Aberto', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Clock };
+    }
+  };
+
+  const statusConfig = getStatusConfig(servico.status || 'aberto');
+  const StatusIcon = statusConfig.icon;
+
   if (compact) {
     return (
       <div className="space-y-3">
@@ -70,6 +92,10 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-gray-800 truncate">{servico.cliente_nome}</h4>
             <p className="text-xs text-gray-500 truncate">{servico.tipo_servico}</p>
+            <Badge className={`${statusConfig.color} text-xs mt-1 border`}>
+              <StatusIcon className="w-3 h-3 mr-1" />
+              {statusConfig.label}
+            </Badge>
           </div>
           <Button
             variant="ghost"
@@ -125,14 +151,39 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
         </div>
 
         <div className="flex items-center gap-1.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="flex-1 h-8 text-xs">
+                <StatusIcon className="w-3 h-3 mr-1" />
+                Status
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => onStatusChange(servico, 'aberto')}>
+                <Clock className="w-3 h-3 mr-2" />
+                Aberto
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onStatusChange(servico, 'andamento')}>
+                <Play className="w-3 h-3 mr-2" />
+                Em Andamento
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onStatusChange(servico, 'pausado')}>
+                <Pause className="w-3 h-3 mr-2" />
+                Pausado
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onStatusChange(servico, 'concluido')}>
+                <CheckCircle className="w-3 h-3 mr-2" />
+                Concluído
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onEdit(servico)}
-            className="flex-1 h-8 text-xs text-gray-600 hover:text-blue-600 hover:border-blue-300"
+            className="h-8 w-8 p-0 text-gray-600 hover:text-blue-600 hover:border-blue-300"
           >
-            <Pencil className="w-3 h-3 mr-1" />
-            Editar
+            <Pencil className="w-3 h-3" />
           </Button>
           <Button
             variant="outline"
@@ -162,9 +213,15 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
             </Button>
             <div className="flex-1">
               <h3 className="font-semibold text-lg">{servico.cliente_nome}</h3>
-              <Badge className={`${getTipoColor(servico.tipo_servico)} mt-1`}>
-                {servico.tipo_servico}
-              </Badge>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <Badge className={`${getTipoColor(servico.tipo_servico)}`}>
+                  {servico.tipo_servico}
+                </Badge>
+                <Badge className={`${statusConfig.color} border`}>
+                  <StatusIcon className="w-3 h-3 mr-1" />
+                  {statusConfig.label}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
@@ -245,14 +302,39 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           )}
 
           <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="flex-1">
+                  <StatusIcon className="w-4 h-4 mr-1.5" />
+                  {statusConfig.label}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => onStatusChange(servico, 'aberto')}>
+                  <Clock className="w-4 h-4 mr-2" />
+                  Aberto
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onStatusChange(servico, 'andamento')}>
+                  <Play className="w-4 h-4 mr-2" />
+                  Em Andamento
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onStatusChange(servico, 'pausado')}>
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pausado
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onStatusChange(servico, 'concluido')}>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Concluído
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onEdit(servico)}
-              className="flex-1 text-gray-600 hover:text-blue-600 hover:border-blue-300"
+              className="text-gray-600 hover:text-blue-600 hover:border-blue-300"
             >
-              <Pencil className="w-4 h-4 mr-1.5" />
-              Editar
+              <Pencil className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
