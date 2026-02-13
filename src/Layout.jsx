@@ -116,8 +116,8 @@ export default function Layout({ children }) {
             <Link to={isAdmin ? createPageUrl('Configuracoes') : '#'} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl shadow-purple-500/50">
                 {(() => {
-                  const Icon = require('lucide-react')[companySettings.company_icon];
-                  return Icon ? <Icon className="w-7 h-7 text-white" /> : <Settings className="w-7 h-7 text-white" />;
+                  const Icon = ICON_MAP[companySettings.company_icon];
+                  return Icon ? <Icon className="w-7 h-7 text-white" /> : <Snowflake className="w-7 h-7 text-white" />;
                 })()}
               </div>
               <div>
