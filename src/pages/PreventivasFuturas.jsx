@@ -21,15 +21,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { format, differenceInDays, addMonths } from 'date-fns';
+import { format, differenceInDays, addMonths, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ServicoForm from '../components/servicos/ServicoForm';
+import { Label } from '@/components/ui/label';
 
 export default function PreventivasFuturasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showServicoForm, setShowServicoForm] = useState(false);
+  const [editingDate, setEditingDate] = useState(false);
+  const [newDate, setNewDate] = useState('');
   const queryClient = useQueryClient();
 
   const { data: clientes = [], isLoading: loadingClientes } = useQuery({
@@ -155,18 +158,59 @@ export default function PreventivasFuturasPage() {
   const isLoading = loadingClientes || loadingServicos;
 
   const createServicoMutation = useMutation({
-    mutationFn: (servicoData) => base44.entities.Servico.create(servicoData),
+    mutationFn: async (servicoData) => {
+      const servico = await base44.entities.Servico.create(servicoData);
+      
+      // Atualizar cliente com nova data de manutenção (180 dias)
+      const clientes = await base44.entities.Cliente.list();
+      const clienteExistente = clientes.find(c => 
+        c.telefone?.replace(/\D/g, '') === servicoData.telefone?.replace(/\D/g, '')
+      );
+      
+      if (clienteExistente) {
+        const novaDataManutencao = format(addDays(new Date(), 180), 'yyyy-MM-dd');
+        await base44.entities.Cliente.update(clienteExistente.id, {
+          proxima_manutencao: novaDataManutencao,
+          ultima_manutencao: format(new Date(), 'yyyy-MM-dd')
+        });
+      }
+      
+      return servico;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['servicos'] });
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
       setShowServicoForm(false);
       setSelectedItem(null);
-      toast.success('Serviço agendado com sucesso!');
+      toast.success('Serviço agendado e manutenção atualizada!');
+    },
+  });
+
+  const updateClienteDateMutation = useMutation({
+    mutationFn: ({ id, proxima_manutencao }) => 
+      base44.entities.Cliente.update(id, { proxima_manutencao }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      setEditingDate(false);
+      setNewDate('');
+      setShowDetails(false);
+      toast.success('Data de manutenção atualizada!');
     },
   });
 
   const handleViewDetails = (item) => {
     setSelectedItem(item);
     setShowDetails(true);
+    setEditingDate(false);
+    setNewDate(item.proximaManutencao || '');
+  };
+
+  const handleSaveDate = () => {
+    if (!newDate || !selectedItem) return;
+    updateClienteDateMutation.mutate({
+      id: selectedItem.id,
+      proxima_manutencao: newDate
+    });
   };
 
   const handleCreateServico = (item) => {
@@ -467,15 +511,64 @@ export default function PreventivasFuturasPage() {
               {selectedItem.tipo === 'cliente' && selectedItem.proximaManutencao && (
                 <div>
                   <label className="text-sm font-medium text-gray-600">Próxima Manutenção</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-800">
-                      {format(new Date(selectedItem.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <Badge className={`${selectedItem.status.color} mt-2`}>
-                    {selectedItem.status.label}
-                  </Badge>
+                  
+                  {editingDate ? (
+                    <div className="space-y-3 mt-2">
+                      <Input
+                        type="date"
+                        value={newDate}
+                        onChange={(e) => setNewDate(e.target.value)}
+                        className="max-w-xs"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleSaveDate}
+                          disabled={updateClienteDateMutation.isPending}
+                          className="bg-gradient-to-r from-blue-500 to-cyan-500"
+                        >
+                          {updateClienteDateMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            'Salvar Data'
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingDate(false);
+                            setNewDate(selectedItem.proximaManutencao);
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-1">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-800">
+                          {format(new Date(selectedItem.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingDate(true)}
+                          className="ml-2 text-blue-600 hover:text-blue-700"
+                        >
+                          Editar
+                        </Button>
+                      </div>
+                      <Badge className={`${selectedItem.status.color}`}>
+                        {selectedItem.status.label}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               )}
 
