@@ -55,6 +55,10 @@ export default function Layout({ children }) {
     { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
   ];
 
+  const allUsersNavigation = [
+    { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
+  ];
+
   const navigation = isTecnico ? baseNavigation : [...baseNavigation, ...adminNavigation];
 
   const isActive = (href) => {
