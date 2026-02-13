@@ -136,71 +136,117 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         const [lat, lng] = input.split(',').map(c => parseFloat(c.trim()));
         
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `Busque o endereço completo para estas coordenadas: latitude ${lat}, longitude ${lng}. 
-                   Retorne o endereço completo, bairro, cidade e estado no Brasil.`,
+          prompt: `Faça uma busca reversa de geocodificação para as coordenadas: ${lat}, ${lng}
+                   Encontre e retorne EXATAMENTE o endereço completo, bairro, cidade e estado desta localização no Brasil.
+                   Use Google Maps ou outro serviço de mapas para obter as informações mais precisas.`,
           add_context_from_internet: true,
           response_json_schema: {
             type: "object",
             properties: {
-              endereco_completo: { type: "string", description: "Endereço completo formatado (rua, número, complemento)" },
-              bairro: { type: "string", description: "Bairro ou distrito" },
+              endereco_completo: { type: "string", description: "Endereço completo com rua e número" },
+              bairro: { type: "string", description: "Nome do bairro" },
               cidade: { type: "string", description: "Nome da cidade" },
-              estado: { type: "string", description: "Sigla do estado (ex: SP, MT)" }
+              estado: { type: "string", description: "Sigla do estado" }
             }
           }
         });
 
         setFormData(prev => ({
           ...prev,
-          endereco: result.endereco_completo || prev.endereco,
-          bairro: result.bairro || prev.bairro,
-          cidade: result.cidade ? `${result.cidade}${result.estado ? ` - ${result.estado}` : ''}` : prev.cidade,
+          endereco: result?.endereco_completo || `Coordenadas: ${lat}, ${lng}`,
+          bairro: result?.bairro || prev.bairro,
+          cidade: result?.cidade ? `${result.cidade}${result.estado ? ` - ${result.estado}` : ''}` : prev.cidade,
           latitude: lat,
           longitude: lng
         }));
-        toast.success('Coordenadas salvas e endereço preenchido!');
+        toast.success('Coordenadas salvas e endereço encontrado!');
         return;
       }
 
-      // Verifica se é um link do Google Maps
+      // Verifica se é um link do Google Maps e tenta extrair coordenadas
       const isGoogleMapsLink = input.includes('google.com/maps') || input.includes('maps.app.goo.gl') || input.includes('goo.gl/maps');
       
-      const prompt = isGoogleMapsLink 
-        ? `Extraia as informações de localização deste link do Google Maps: "${input}". 
-           Retorne os dados do local incluindo endereço completo, cidade, bairro/distrito, e coordenadas se possível.`
-        : `Busque informações sobre este endereço no Brasil: "${input}". 
-           Complete com cidade, bairro e formate o endereço completo.`;
-
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt,
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            endereco_completo: { type: "string", description: "Endereço completo formatado (rua, número, complemento)" },
-            bairro: { type: "string", description: "Bairro ou distrito" },
-            cidade: { type: "string", description: "Nome da cidade" },
-            estado: { type: "string", description: "Sigla do estado (ex: SP, MT)" },
-            latitude: { type: "number", description: "Latitude do local" },
-            longitude: { type: "number", description: "Longitude do local" }
+      if (isGoogleMapsLink) {
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `Acesse este link do Google Maps e extraia TODAS as informações da localização: "${input}"
+                   
+                   IMPORTANTE: Retorne as informações EXATAS que aparecem no Google Maps:
+                   - Endereço completo (rua, número, complemento se houver)
+                   - Bairro ou distrito
+                   - Cidade
+                   - Estado (sigla)
+                   - Coordenadas exatas (latitude e longitude)
+                   
+                   Use a busca na internet para acessar o link e obter os dados precisos.`,
+          add_context_from_internet: true,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              endereco_completo: { type: "string", description: "Endereço completo formatado" },
+              bairro: { type: "string", description: "Nome do bairro ou distrito" },
+              cidade: { type: "string", description: "Nome da cidade" },
+              estado: { type: "string", description: "Sigla do estado (ex: MT, SP)" },
+              latitude: { type: "number", description: "Latitude exata" },
+              longitude: { type: "number", description: "Longitude exata" }
+            }
           }
-        }
-      });
+        });
 
-      if (result) {
-        setFormData(prev => ({
-          ...prev,
-          endereco: result.endereco_completo || prev.endereco,
-          bairro: result.bairro || prev.bairro,
-          cidade: result.cidade ? `${result.cidade}${result.estado ? ` - ${result.estado}` : ''}` : prev.cidade,
-          latitude: result.latitude || prev.latitude,
-          longitude: result.longitude || prev.longitude
-        }));
-        toast.success('Localização encontrada e campos preenchidos!');
+        if (result) {
+          setFormData(prev => ({
+            ...prev,
+            endereco: result.endereco_completo || prev.endereco,
+            bairro: result.bairro || prev.bairro,
+            cidade: result.cidade ? `${result.cidade}${result.estado ? ` - ${result.estado}` : ''}` : prev.cidade,
+            latitude: result.latitude || prev.latitude,
+            longitude: result.longitude || prev.longitude
+          }));
+          toast.success('Localização do Maps encontrada!');
+        } else {
+          toast.error('Não foi possível extrair dados do link');
+        }
+      } else {
+        // É um endereço texto - busca geocodificação
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `Faça uma geocodificação do seguinte endereço no Brasil: "${input}"
+                   
+                   Use Google Maps ou outro serviço de mapas para encontrar:
+                   - O endereço completo e formatado corretamente
+                   - Bairro
+                   - Cidade
+                   - Estado
+                   - Coordenadas geográficas (latitude e longitude)
+                   
+                   IMPORTANTE: Retorne apenas informações verificadas e precisas.`,
+          add_context_from_internet: true,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              endereco_completo: { type: "string", description: "Endereço completo formatado" },
+              bairro: { type: "string", description: "Nome do bairro" },
+              cidade: { type: "string", description: "Nome da cidade" },
+              estado: { type: "string", description: "Sigla do estado" },
+              latitude: { type: "number", description: "Latitude" },
+              longitude: { type: "number", description: "Longitude" }
+            }
+          }
+        });
+
+        if (result) {
+          setFormData(prev => ({
+            ...prev,
+            endereco: result.endereco_completo || prev.endereco,
+            bairro: result.bairro || prev.bairro,
+            cidade: result.cidade ? `${result.cidade}${result.estado ? ` - ${result.estado}` : ''}` : prev.cidade,
+            latitude: result.latitude || prev.latitude,
+            longitude: result.longitude || prev.longitude
+          }));
+          toast.success('Endereço encontrado e dados preenchidos!');
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar localização:', error);
-      toast.error('Não foi possível buscar a localização. Tente novamente.');
+      toast.error('Erro ao buscar localização. Verifique os dados e tente novamente.');
     } finally {
       setLoadingLocation(false);
     }
