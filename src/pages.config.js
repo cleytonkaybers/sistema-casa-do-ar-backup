@@ -58,6 +58,7 @@ import Suporte from './pages/Suporte';
 import Relatorios from './pages/Relatorios';
 import Configuracoes from './pages/Configuracoes';
 import PreferencesNotificacao from './pages/PreferencesNotificacao';
+import ClienteDetalhes from './pages/ClienteDetalhes';
 import __Layout from './Layout.jsx';
 
 
@@ -73,6 +74,7 @@ export const PAGES = {
     "Relatorios": Relatorios,
     "Configuracoes": Configuracoes,
     "PreferencesNotificacao": PreferencesNotificacao,
+    "ClienteDetalhes": ClienteDetalhes,
 }
 
 export const pagesConfig = {
