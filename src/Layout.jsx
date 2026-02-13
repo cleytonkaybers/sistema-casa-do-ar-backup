@@ -23,9 +23,16 @@ export default function Layout({ children }) {
   const location = useLocation();
 
   const [currentUser, setCurrentUser] = useState(null);
+  const [companySettings, setCompanySettings] = useState({ company_name: 'Casa do Ar', company_icon: 'Snowflake' });
 
-  useState(() => {
+  React.useEffect(() => {
     base44.auth.me().then(user => setCurrentUser(user)).catch(() => setCurrentUser(null));
+    
+    base44.entities.CompanySettings.list().then(result => {
+      if (result.length > 0) {
+        setCompanySettings(result[0]);
+      }
+    }).catch(() => {});
   }, []);
 
   const isAdmin = currentUser?.role === 'admin';
