@@ -41,9 +41,9 @@ export default function Layout({ children }) {
   const adminNavigation = [
     { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
     { name: 'Relatórios', href: createPageUrl('Relatorios'), icon: BarChart3 },
-    { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
     { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
     { name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users },
+    { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
   ];
 
   const navigation = isTecnico ? baseNavigation : [...baseNavigation, ...adminNavigation];
