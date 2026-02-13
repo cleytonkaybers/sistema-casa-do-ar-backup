@@ -43,6 +43,21 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         valor: servico.valor || '',
         ativo: servico.ativo !== false
       });
+    } else if (prefilledData) {
+      setFormData({
+        cliente_nome: prefilledData.cliente_nome || '',
+        cpf: prefilledData.cpf || '',
+        telefone: prefilledData.telefone || '',
+        endereco: prefilledData.endereco || '',
+        latitude: prefilledData.latitude || null,
+        longitude: prefilledData.longitude || null,
+        tipo_servico: 'Limpeza de 9k',
+        dia_semana: '',
+        horario: '',
+        descricao: '',
+        valor: '',
+        ativo: true
+      });
     } else {
       setFormData({
         cliente_nome: '',
@@ -59,7 +74,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         ativo: true
       });
     }
-  }, [servico, open]);
+  }, [servico, prefilledData, open]);
 
   const formatPhoneInput = (value) => {
     const cleaned = value.replace(/\D/g, '');
