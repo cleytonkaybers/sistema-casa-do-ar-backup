@@ -20,13 +20,15 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Loader2, MapPin } from 'lucide-react';
+import { CalendarIcon, Loader2, MapPin, Contact, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const TIPOS_EQUIPAMENTO = ['Split', 'Inverter', 'Janela', 'Cassete', 'Piso-Teto', 'Multi-Split', 'Outro'];
 const STATUS_OPTIONS = ['Ativo', 'Inativo', 'Pendente'];
 
 export default function ClienteForm({ open, onClose, onSave, cliente, isLoading }) {
+  const [loadingContacts, setLoadingContacts] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     telefone: '',
@@ -113,6 +115,68 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
     onSave(formData);
   };
 
+  const handleImportContact = async () => {
+    // Verifica se a API de Contatos está disponível
+    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+      toast.error('Seu navegador não suporta importação de contatos. Use um dispositivo móvel com Chrome ou Edge.');
+      return;
+    }
+
+    setLoadingContacts(true);
+    try {
+      const props = ['name', 'tel', 'address'];
+      const opts = { multiple: false };
+      
+      const contacts = await navigator.contacts.select(props, opts);
+      
+      if (contacts && contacts.length > 0) {
+        const contact = contacts[0];
+        
+        // Preenche os campos com os dados do contato
+        const nome = contact.name?.[0] || '';
+        let telefone = contact.tel?.[0] || '';
+        
+        // Formata o telefone
+        if (telefone) {
+          telefone = telefone.replace(/\D/g, '');
+          // Remove o código do país se existir
+          if (telefone.startsWith('55') && telefone.length > 11) {
+            telefone = telefone.slice(2);
+          }
+          telefone = formatPhoneInput(telefone);
+        }
+        
+        // Tenta extrair endereço
+        let endereco = '';
+        if (contact.address && contact.address.length > 0) {
+          const addr = contact.address[0];
+          const parts = [
+            addr.streetAddress,
+            addr.locality,
+            addr.region
+          ].filter(Boolean);
+          endereco = parts.join(', ');
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          nome: nome || prev.nome,
+          telefone: telefone || prev.telefone,
+          endereco: endereco || prev.endereco
+        }));
+        
+        toast.success('Contato importado com sucesso!');
+      }
+    } catch (error) {
+      if (error.name !== 'TypeError') {
+        console.error('Erro ao importar contato:', error);
+        toast.error('Não foi possível importar o contato');
+      }
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -123,6 +187,29 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Botão Importar Contato */}
+          {!cliente && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleImportContact}
+              disabled={loadingContacts}
+              className="w-full h-12 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
+            >
+              {loadingContacts ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <Contact className="w-5 h-5 mr-2" />
+                  Importar da Agenda do Telefone
+                </>
+              )}
+            </Button>
+          )}
+
           {/* Nome e Telefone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
