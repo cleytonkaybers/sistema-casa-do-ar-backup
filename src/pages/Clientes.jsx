@@ -25,9 +25,11 @@ import ClienteForm from '@/components/clientes/ClienteForm';
 import DeleteConfirmDialog from '@/components/clientes/DeleteConfirmDialog';
 import HistoricoModal from '@/components/atendimentos/HistoricoModal';
 import AtendimentoForm from '@/components/atendimentos/AtendimentoForm';
+import { usePermissions } from '@/components/auth/PermissionGuard';
 
 export default function Clientes() {
   const queryClient = useQueryClient();
+  const { hasPermission, isAdmin } = usePermissions();
   
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
@@ -151,13 +153,15 @@ export default function Clientes() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Clientes</h1>
           <p className="text-gray-500 mt-1">{clientes.length} clientes cadastrados</p>
         </div>
-        <Button 
-          onClick={() => { setEditingCliente(null); setFormOpen(true); }}
-          className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/30"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Adicionar Cliente
-        </Button>
+        {(isAdmin || hasPermission('clientes_criar')) && (
+          <Button 
+            onClick={() => { setEditingCliente(null); setFormOpen(true); }}
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/30"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Cliente
+          </Button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -224,8 +228,8 @@ export default function Clientes() {
             <ClienteCard
               key={cliente.id}
               cliente={cliente}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              onEdit={(isAdmin || hasPermission('clientes_editar')) ? handleEdit : undefined}
+              onDelete={(isAdmin || hasPermission('clientes_deletar')) ? handleDelete : undefined}
               onViewHistory={handleViewHistory}
             />
           ))}

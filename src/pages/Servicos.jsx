@@ -12,8 +12,10 @@ import ReagendarModal from '../components/servicos/ReagendarModal';
 import { toast } from 'sonner';
 import { format, parseISO, startOfMonth, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { usePermissions } from '@/components/auth/PermissionGuard';
 
 export default function ServicosPage() {
+  const { hasPermission, isAdmin } = usePermissions();
   const [showForm, setShowForm] = useState(false);
   const [editingServico, setEditingServico] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -188,16 +190,18 @@ export default function ServicosPage() {
           <h1 className="text-3xl font-bold text-gray-800">Serviços</h1>
           <p className="text-gray-500 mt-1">Gerencie serviços diários e semanais</p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingServico(null);
-            setShowForm(true);
-          }}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Novo Serviço
-        </Button>
+        {(isAdmin || hasPermission('servicos_criar')) && (
+          <Button
+            onClick={() => {
+              setEditingServico(null);
+              setShowForm(true);
+            }}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Novo Serviço
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -282,9 +286,9 @@ export default function ServicosPage() {
                           <div className="p-3">
                             <ServicoCard
                               servico={servico}
-                              onEdit={handleEdit}
-                              onDelete={handleDelete}
-                              onStatusChange={handleStatusChange}
+                              onEdit={(isAdmin || hasPermission('servicos_editar')) ? handleEdit : undefined}
+                              onDelete={(isAdmin || hasPermission('servicos_deletar')) ? handleDelete : undefined}
+                              onStatusChange={(isAdmin || hasPermission('servicos_editar')) ? handleStatusChange : undefined}
                               compact
                             />
                           </div>
@@ -314,9 +318,9 @@ export default function ServicosPage() {
                   <ServicoCard
                     key={servico.id}
                     servico={servico}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onStatusChange={handleStatusChange}
+                    onEdit={(isAdmin || hasPermission('servicos_editar')) ? handleEdit : undefined}
+                    onDelete={(isAdmin || hasPermission('servicos_deletar')) ? handleDelete : undefined}
+                    onStatusChange={(isAdmin || hasPermission('servicos_editar')) ? handleStatusChange : undefined}
                   />
                 ))}
               </div>
