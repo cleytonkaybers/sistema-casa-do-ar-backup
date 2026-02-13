@@ -42,10 +42,10 @@ import AtendimentoForm from '@/components/atendimentos/AtendimentoForm';
 import DeleteConfirmDialog from '@/components/clientes/DeleteConfirmDialog';
 
 const statusColors = {
-  'Agendado': 'bg-blue-100 text-blue-700 border-blue-200',
-  'Em Andamento': 'bg-amber-100 text-amber-700 border-amber-200',
-  'Concluído': 'bg-green-100 text-green-700 border-green-200',
-  'Cancelado': 'bg-gray-100 text-gray-700 border-gray-200'
+  'Aberto': 'bg-gray-100 text-gray-700 border-gray-200',
+  'Em Andamento': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Pausado': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  'Concluído': 'bg-green-100 text-green-700 border-green-200'
 };
 
 export default function Atendimentos() {
@@ -230,10 +230,10 @@ export default function Atendimentos() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="Agendado">Agendado</SelectItem>
+              <SelectItem value="Aberto">Aberto</SelectItem>
               <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+              <SelectItem value="Pausado">Pausado</SelectItem>
               <SelectItem value="Concluído">Concluído</SelectItem>
-              <SelectItem value="Cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>
 
@@ -306,10 +306,10 @@ export default function Atendimentos() {
                   
                   // Mapear status do serviço para status do atendimento
                   const statusAtendimentoSincronizado = servicoRelacionado?.status 
-                    ? (servicoRelacionado.status === 'aberto' ? 'Agendado' :
+                    ? (servicoRelacionado.status === 'aberto' ? 'Aberto' :
                        servicoRelacionado.status === 'andamento' ? 'Em Andamento' :
                        servicoRelacionado.status === 'concluido' ? 'Concluído' :
-                       servicoRelacionado.status === 'pausado' ? 'Em Andamento' : atendimento.status)
+                       servicoRelacionado.status === 'pausado' ? 'Pausado' : atendimento.status)
                     : atendimento.status;
                   
                   const statusServicoColors = {
@@ -399,10 +399,10 @@ export default function Atendimentos() {
               
               // Mapear status do serviço para status do atendimento
               const statusAtendimentoSincronizado = servicoRelacionado?.status 
-                ? (servicoRelacionado.status === 'aberto' ? 'Agendado' :
+                ? (servicoRelacionado.status === 'aberto' ? 'Aberto' :
                    servicoRelacionado.status === 'andamento' ? 'Em Andamento' :
                    servicoRelacionado.status === 'concluido' ? 'Concluído' :
-                   servicoRelacionado.status === 'pausado' ? 'Em Andamento' : atendimento.status)
+                   servicoRelacionado.status === 'pausado' ? 'Pausado' : atendimento.status)
                 : atendimento.status;
               
               const statusServicoColors = {
