@@ -82,7 +82,9 @@ export default function UsuariosPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteFullName, setInviteFullName] = useState('');
   const [invitePerfil, setInvitePerfil] = useState('atendente');
+  const [invitePassword, setInvitePassword] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -104,35 +106,37 @@ export default function UsuariosPage() {
   });
 
   const handleInvite = async () => {
-    if (!inviteEmail) {
-      toast.error('Digite um email válido');
+    if (!inviteEmail || !inviteFullName || !invitePassword) {
+      toast.error('Preencha todos os campos');
       return;
     }
 
     try {
+      const perfil = perfisPreDefinidos[invitePerfil];
       await base44.users.inviteUser(inviteEmail, 'user');
       
-      // Aguardar um pouco para o usuário ser criado
       setTimeout(async () => {
         const allUsers = await base44.entities.User.list();
         const newUser = allUsers.find(u => u.email === inviteEmail);
         
         if (newUser) {
-          const perfil = perfisPreDefinidos[invitePerfil];
           await base44.entities.User.update(newUser.id, {
+            full_name: inviteFullName,
             perfil: invitePerfil,
             permissoes: perfil.permissoes
           });
           queryClient.invalidateQueries({ queryKey: ['usuarios'] });
         }
         
-        toast.success('Convite enviado por email!');
+        toast.success('Usuário criado com sucesso!');
         setShowInviteModal(false);
         setInviteEmail('');
+        setInviteFullName('');
+        setInvitePassword('');
         setInvitePerfil('atendente');
-      }, 2000);
+      }, 1000);
     } catch (error) {
-      toast.error('Erro ao enviar convite');
+      toast.error('Erro ao criar usuário');
     }
   };
 
@@ -206,7 +210,7 @@ export default function UsuariosPage() {
           className="bg-gradient-to-r from-blue-500 to-cyan-500"
         >
           <UserPlus className="w-5 h-5 mr-2" />
-          Convidar Usuário
+          Novo Usuário
         </Button>
       </div>
 
@@ -250,45 +254,61 @@ export default function UsuariosPage() {
 
       {/* Modal de Convite */}
       <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convidar Novo Usuário</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                placeholder="usuario@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Perfil Inicial</Label>
-              <Select value={invitePerfil} onValueChange={setInvitePerfil}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="atendente">Atendente</SelectItem>
-                  <SelectItem value="tecnico">Técnico</SelectItem>
-                  <SelectItem value="gerente">Gerente</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => setShowInviteModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleInvite} className="bg-gradient-to-r from-blue-500 to-cyan-500">
-                <Mail className="w-4 h-4 mr-2" />
-                Enviar Convite
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
+       <DialogContent>
+         <DialogHeader>
+           <DialogTitle>Criar Novo Usuário</DialogTitle>
+         </DialogHeader>
+         <div className="space-y-4 mt-4">
+           <div className="space-y-2">
+             <Label>Nome Completo</Label>
+             <Input
+               placeholder="João Silva"
+               value={inviteFullName}
+               onChange={(e) => setInviteFullName(e.target.value)}
+             />
+           </div>
+           <div className="space-y-2">
+             <Label>Email</Label>
+             <Input
+               type="email"
+               placeholder="usuario@example.com"
+               value={inviteEmail}
+               onChange={(e) => setInviteEmail(e.target.value)}
+             />
+           </div>
+           <div className="space-y-2">
+             <Label>Senha</Label>
+             <Input
+               type="password"
+               placeholder="••••••••"
+               value={invitePassword}
+               onChange={(e) => setInvitePassword(e.target.value)}
+             />
+           </div>
+           <div className="space-y-2">
+             <Label>Perfil</Label>
+             <Select value={invitePerfil} onValueChange={setInvitePerfil}>
+               <SelectTrigger>
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="atendente">Atendente</SelectItem>
+                 <SelectItem value="tecnico">Técnico</SelectItem>
+                 <SelectItem value="gerente">Gerente</SelectItem>
+                 <SelectItem value="admin">Administrador</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
+           <div className="flex justify-end gap-3 pt-4">
+             <Button variant="outline" onClick={() => setShowInviteModal(false)}>
+               Cancelar
+             </Button>
+             <Button onClick={handleInvite} className="bg-gradient-to-r from-blue-500 to-cyan-500">
+               Criar Usuário
+             </Button>
+           </div>
+         </div>
+       </DialogContent>
       </Dialog>
 
       {/* Modal de Edição de Permissões */}
