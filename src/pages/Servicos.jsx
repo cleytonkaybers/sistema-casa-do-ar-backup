@@ -85,37 +85,37 @@ export default function ServicosPage() {
     return matchSearch && matchTipo;
   });
 
-  // Organizar serviços por mês e data programada
+  // Organizar serviços por dia da semana
   const servicosComData = filteredServicos.filter(s => s.data_programada);
   const servicosSemData = filteredServicos.filter(s => !s.data_programada);
 
-  // Ordenar por data e horário
-  const servicosOrdenados = [...servicosComData].sort((a, b) => {
-    const dateCompare = new Date(a.data_programada) - new Date(b.data_programada);
-    if (dateCompare !== 0) return dateCompare;
+  const servicosPorDia = servicosComData.reduce((acc, servico) => {
+    const diaSemana = servico.dia_semana || 'Sem dia';
     
-    if (a.horario && b.horario) {
-      return a.horario.localeCompare(b.horario);
-    }
-    return 0;
-  });
-
-  // Agrupar por mês
-  const servicosPorMes = servicosOrdenados.reduce((acc, servico) => {
-    const data = parseISO(servico.data_programada);
-    const mesKey = format(data, 'yyyy-MM');
-    const mesLabel = format(data, 'MMMM yyyy', { locale: ptBR });
-    
-    if (!acc[mesKey]) {
-      acc[mesKey] = {
-        label: mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1),
-        servicos: []
-      };
+    if (!acc[diaSemana]) {
+      acc[diaSemana] = [];
     }
     
-    acc[mesKey].servicos.push(servico);
+    acc[diaSemana].push(servico);
     return acc;
   }, {});
+
+  // Ordenar serviços dentro de cada dia por horário (mais cedo no topo)
+  Object.keys(servicosPorDia).forEach(dia => {
+    servicosPorDia[dia].sort((a, b) => {
+      // Serviços com horário primeiro, sem horário depois
+      if (a.horario && !b.horario) return -1;
+      if (!a.horario && b.horario) return 1;
+      
+      // Se ambos têm horário, ordenar por horário
+      if (a.horario && b.horario) {
+        return a.horario.localeCompare(b.horario);
+      }
+      
+      // Se nenhum tem horário, ordenar por data
+      return new Date(a.data_programada) - new Date(b.data_programada);
+    });
+  });
 
   const diasDaSemana = [
     'Segunda-feira',
@@ -209,57 +209,48 @@ export default function ServicosPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Serviços organizados por mês e data */}
-          {Object.entries(servicosPorMes).map(([mesKey, mesData]) => (
-            <div key={mesKey} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              {/* Cabeçalho do mês */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-white">{mesData.label}</h2>
-                  <Badge className="bg-white/20 text-white border-white/30 text-lg px-3 py-1">
-                    {mesData.servicos.length} serviços
-                  </Badge>
-                </div>
-              </div>
+          {/* Serviços organizados em colunas por dia da semana */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+            {diasDaSemana.map(dia => {
+              const servicosDoDia = servicosPorDia[dia] || [];
+              
+              return (
+                <div key={dia} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+                  {/* Cabeçalho do dia */}
+                  <div className={`bg-gradient-to-r ${diaColors[dia]} px-4 py-3 sticky top-0 z-10`}>
+                    <h3 className="font-bold text-white text-center text-sm lg:text-base">
+                      {dia}
+                    </h3>
+                    <p className="text-white/90 text-center text-xs mt-1">
+                      {servicosDoDia.length} {servicosDoDia.length === 1 ? 'serviço' : 'serviços'}
+                    </p>
+                  </div>
 
-              {/* Serviços do mês organizados por data */}
-              <div className="p-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                  {mesData.servicos.map(servico => {
-                    const dataServico = parseISO(servico.data_programada);
-                    const diaSemana = format(dataServico, 'EEEE', { locale: ptBR });
-                    const diaSemanaCapitalizado = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
-                    
-                    return (
-                      <div key={servico.id} className="bg-gray-50 rounded-lg shadow border border-gray-200 overflow-hidden">
-                        {/* Data e dia da semana */}
-                        <div className={`bg-gradient-to-r ${diaColors[diaSemanaCapitalizado] || 'from-gray-500 to-gray-600'} px-3 py-2`}>
-                          <div className="flex items-center justify-between text-white">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4" />
-                              <span className="font-semibold text-sm">
-                                {format(dataServico, 'dd/MM')} - {diaSemanaCapitalizado}
-                              </span>
-                            </div>
+                  {/* Lista de serviços do dia */}
+                  <div className="p-3 space-y-3 flex-1 overflow-y-auto">
+                    {servicosDoDia.length === 0 ? (
+                      <p className="text-gray-400 text-center text-sm py-4">
+                        Nenhum serviço
+                      </p>
+                    ) : (
+                      servicosDoDia.map(servico => (
+                        <div key={servico.id} className="bg-gray-50 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                          <div className="p-3">
+                            <ServicoCard
+                              servico={servico}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              compact
+                            />
                           </div>
                         </div>
-                        
-                        {/* Card do serviço */}
-                        <div className="p-3">
-                          <ServicoCard
-                            servico={servico}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            compact
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
 
           {/* Serviços sem data programada */}
           {servicosSemData.length > 0 && (
