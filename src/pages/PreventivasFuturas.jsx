@@ -72,29 +72,41 @@ export default function PreventivasFuturasPage() {
     
     if (daysUntil < 0) {
       return { 
-        label: `Atrasada (${Math.abs(daysUntil)} dias)`, 
+        label: `Atrasada - ${Math.abs(daysUntil)} dias`, 
         color: 'bg-red-100 text-red-700 border-red-300',
-        priority: 1
+        priority: 1,
+        days: daysUntil
+      };
+    }
+    if (daysUntil <= 7) {
+      return { 
+        label: `Faltam ${daysUntil} ${daysUntil === 1 ? 'dia' : 'dias'}`, 
+        color: 'bg-orange-100 text-orange-700 border-orange-300',
+        priority: 2,
+        days: daysUntil
       };
     }
     if (daysUntil <= 30) {
       return { 
-        label: `${daysUntil} dias`, 
+        label: `Faltam ${daysUntil} dias`, 
         color: 'bg-amber-100 text-amber-700 border-amber-300',
-        priority: 2
+        priority: 3,
+        days: daysUntil
       };
     }
     if (daysUntil <= 90) {
       return { 
-        label: `${daysUntil} dias`, 
+        label: `Faltam ${daysUntil} dias`, 
         color: 'bg-blue-100 text-blue-700 border-blue-300',
-        priority: 3
+        priority: 4,
+        days: daysUntil
       };
     }
     return { 
-      label: `${daysUntil} dias`, 
+      label: `Faltam ${daysUntil} dias`, 
       color: 'bg-gray-100 text-gray-700 border-gray-300',
-      priority: 4
+      priority: 5,
+      days: daysUntil
     };
   };
 
