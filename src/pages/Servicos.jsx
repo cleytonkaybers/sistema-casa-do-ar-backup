@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Loader2 } from 'lucide-react';
+import { Plus, Search, Loader2, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import ServicoForm from '../components/servicos/ServicoForm';
 import ServicoCard from '../components/servicos/ServicoCard';
 import { toast } from 'sonner';
@@ -82,6 +83,34 @@ export default function ServicosPage() {
     return matchSearch && matchTipo;
   });
 
+  // Agrupar serviços por dia da semana
+  const diasDaSemana = [
+    'Segunda-feira',
+    'Terça-feira',
+    'Quarta-feira',
+    'Quinta-feira',
+    'Sexta-feira',
+    'Sábado',
+    'Domingo'
+  ];
+
+  const servicosPorDia = diasDaSemana.reduce((acc, dia) => {
+    acc[dia] = filteredServicos.filter(s => s.dia_semana === dia);
+    return acc;
+  }, {});
+
+  const servicosSemDia = filteredServicos.filter(s => !s.dia_semana);
+
+  const diaColors = {
+    'Segunda-feira': 'from-blue-500 to-blue-600',
+    'Terça-feira': 'from-green-500 to-green-600',
+    'Quarta-feira': 'from-yellow-500 to-yellow-600',
+    'Quinta-feira': 'from-orange-500 to-orange-600',
+    'Sexta-feira': 'from-purple-500 to-purple-600',
+    'Sábado': 'from-pink-500 to-pink-600',
+    'Domingo': 'from-red-500 to-red-600'
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -153,15 +182,68 @@ export default function ServicosPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServicos.map((servico) => (
-            <ServicoCard
-              key={servico.id}
-              servico={servico}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
+        <div className="space-y-6">
+          {/* Serviços organizados por dia da semana */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            {diasDaSemana.map(dia => {
+              const servicosDoDia = servicosPorDia[dia];
+              if (servicosDoDia.length === 0) return null;
+
+              return (
+                <div key={dia} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                  {/* Cabeçalho do dia */}
+                  <div className={`bg-gradient-to-r ${diaColors[dia]} px-4 py-3 flex items-center justify-between`}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-white" />
+                      <h3 className="font-bold text-white">{dia}</h3>
+                    </div>
+                    <Badge className="bg-white/20 text-white border-white/30">
+                      {servicosDoDia.length}
+                    </Badge>
+                  </div>
+
+                  {/* Lista de serviços */}
+                  <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                    {servicosDoDia.map(servico => (
+                      <div key={servico.id} className="p-4 hover:bg-gray-50 transition-colors">
+                        <ServicoCard
+                          servico={servico}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          compact
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Serviços sem dia da semana definido */}
+          {servicosSemDia.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-500 to-gray-600 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-white" />
+                  <h3 className="font-bold text-white">Sem Dia Definido</h3>
+                </div>
+                <Badge className="bg-white/20 text-white border-white/30">
+                  {servicosSemDia.length}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                {servicosSemDia.map(servico => (
+                  <ServicoCard
+                    key={servico.id}
+                    servico={servico}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
