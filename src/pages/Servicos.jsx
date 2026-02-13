@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import ServicoForm from '../components/servicos/ServicoForm';
 import ServicoCard from '../components/servicos/ServicoCard';
 import { toast } from 'sonner';
+import { format, parseISO, startOfMonth, isSameMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function ServicosPage() {
   const [showForm, setShowForm] = useState(false);
@@ -83,7 +85,38 @@ export default function ServicosPage() {
     return matchSearch && matchTipo;
   });
 
-  // Agrupar serviços por dia da semana
+  // Organizar serviços por mês e data programada
+  const servicosComData = filteredServicos.filter(s => s.data_programada);
+  const servicosSemData = filteredServicos.filter(s => !s.data_programada);
+
+  // Ordenar por data e horário
+  const servicosOrdenados = [...servicosComData].sort((a, b) => {
+    const dateCompare = new Date(a.data_programada) - new Date(b.data_programada);
+    if (dateCompare !== 0) return dateCompare;
+    
+    if (a.horario && b.horario) {
+      return a.horario.localeCompare(b.horario);
+    }
+    return 0;
+  });
+
+  // Agrupar por mês
+  const servicosPorMes = servicosOrdenados.reduce((acc, servico) => {
+    const data = parseISO(servico.data_programada);
+    const mesKey = format(data, 'yyyy-MM');
+    const mesLabel = format(data, 'MMMM yyyy', { locale: ptBR });
+    
+    if (!acc[mesKey]) {
+      acc[mesKey] = {
+        label: mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1),
+        servicos: []
+      };
+    }
+    
+    acc[mesKey].servicos.push(servico);
+    return acc;
+  }, {});
+
   const diasDaSemana = [
     'Segunda-feira',
     'Terça-feira',
@@ -93,40 +126,6 @@ export default function ServicosPage() {
     'Sábado',
     'Domingo'
   ];
-
-  // Função para ordenar serviços por data e horário
-  const ordenarServicos = (servicos) => {
-    return [...servicos].sort((a, b) => {
-      // Primeiro por data programada
-      if (a.data_programada && b.data_programada) {
-        const dateCompare = new Date(a.data_programada) - new Date(b.data_programada);
-        if (dateCompare !== 0) return dateCompare;
-      } else if (a.data_programada) {
-        return -1;
-      } else if (b.data_programada) {
-        return 1;
-      }
-      
-      // Depois por horário
-      if (a.horario && b.horario) {
-        return a.horario.localeCompare(b.horario);
-      } else if (a.horario) {
-        return -1;
-      } else if (b.horario) {
-        return 1;
-      }
-      
-      return 0;
-    });
-  };
-
-  const servicosPorDia = diasDaSemana.reduce((acc, dia) => {
-    const servicosDoDia = filteredServicos.filter(s => s.dia_semana === dia);
-    acc[dia] = ordenarServicos(servicosDoDia);
-    return acc;
-  }, {});
-
-  const servicosSemDia = ordenarServicos(filteredServicos.filter(s => !s.dia_semana));
 
   const diaColors = {
     'Segunda-feira': 'from-blue-500 to-blue-600',
@@ -210,57 +209,72 @@ export default function ServicosPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Serviços organizados por dia da semana */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-            {diasDaSemana.map(dia => {
-              const servicosDoDia = servicosPorDia[dia];
-              if (servicosDoDia.length === 0) return null;
-
-              return (
-                <div key={dia} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                  {/* Cabeçalho do dia */}
-                  <div className={`bg-gradient-to-r ${diaColors[dia]} px-4 py-3 flex items-center justify-between`}>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-white" />
-                      <h3 className="font-bold text-white">{dia}</h3>
-                    </div>
-                    <Badge className="bg-white/20 text-white border-white/30">
-                      {servicosDoDia.length}
-                    </Badge>
-                  </div>
-
-                  {/* Lista de serviços */}
-                  <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-                    {servicosDoDia.map(servico => (
-                      <div key={servico.id} className="p-4 hover:bg-gray-50 transition-colors">
-                        <ServicoCard
-                          servico={servico}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          compact
-                        />
-                      </div>
-                    ))}
-                  </div>
+          {/* Serviços organizados por mês e data */}
+          {Object.entries(servicosPorMes).map(([mesKey, mesData]) => (
+            <div key={mesKey} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              {/* Cabeçalho do mês */}
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-white">{mesData.label}</h2>
+                  <Badge className="bg-white/20 text-white border-white/30 text-lg px-3 py-1">
+                    {mesData.servicos.length} serviços
+                  </Badge>
                 </div>
-              );
-            })}
-          </div>
+              </div>
 
-          {/* Serviços sem dia da semana definido */}
-          {servicosSemDia.length > 0 && (
+              {/* Serviços do mês organizados por data */}
+              <div className="p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                  {mesData.servicos.map(servico => {
+                    const dataServico = parseISO(servico.data_programada);
+                    const diaSemana = format(dataServico, 'EEEE', { locale: ptBR });
+                    const diaSemanaCapitalizado = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+                    
+                    return (
+                      <div key={servico.id} className="bg-gray-50 rounded-lg shadow border border-gray-200 overflow-hidden">
+                        {/* Data e dia da semana */}
+                        <div className={`bg-gradient-to-r ${diaColors[diaSemanaCapitalizado] || 'from-gray-500 to-gray-600'} px-3 py-2`}>
+                          <div className="flex items-center justify-between text-white">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              <span className="font-semibold text-sm">
+                                {format(dataServico, 'dd/MM')} - {diaSemanaCapitalizado}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Card do serviço */}
+                        <div className="p-3">
+                          <ServicoCard
+                            servico={servico}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            compact
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Serviços sem data programada */}
+          {servicosSemData.length > 0 && (
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div className="bg-gradient-to-r from-gray-500 to-gray-600 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-white" />
-                  <h3 className="font-bold text-white">Sem Dia Definido</h3>
+                  <h3 className="font-bold text-white">Sem Data Programada</h3>
                 </div>
                 <Badge className="bg-white/20 text-white border-white/30">
-                  {servicosSemDia.length}
+                  {servicosSemData.length}
                 </Badge>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                {servicosSemDia.map(servico => (
+                {servicosSemData.map(servico => (
                   <ServicoCard
                     key={servico.id}
                     servico={servico}
