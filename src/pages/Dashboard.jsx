@@ -83,17 +83,17 @@ export default function Dashboard() {
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-3xl font-bold mt-2 text-gray-800">{value}</p>
+            <p className="text-sm font-medium text-gray-400">{title}</p>
+            <p className="text-3xl font-bold mt-2 text-white">{value}</p>
             {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
           </div>
-          <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center shadow-lg`}>
+          <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center shadow-xl`}>
             <Icon className="w-6 h-6 text-white" />
           </div>
         </div>
         {(onClick || href) && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center text-sm font-medium text-blue-600">
+          <div className="mt-4 pt-4 border-t border-purple-700/30">
+            <div className="flex items-center text-sm font-medium text-cyan-400 group-hover:text-cyan-300">
               Ver detalhes <ArrowRight className="w-4 h-4 ml-1" />
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function Dashboard() {
     if (href) {
       return (
         <Link to={href}>
-          <Card className="bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-105 group">
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer hover:scale-105 group">
             {content}
           </Card>
         </Link>
@@ -113,7 +113,7 @@ export default function Dashboard() {
 
     return (
       <Card 
-        className={`bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 ${onClick ? 'cursor-pointer hover:scale-105 group' : ''}`}
+        className={`bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 ${onClick ? 'cursor-pointer hover:scale-105 group' : ''}`}
         onClick={onClick}
       >
         {content}
@@ -126,28 +126,28 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-gray-500 mt-1 flex items-center gap-2">
+          <p className="text-purple-300/70 mt-1 flex items-center gap-2">
             <Clock className="w-4 h-4" />
             Visão geral - {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link to={createPageUrl('Servicos')}>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Serviço
-            </Button>
-          </Link>
-          <Link to={createPageUrl('Clientes')}>
-            <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg">
-              <Users className="w-4 h-4 mr-2" />
-              Ver Clientes
-            </Button>
-          </Link>
-        </div>
+           <Link to={createPageUrl('Servicos')}>
+             <Button className="bg-gradient-to-r from-pink-500 via-purple-500 to-violet-600 hover:from-pink-600 hover:via-purple-600 hover:to-violet-700 shadow-xl shadow-purple-500/50">
+               <Plus className="w-4 h-4 mr-2" />
+               Novo Serviço
+             </Button>
+           </Link>
+           <Link to={createPageUrl('Clientes')}>
+             <Button className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 hover:from-cyan-600 hover:via-blue-600 hover:to-purple-700 shadow-xl shadow-blue-500/50">
+               <Users className="w-4 h-4 mr-2" />
+               Ver Clientes
+             </Button>
+           </Link>
+         </div>
       </div>
 
       {/* Stats Grid */}
@@ -156,7 +156,7 @@ export default function Dashboard() {
           title="Total de Clientes"
           value={totalClientes}
           icon={Users}
-          color="bg-gradient-to-br from-blue-500 to-blue-600"
+          color="bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600"
           subtitle={`${clientesAtivos} ativos`}
           href={createPageUrl('Clientes')}
         />
@@ -164,7 +164,7 @@ export default function Dashboard() {
           title="Atendimentos do Mês"
           value={atendimentosDoMes.length}
           icon={ClipboardList}
-          color="bg-gradient-to-br from-cyan-500 to-cyan-600"
+          color="bg-gradient-to-br from-blue-500 to-cyan-500"
           subtitle={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
           href={createPageUrl('Atendimentos')}
         />
@@ -172,7 +172,7 @@ export default function Dashboard() {
           title="Manutenções Pendentes"
           value={manutencoesPendentes.length}
           icon={AlertTriangle}
-          color={manutencoesPendentes.length > 0 ? "bg-gradient-to-br from-amber-500 to-amber-600" : "bg-gradient-to-br from-green-500 to-green-600"}
+          color={manutencoesPendentes.length > 0 ? "bg-gradient-to-br from-orange-500 to-red-500" : "bg-gradient-to-br from-emerald-500 to-teal-600"}
           subtitle="Próximos 30 dias"
           href={createPageUrl('PreventivasFuturas')}
         />
@@ -180,7 +180,7 @@ export default function Dashboard() {
           title="Serviços Concluídos"
           value={atendimentosConcluidos}
           icon={CheckCircle2}
-          color="bg-gradient-to-br from-green-500 to-green-600"
+          color="bg-gradient-to-br from-emerald-500 to-teal-600"
           subtitle="Total histórico"
           href={createPageUrl('Atendimentos')}
         />
