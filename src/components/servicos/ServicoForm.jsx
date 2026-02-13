@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, MapPin, Search, ExternalLink, Contact } from 'lucide-react';
+import { Loader2, MapPin, Search, ExternalLink, Contact, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO } from 'date-fns';
@@ -21,7 +21,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     endereco: '',
     latitude: null,
     longitude: null,
-    tipo_servico: 'Limpeza de 9k',
+    tipos_servico: ['Limpeza de 9k'],
     dia_semana: '',
     data_programada: '',
     horario: '',
@@ -39,7 +39,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: servico.endereco || '',
         latitude: servico.latitude || null,
         longitude: servico.longitude || null,
-        tipo_servico: servico.tipo_servico || 'Semanal',
+        tipos_servico: servico.tipo_servico ? [servico.tipo_servico] : ['Limpeza de 9k'],
         dia_semana: servico.dia_semana || '',
         data_programada: servico.data_programada || '',
         horario: servico.horario || '',
@@ -55,7 +55,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: prefilledData.endereco || '',
         latitude: prefilledData.latitude || null,
         longitude: prefilledData.longitude || null,
-        tipo_servico: 'Limpeza de 9k',
+        tipos_servico: ['Limpeza de 9k'],
         dia_semana: '',
         data_programada: '',
         horario: '',
@@ -71,7 +71,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: '',
         latitude: null,
         longitude: null,
-        tipo_servico: 'Limpeza de 9k',
+        tipos_servico: ['Limpeza de 9k'],
         dia_semana: '',
         data_programada: '',
         horario: '',
@@ -276,9 +276,11 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     
     const dataToSave = {
       ...formData,
+      tipo_servico: formData.tipos_servico.join(' + '),
       dia_semana: diaSemana,
       valor: formData.valor ? parseFloat(formData.valor) : 0
     };
+    delete dataToSave.tipos_servico;
     onSave(dataToSave);
   };
 
@@ -383,32 +385,68 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
           </div>
 
           <div className="space-y-2">
-            <Label>Tipo de Serviço *</Label>
-            <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Limpeza de 9k">Limpeza de 9k</SelectItem>
-                <SelectItem value="Limpeza de 12k">Limpeza de 12k</SelectItem>
-                <SelectItem value="Limpeza de 18k">Limpeza de 18k</SelectItem>
-                <SelectItem value="Limpeza de 22 a 24k">Limpeza de 22 a 24k</SelectItem>
-                <SelectItem value="Limpeza de 24k">Limpeza de 24k</SelectItem>
-                <SelectItem value="Limpeza de 30 a 32k">Limpeza de 30 a 32k</SelectItem>
-                <SelectItem value="Limpeza piso e teto">Limpeza piso e teto</SelectItem>
-                <SelectItem value="Instalação de 9k">Instalação de 9k</SelectItem>
-                <SelectItem value="Instalação de 12k">Instalação de 12k</SelectItem>
-                <SelectItem value="Instalação de 18k">Instalação de 18k</SelectItem>
-                <SelectItem value="Instalação de 22 a 24k">Instalação de 22 a 24k</SelectItem>
-                <SelectItem value="Instalação de 24k">Instalação de 24k</SelectItem>
-                <SelectItem value="Instalação de 30 a 32k">Instalação de 30 a 32k</SelectItem>
-                <SelectItem value="Instalação piso e teto">Instalação piso e teto</SelectItem>
-                <SelectItem value="Troca de capacitor">Troca de capacitor</SelectItem>
-                <SelectItem value="Carga de gás">Carga de gás</SelectItem>
-                <SelectItem value="Recarga de gás">Recarga de gás</SelectItem>
-                <SelectItem value="Ver defeito">Ver defeito</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Tipos de Serviço *</Label>
+            <div className="space-y-2">
+              {formData.tipos_servico.map((tipo, index) => (
+                <div key={index} className="flex gap-2">
+                  <Select 
+                    value={tipo} 
+                    onValueChange={(value) => {
+                      const newTipos = [...formData.tipos_servico];
+                      newTipos[index] = value;
+                      setFormData({ ...formData, tipos_servico: newTipos });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Limpeza de 9k">Limpeza de 9k</SelectItem>
+                      <SelectItem value="Limpeza de 12k">Limpeza de 12k</SelectItem>
+                      <SelectItem value="Limpeza de 18k">Limpeza de 18k</SelectItem>
+                      <SelectItem value="Limpeza de 22 a 24k">Limpeza de 22 a 24k</SelectItem>
+                      <SelectItem value="Limpeza de 24k">Limpeza de 24k</SelectItem>
+                      <SelectItem value="Limpeza de 30 a 32k">Limpeza de 30 a 32k</SelectItem>
+                      <SelectItem value="Limpeza piso e teto">Limpeza piso e teto</SelectItem>
+                      <SelectItem value="Instalação de 9k">Instalação de 9k</SelectItem>
+                      <SelectItem value="Instalação de 12k">Instalação de 12k</SelectItem>
+                      <SelectItem value="Instalação de 18k">Instalação de 18k</SelectItem>
+                      <SelectItem value="Instalação de 22 a 24k">Instalação de 22 a 24k</SelectItem>
+                      <SelectItem value="Instalação de 24k">Instalação de 24k</SelectItem>
+                      <SelectItem value="Instalação de 30 a 32k">Instalação de 30 a 32k</SelectItem>
+                      <SelectItem value="Instalação piso e teto">Instalação piso e teto</SelectItem>
+                      <SelectItem value="Troca de capacitor">Troca de capacitor</SelectItem>
+                      <SelectItem value="Carga de gás">Carga de gás</SelectItem>
+                      <SelectItem value="Recarga de gás">Recarga de gás</SelectItem>
+                      <SelectItem value="Ver defeito">Ver defeito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.tipos_servico.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const newTipos = formData.tipos_servico.filter((_, i) => i !== index);
+                        setFormData({ ...formData, tipos_servico: newTipos });
+                      }}
+                      className="text-red-500 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFormData({ ...formData, tipos_servico: [...formData.tipos_servico, 'Limpeza de 9k'] })}
+                className="w-full border-dashed"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar outro tipo
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
