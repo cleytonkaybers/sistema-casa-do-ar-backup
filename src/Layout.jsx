@@ -29,18 +29,24 @@ export default function Layout({ children }) {
   }, []);
 
   const isAdmin = currentUser?.role === 'admin';
+  const isTecnico = currentUser?.role === 'tecnico';
 
-  const navigation = [
+  const baseNavigation = [
     { name: 'Dashboard', href: createPageUrl('Dashboard'), icon: LayoutDashboard },
     { name: 'Clientes', href: createPageUrl('Clientes'), icon: Users },
     { name: 'Serviços', href: createPageUrl('Servicos'), icon: ClipboardList },
-    { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
     { name: 'Atendimentos', href: createPageUrl('Atendimentos'), icon: ClipboardList },
+  ];
+
+  const adminNavigation = [
+    { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
     { name: 'Relatórios', href: createPageUrl('Relatorios'), icon: BarChart3 },
     { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
     { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
-    ...(isAdmin ? [{ name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users }] : []),
+    { name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users },
   ];
+
+  const navigation = isTecnico ? baseNavigation : [...baseNavigation, ...adminNavigation];
 
   const isActive = (href) => {
     return location.pathname === new URL(href, window.location.origin).pathname;
