@@ -123,7 +123,15 @@ export default function ServicosPage() {
     }
   };
 
-  const handleStatusChange = (servico, novoStatus) => {
+  const handleStatusChange = async (servico, novoStatus) => {
+    const currentUser = await base44.auth.me();
+    const updateData = {
+      ...servico,
+      status: novoStatus,
+      usuario_atualizacao_status: currentUser?.email,
+      data_atualizacao_status: new Date().toISOString()
+    };
+
     if (novoStatus === 'pausado') {
       // Abrir modal de reagendamento obrigatório
       setServicoParaReagendar(servico);
@@ -131,13 +139,13 @@ export default function ServicosPage() {
       // Atualizar o status para pausado
       updateMutation.mutate({ 
         id: servico.id, 
-        data: { ...servico, status: novoStatus } 
+        data: updateData
       });
     } else if (novoStatus === 'concluido') {
       // Atualizar status e abrir modal de compartilhamento
       updateMutation.mutate({ 
         id: servico.id, 
-        data: { ...servico, status: novoStatus } 
+        data: updateData
       });
       setServicoConcluido(servico);
       setShowCompartilharModal(true);
@@ -145,7 +153,7 @@ export default function ServicosPage() {
     } else {
       updateMutation.mutate({ 
         id: servico.id, 
-        data: { ...servico, status: novoStatus } 
+        data: updateData
       });
       toast.success(`Status alterado para ${novoStatus}`);
     }
