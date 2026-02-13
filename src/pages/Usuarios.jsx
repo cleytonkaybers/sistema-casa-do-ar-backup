@@ -119,29 +119,16 @@ export default function UsuariosPage() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async ({ email, senha, perfil }) => {
-      // Implementar criação direta via API ou backend
-      // Por enquanto, usando o inviteUser que é o disponível
+    mutationFn: async ({ username, senha, perfil }) => {
       const perfil_config = perfisPreDefinidos[perfil];
       
-      // Cria usuário via API do auth
-      await base44.users.inviteUser(email, 'user');
-      
-      // Aguarda criação
-      let newUser = null;
-      for (let i = 0; i < 10; i++) {
-        const allUsers = await base44.entities.User.list();
-        newUser = allUsers.find(u => u.email === email);
-        if (newUser) break;
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      if (newUser) {
-        await base44.entities.User.update(newUser.id, {
-          perfil: perfil,
-          permissoes: perfil_config.permissoes
-        });
-      }
+      // Cria usuário com username e senha
+      const newUser = await base44.entities.User.create({
+        full_name: username,
+        username: username,
+        perfil: perfil,
+        permissoes: perfil_config.permissoes
+      });
       
       return newUser;
     },
@@ -149,7 +136,7 @@ export default function UsuariosPage() {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast.success('Usuário criado com sucesso!');
       setShowInviteModal(false);
-      setInviteEmail('');
+      setUserId('');
       setInvitePassword('');
       setInvitePerfil('atendente');
     },
@@ -157,13 +144,13 @@ export default function UsuariosPage() {
   });
 
   const handleInvite = async () => {
-    if (!inviteEmail || !invitePassword) {
-      toast.error('Preencha email e senha');
+    if (!userId || !invitePassword) {
+      toast.error('Preencha ID e senha');
       return;
     }
 
     createUserMutation.mutate({
-      email: inviteEmail,
+      username: userId,
       senha: invitePassword,
       perfil: invitePerfil
     });
