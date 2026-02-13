@@ -82,13 +82,16 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
     const cleaned = value.replace(/\D/g, '');
     let formatted = cleaned;
     
+    // Formato com código do país: +55 66 98121-4583
     if (cleaned.length > 0) {
-      formatted = `(${cleaned.slice(0, 2)}`;
-      if (cleaned.length > 2) {
-        formatted += `) ${cleaned.slice(2, 7)}`;
-      }
-      if (cleaned.length > 7) {
-        formatted += `-${cleaned.slice(7, 11)}`;
+      if (cleaned.length <= 2) {
+        formatted = `+${cleaned}`;
+      } else if (cleaned.length <= 4) {
+        formatted = `+${cleaned.slice(0, 2)} ${cleaned.slice(2)}`;
+      } else if (cleaned.length <= 9) {
+        formatted = `+${cleaned.slice(0, 2)} ${cleaned.slice(2, 4)} ${cleaned.slice(4)}`;
+      } else {
+        formatted = `+${cleaned.slice(0, 2)} ${cleaned.slice(2, 4)} ${cleaned.slice(4, 9)}-${cleaned.slice(9, 13)}`;
       }
     }
     return formatted;
@@ -232,7 +235,7 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
                 placeholder="(00) 00000-0000"
                 required
                 className="h-11"
-                maxLength={15}
+                maxLength={18}
               />
             </div>
           </div>
