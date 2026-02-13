@@ -81,9 +81,32 @@ export default function Atendimentos() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Atendimento.create(data),
+    mutationFn: async (data) => {
+      const atendimento = await base44.entities.Atendimento.create(data);
+      
+      // Criar notificação para todos os usuários
+      const usuarios = await base44.entities.User.list();
+      for (const usuario of usuarios) {
+        const prefs = await base44.entities.PreferenciaNotificacao.filter({ usuario_email: usuario.email });
+        const devNotificar = prefs.length === 0 || prefs[0].atendimento_criado;
+        
+        if (devNotificar) {
+          await base44.entities.Notificacao.create({
+            usuario_email: usuario.email,
+            tipo: 'atendimento_criado',
+            titulo: 'Novo Atendimento',
+            mensagem: `Novo atendimento registrado para ${data.cliente_nome}`,
+            cliente_nome: data.cliente_nome,
+            atendimento_id: atendimento.id
+          });
+        }
+      }
+      
+      return atendimento;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
+      queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
       setFormOpen(false);
       toast.success('Atendimento registrado com sucesso!');
     },
@@ -91,9 +114,32 @@ export default function Atendimentos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Atendimento.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const atendimento = await base44.entities.Atendimento.update(id, data);
+      
+      // Criar notificação para todos os usuários
+      const usuarios = await base44.entities.User.list();
+      for (const usuario of usuarios) {
+        const prefs = await base44.entities.PreferenciaNotificacao.filter({ usuario_email: usuario.email });
+        const devNotificar = prefs.length === 0 || prefs[0].atendimento_atualizado;
+        
+        if (devNotificar) {
+          await base44.entities.Notificacao.create({
+            usuario_email: usuario.email,
+            tipo: 'atendimento_atualizado',
+            titulo: 'Atendimento Atualizado',
+            mensagem: `Atendimento de ${data.cliente_nome} foi atualizado`,
+            cliente_nome: data.cliente_nome,
+            atendimento_id: id
+          });
+        }
+      }
+      
+      return atendimento;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
+      queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
       setFormOpen(false);
       setEditingAtendimento(null);
       toast.success('Atendimento atualizado com sucesso!');
