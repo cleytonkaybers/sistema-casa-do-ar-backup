@@ -5,7 +5,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Phone, MapPin, Calendar, MessageCircle, Navigation, Search, Loader2, Clock, Wrench } from 'lucide-react';
+import { Phone, MapPin, Calendar, MessageCircle, Navigation, Search, Loader2, Clock, Wrench, Share2 } from 'lucide-react';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { toast } from 'sonner';
 import { format, differenceInDays, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -122,6 +131,49 @@ export default function PreventivasFuturasPage() {
 
   const isLoading = loadingClientes || loadingServicos;
 
+  const handleShare = async (item) => {
+    const isCliente = item.tipo === 'cliente';
+    const nome = isCliente ? item.nome : item.cliente_nome;
+    const mapsLink = getGoogleMapsLink(item);
+    
+    let shareText = `📋 *${nome}*\n\n📞 ${formatPhone(item.telefone)}\n`;
+    
+    if (item.endereco) {
+      shareText += `📍 ${item.endereco}\n`;
+    }
+    
+    if (mapsLink) {
+      shareText += `🗺️ ${mapsLink}\n`;
+    }
+    
+    if (isCliente && item.proximaManutencao) {
+      shareText += `\n📅 Próxima manutenção: ${format(new Date(item.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}\n`;
+    }
+    
+    if (!isCliente) {
+      shareText += `\n🔧 ${item.tipo_servico}`;
+      if (item.dia_semana) shareText += `\n📆 ${item.dia_semana}`;
+      if (item.horario) shareText += ` às ${item.horario}`;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: nome,
+          text: shareText
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareText);
+          toast.success('Informações copiadas!');
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareText);
+      toast.success('Informações copiadas!');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -155,121 +207,118 @@ export default function PreventivasFuturasPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {todosItens.map((item) => {
-            const isCliente = item.tipo === 'cliente';
-            const mapsLink = getGoogleMapsLink(item);
+        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gradient-to-r from-blue-500 to-cyan-500">
+                  <TableHead className="text-white font-semibold">Tipo</TableHead>
+                  <TableHead className="text-white font-semibold">Nome</TableHead>
+                  <TableHead className="text-white font-semibold">Telefone</TableHead>
+                  <TableHead className="text-white font-semibold">Endereço</TableHead>
+                  <TableHead className="text-white font-semibold">Serviço/Data</TableHead>
+                  <TableHead className="text-white font-semibold">Status</TableHead>
+                  <TableHead className="text-white font-semibold text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {todosItens.map((item) => {
+                  const isCliente = item.tipo === 'cliente';
+                  const mapsLink = getGoogleMapsLink(item);
 
-            return (
-              <Card key={`${item.tipo}-${item.id}`} className="bg-white hover:shadow-xl transition-all duration-300 border-0 shadow-md">
-                <CardContent className="p-0">
-                  <div className={`p-4 text-white ${isCliente ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gradient-to-r from-purple-500 to-pink-500'}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">
-                          {isCliente ? item.nome : item.cliente_nome}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          {isCliente ? (
-                            <Clock className="w-4 h-4" />
+                  return (
+                    <TableRow key={`${item.tipo}-${item.id}`} className="hover:bg-gray-50">
+                      <TableCell>
+                        <Badge className={isCliente ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}>
+                          {isCliente ? 'Cliente' : 'Serviço'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {isCliente ? item.nome : item.cliente_nome}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-400" />
+                          {formatPhone(item.telefone)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs">
+                          {item.endereco ? (
+                            <div className="flex items-start gap-2">
+                              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm line-clamp-2">{item.endereco}</span>
+                            </div>
                           ) : (
-                            <Wrench className="w-4 h-4" />
+                            <span className="text-gray-400 text-sm">-</span>
                           )}
-                          <span className="text-sm">
-                            {isCliente ? 'Cliente' : item.tipo_servico}
-                          </span>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium">{formatPhone(item.telefone)}</span>
-                      </div>
-                      <a
-                        href={getWhatsAppLink(item.telefone)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-full transition-colors"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        WhatsApp
-                      </a>
-                    </div>
-
-                    {item.endereco && (
-                      <div className="flex items-start gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm line-clamp-2">{item.endereco}</span>
-                      </div>
-                    )}
-
-                    {mapsLink && (
-                      <a
-                        href={mapsLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold border border-blue-200"
-                      >
-                        <Navigation className="w-4 h-4" />
-                        <span className="text-sm">Ver no Google Maps</span>
-                      </a>
-                    )}
-
-                    {isCliente && item.proximaManutencao && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span>
-                            Próxima: {format(new Date(item.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
-                          </span>
-                        </div>
-                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${item.status.color}`}>
-                          <Clock className="w-4 h-4" />
-                          <span className="text-sm font-medium">{item.status.label}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {!isCliente && (
-                      <div className="flex flex-wrap gap-2">
-                        {item.dia_semana && (
-                          <Badge variant="outline" className="bg-gray-50">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {item.dia_semana}
-                          </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {isCliente && item.proximaManutencao ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            {format(new Date(item.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
+                          </div>
+                        ) : !isCliente ? (
+                          <div className="text-sm space-y-1">
+                            <div className="font-medium text-gray-700">{item.tipo_servico}</div>
+                            {item.dia_semana && (
+                              <div className="flex items-center gap-1 text-gray-500">
+                                <Calendar className="w-3 h-3" />
+                                {item.dia_semana}
+                                {item.horario && ` - ${item.horario}`}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
                         )}
-                        {item.horario && (
-                          <Badge variant="outline" className="bg-gray-50">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {item.horario}
-                          </Badge>
-                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge className={item.status.color}>
                           {item.status.label}
                         </Badge>
-                      </div>
-                    )}
-
-                    {item.observacoes && (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg line-clamp-2">
-                        {item.observacoes}
-                      </p>
-                    )}
-
-                    {!isCliente && item.descricao && (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg line-clamp-2">
-                        {item.descricao}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleShare(item)}
+                            className="text-gray-600 hover:text-blue-600"
+                            title="Compartilhar"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </Button>
+                          <a
+                            href={getWhatsAppLink(item.telefone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center h-8 px-3 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md transition-colors"
+                            title="WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </a>
+                          {mapsLink && (
+                            <a
+                              href={mapsLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center h-8 px-3 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-colors"
+                              title="Google Maps"
+                            >
+                              <Navigation className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
     </div>
