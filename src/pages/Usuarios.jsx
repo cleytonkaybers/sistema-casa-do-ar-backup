@@ -85,7 +85,6 @@ export default function UsuariosPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteFullName, setInviteFullName] = useState('');
   const [invitePerfil, setInvitePerfil] = useState('atendente');
   const [invitePassword, setInvitePassword] = useState('');
 
