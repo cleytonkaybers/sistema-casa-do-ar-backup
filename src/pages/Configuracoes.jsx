@@ -49,6 +49,7 @@ export default function ConfiguracoesPage() {
       setFormData({
         company_name: settings.company_name || '',
         company_icon: settings.company_icon || 'Snowflake',
+        company_logo_url: settings.company_logo_url || '',
       });
     }
   }, [settings]);
