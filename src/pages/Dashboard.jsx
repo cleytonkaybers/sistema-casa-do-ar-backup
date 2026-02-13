@@ -19,6 +19,15 @@ import {
 import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const formatPhone = (phone) => {
+  if (!phone) return '';
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 11) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  }
+  return phone;
+};
+
 export default function Dashboard() {
   const { data: clientes = [], isLoading: loadingClientes } = useQuery({
     queryKey: ['clientes'],
@@ -30,7 +39,12 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Atendimento.list('-created_date'),
   });
 
-  const isLoading = loadingClientes || loadingAtendimentos;
+  const { data: servicos = [], isLoading: loadingServicos } = useQuery({
+    queryKey: ['servicos'],
+    queryFn: () => base44.entities.Servico.list('-created_date'),
+  });
+
+  const isLoading = loadingClientes || loadingAtendimentos || loadingServicos;
 
   // Estatísticas
   const totalClientes = clientes.length;
@@ -40,6 +54,17 @@ export default function Dashboard() {
     if (!c.proxima_manutencao) return false;
     const daysUntil = differenceInDays(new Date(c.proxima_manutencao), new Date());
     return daysUntil <= 30;
+  });
+
+  // Manutenções vencidas (180 dias ou mais vencidas)
+  const manutencoesVencidas = clientes.filter(c => {
+    if (!c.proxima_manutencao) return false;
+    const daysUntil = differenceInDays(new Date(c.proxima_manutencao), new Date());
+    return daysUntil < 0;
+  }).sort((a, b) => {
+    const daysA = differenceInDays(new Date(a.proxima_manutencao), new Date());
+    const daysB = differenceInDays(new Date(b.proxima_manutencao), new Date());
+    return daysA - daysB; // Mais atrasadas primeiro
   });
 
   const atendimentosDoMes = atendimentos.filter(a => {
@@ -118,6 +143,68 @@ export default function Dashboard() {
           subtitle="Total histórico"
         />
       </div>
+
+      {/* Manutenções Vencidas - Alerta Destaque */}
+      {manutencoesVencidas.length > 0 && (
+        <Card className="bg-gradient-to-r from-red-500 to-red-600 border-0 shadow-xl">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <AlertTriangle className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-bold text-white">
+                    Manutenções Vencidas
+                  </CardTitle>
+                  <p className="text-white/90 text-sm mt-1">
+                    {manutencoesVencidas.length} {manutencoesVencidas.length === 1 ? 'cliente precisa' : 'clientes precisam'} de atenção urgente
+                  </p>
+                </div>
+              </div>
+              <Link to={createPageUrl('PreventivasFuturas')}>
+                <Button variant="ghost" className="text-white hover:bg-white/20 hover:text-white">
+                  Ver todas <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {manutencoesVencidas.slice(0, 5).map((cliente) => {
+                const daysOverdue = Math.abs(differenceInDays(new Date(cliente.proxima_manutencao), new Date()));
+                
+                return (
+                  <div
+                    key={cliente.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-white/95 hover:bg-white transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <Snowflake className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800">{cliente.nome}</p>
+                        <p className="text-sm text-gray-600">
+                          {cliente.telefone && formatPhone(cliente.telefone)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-bold text-red-600">
+                        {daysOverdue} {daysOverdue === 1 ? 'dia' : 'dias'} atrasado
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Desde {format(new Date(cliente.proxima_manutencao), "dd/MM/yyyy")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -73,20 +73,23 @@ export default function PreventivasFuturasPage() {
     if (!proximaManutencao) return null;
     const daysUntil = differenceInDays(new Date(proximaManutencao), new Date());
     
+    // Vencidos ou vencendo (180 dias ou mais de atraso)
     if (daysUntil < 0) {
       return { 
-        label: `Atrasada - ${Math.abs(daysUntil)} dias`, 
+        label: `VENCIDA - ${Math.abs(daysUntil)} dias atrasado`, 
         color: 'bg-red-100 text-red-700 border-red-300',
         priority: 1,
-        days: daysUntil
+        days: daysUntil,
+        vencida: true
       };
     }
     if (daysUntil <= 7) {
       return { 
-        label: `Faltam ${daysUntil} ${daysUntil === 1 ? 'dia' : 'dias'}`, 
+        label: `URGENTE - Faltam ${daysUntil} ${daysUntil === 1 ? 'dia' : 'dias'}`, 
         color: 'bg-orange-100 text-orange-700 border-orange-300',
         priority: 2,
-        days: daysUntil
+        days: daysUntil,
+        vencida: false
       };
     }
     if (daysUntil <= 30) {
@@ -94,7 +97,8 @@ export default function PreventivasFuturasPage() {
         label: `Faltam ${daysUntil} dias`, 
         color: 'bg-amber-100 text-amber-700 border-amber-300',
         priority: 3,
-        days: daysUntil
+        days: daysUntil,
+        vencida: false
       };
     }
     if (daysUntil <= 90) {
@@ -102,14 +106,16 @@ export default function PreventivasFuturasPage() {
         label: `Faltam ${daysUntil} dias`, 
         color: 'bg-blue-100 text-blue-700 border-blue-300',
         priority: 4,
-        days: daysUntil
+        days: daysUntil,
+        vencida: false
       };
     }
     return { 
       label: `Faltam ${daysUntil} dias`, 
       color: 'bg-gray-100 text-gray-700 border-gray-300',
       priority: 5,
-      days: daysUntil
+      days: daysUntil,
+      vencida: false
     };
   };
 
