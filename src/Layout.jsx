@@ -115,10 +115,14 @@ export default function Layout({ children }) {
           <div className="flex items-center justify-between p-6 border-b border-purple-700/50">
             <Link to={isAdmin ? createPageUrl('Configuracoes') : '#'} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl shadow-purple-500/50">
-                {(() => {
-                  const Icon = ICON_MAP[companySettings.company_icon];
-                  return Icon ? <Icon className="w-7 h-7 text-white" /> : <Snowflake className="w-7 h-7 text-white" />;
-                })()}
+                {companySettings.company_logo_url ? (
+                  <img src={companySettings.company_logo_url} alt="Logo" className="w-10 h-10 object-contain" />
+                ) : (
+                  (() => {
+                    const Icon = ICON_MAP[companySettings.company_icon];
+                    return Icon ? <Icon className="w-7 h-7 text-white" /> : <Snowflake className="w-7 h-7 text-white" />;
+                  })()
+                )}
               </div>
               <div>
                 <h1 className="font-bold text-white text-lg leading-tight">{companySettings.company_name}</h1>
