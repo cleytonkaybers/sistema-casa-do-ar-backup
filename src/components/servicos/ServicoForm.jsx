@@ -371,65 +371,45 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Tipo de Serviço *</Label>
-              <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Limpeza de 9k">Limpeza de 9k</SelectItem>
-                  <SelectItem value="Limpeza de 12k">Limpeza de 12k</SelectItem>
-                  <SelectItem value="Limpeza de 18k">Limpeza de 18k</SelectItem>
-                  <SelectItem value="Limpeza de 22 a 24k">Limpeza de 22 a 24k</SelectItem>
-                  <SelectItem value="Limpeza de 24k">Limpeza de 24k</SelectItem>
-                  <SelectItem value="Limpeza de 30 a 32k">Limpeza de 30 a 32k</SelectItem>
-                  <SelectItem value="Limpeza piso e teto">Limpeza piso e teto</SelectItem>
-                  <SelectItem value="Instalação de 9k">Instalação de 9k</SelectItem>
-                  <SelectItem value="Instalação de 12k">Instalação de 12k</SelectItem>
-                  <SelectItem value="Instalação de 18k">Instalação de 18k</SelectItem>
-                  <SelectItem value="Instalação de 22 a 24k">Instalação de 22 a 24k</SelectItem>
-                  <SelectItem value="Instalação de 24k">Instalação de 24k</SelectItem>
-                  <SelectItem value="Instalação de 30 a 32k">Instalação de 30 a 32k</SelectItem>
-                  <SelectItem value="Instalação piso e teto">Instalação piso e teto</SelectItem>
-                  <SelectItem value="Troca de capacitor">Troca de capacitor</SelectItem>
-                  <SelectItem value="Carga de gás">Carga de gás</SelectItem>
-                  <SelectItem value="Recarga de gás">Recarga de gás</SelectItem>
-                  <SelectItem value="Ver defeito">Ver defeito</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Dia da Semana</Label>
-              <Select value={formData.dia_semana} onValueChange={(value) => setFormData({ ...formData, dia_semana: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o dia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Segunda-feira">Segunda-feira</SelectItem>
-                  <SelectItem value="Terça-feira">Terça-feira</SelectItem>
-                  <SelectItem value="Quarta-feira">Quarta-feira</SelectItem>
-                  <SelectItem value="Quinta-feira">Quinta-feira</SelectItem>
-                  <SelectItem value="Sexta-feira">Sexta-feira</SelectItem>
-                  <SelectItem value="Sábado">Sábado</SelectItem>
-                  <SelectItem value="Domingo">Domingo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {formData.dia_semana && (
-              <div className="space-y-2">
-                <Label htmlFor="data_programada">Data Programada</Label>
-                <Input
-                  id="data_programada"
-                  type="date"
-                  value={formData.data_programada}
-                  onChange={(e) => setFormData({ ...formData, data_programada: e.target.value })}
-                  className="w-full"
-                />
-              </div>
-            )}
+          <div className="space-y-2">
+            <Label>Tipo de Serviço *</Label>
+            <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Limpeza de 9k">Limpeza de 9k</SelectItem>
+                <SelectItem value="Limpeza de 12k">Limpeza de 12k</SelectItem>
+                <SelectItem value="Limpeza de 18k">Limpeza de 18k</SelectItem>
+                <SelectItem value="Limpeza de 22 a 24k">Limpeza de 22 a 24k</SelectItem>
+                <SelectItem value="Limpeza de 24k">Limpeza de 24k</SelectItem>
+                <SelectItem value="Limpeza de 30 a 32k">Limpeza de 30 a 32k</SelectItem>
+                <SelectItem value="Limpeza piso e teto">Limpeza piso e teto</SelectItem>
+                <SelectItem value="Instalação de 9k">Instalação de 9k</SelectItem>
+                <SelectItem value="Instalação de 12k">Instalação de 12k</SelectItem>
+                <SelectItem value="Instalação de 18k">Instalação de 18k</SelectItem>
+                <SelectItem value="Instalação de 22 a 24k">Instalação de 22 a 24k</SelectItem>
+                <SelectItem value="Instalação de 24k">Instalação de 24k</SelectItem>
+                <SelectItem value="Instalação de 30 a 32k">Instalação de 30 a 32k</SelectItem>
+                <SelectItem value="Instalação piso e teto">Instalação piso e teto</SelectItem>
+                <SelectItem value="Troca de capacitor">Troca de capacitor</SelectItem>
+                <SelectItem value="Carga de gás">Carga de gás</SelectItem>
+                <SelectItem value="Recarga de gás">Recarga de gás</SelectItem>
+                <SelectItem value="Ver defeito">Ver defeito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="data_programada">Data Programada *</Label>
+            <Input
+              id="data_programada"
+              type="date"
+              value={formData.data_programada}
+              onChange={(e) => setFormData({ ...formData, data_programada: e.target.value })}
+              className="w-full"
+              required
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
