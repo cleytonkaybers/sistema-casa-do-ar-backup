@@ -39,8 +39,15 @@ export default function ClienteCard({ cliente, onEdit, onDelete, onViewHistory }
     if (cliente.latitude && cliente.longitude) {
       return `https://www.google.com/maps?q=${cliente.latitude},${cliente.longitude}`;
     }
-    if (cliente.endereco) {
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cliente.endereco)}`;
+    // Monta endereço completo incluindo bairro e cidade para melhor precisão
+    const addressParts = [
+      cliente.endereco,
+      cliente.bairro,
+      cliente.cidade
+    ].filter(Boolean);
+    
+    if (addressParts.length > 0) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressParts.join(', '))}`;
     }
     return null;
   };
