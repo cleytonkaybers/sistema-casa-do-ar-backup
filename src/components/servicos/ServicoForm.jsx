@@ -259,15 +259,31 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
       return;
     }
     
-    // Validar que a data não seja anterior à data atual
-    const dataAtual = new Date();
-    dataAtual.setHours(0, 0, 0, 0);
-    const dataProgramada = new Date(formData.data_programada);
-    dataProgramada.setHours(0, 0, 0, 0);
+    // Validar que a data/hora não seja anterior a 2 horas atrás
+    const agora = new Date();
+    const duasHorasAtras = new Date(agora.getTime() - 2 * 60 * 60 * 1000);
     
-    if (dataProgramada < dataAtual) {
-      toast.error('Não é permitido criar serviços com datas anteriores!');
-      return;
+    const dataProgramada = new Date(formData.data_programada);
+    
+    // Se tem horário definido, validar com horário completo
+    if (formData.horario) {
+      const [horas, minutos] = formData.horario.split(':').map(Number);
+      dataProgramada.setHours(horas, minutos, 0, 0);
+      
+      if (dataProgramada < duasHorasAtras) {
+        toast.error('Não é permitido criar serviços com mais de 2 horas de atraso!');
+        return;
+      }
+    } else {
+      // Se não tem horário, validar apenas a data
+      dataProgramada.setHours(0, 0, 0, 0);
+      const dataLimite = new Date(duasHorasAtras);
+      dataLimite.setHours(0, 0, 0, 0);
+      
+      if (dataProgramada < dataLimite) {
+        toast.error('Não é permitido criar serviços com mais de 2 horas de atraso!');
+        return;
+      }
     }
     
     // Calcular dia da semana automaticamente a partir da data programada
@@ -464,7 +480,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
               type="date"
               value={formData.data_programada}
               onChange={(e) => setFormData({ ...formData, data_programada: e.target.value })}
-              min={format(new Date(), 'yyyy-MM-dd')}
+
               className="w-full"
               required
             />
