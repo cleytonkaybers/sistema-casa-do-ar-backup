@@ -292,10 +292,8 @@ export default function ServicosPage() {
             <SelectItem value="Instalação de 30 a 32k">Instalação de 30 a 32k</SelectItem>
             <SelectItem value="Instalação piso e teto">Instalação piso e teto</SelectItem>
             <SelectItem value="Troca de capacitor">Troca de capacitor</SelectItem>
-            <SelectItem value="Carga de gás">Carga de gás</SelectItem>
             <SelectItem value="Recarga de gás">Recarga de gás</SelectItem>
             <SelectItem value="Carga de gás completa">Carga de gás completa</SelectItem>
-            <SelectItem value="Reposição de gás">Reposição de gás</SelectItem>
             <SelectItem value="Serviço de solda">Serviço de solda</SelectItem>
             <SelectItem value="Troca de relé da placa">Troca de relé da placa</SelectItem>
             <SelectItem value="Troca de sensor">Troca de sensor</SelectItem>
