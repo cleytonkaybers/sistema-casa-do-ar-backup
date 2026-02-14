@@ -425,6 +425,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                       <SelectItem value="Troca de chave contadora">Troca de chave contadora</SelectItem>
                       <SelectItem value="Conserto de placa eletrônica">Conserto de placa eletrônica</SelectItem>
                       <SelectItem value="Retirada de ar condicionado">Retirada de ar condicionado</SelectItem>
+                      <SelectItem value="Serviço de passar tubulação de infra">Serviço de passar tubulação de infra</SelectItem>
                       <SelectItem value="Ver defeito">Ver defeito</SelectItem>
                     </SelectContent>
                   </Select>
