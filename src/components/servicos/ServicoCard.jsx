@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange, compact = false }) {
+export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange, onShare, compact = false }) {
   const formatPhone = (phone) => {
     if (!phone) return '';
     const cleaned = phone.replace(/\D/g, '');
@@ -36,22 +36,26 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
     return null;
   };
 
-  const handleShare = async () => {
-    const mapsLink = getGoogleMapsLink();
-    const shareText = `📋 *${servico.cliente_nome}* - ${servico.tipo_servico}\n\n📞 Telefone: ${formatPhone(servico.telefone)}\n\n📍 Localização: ${servico.endereco || 'Não informado'}\n${mapsLink ? `🗺️ ${mapsLink}\n` : ''}\n${servico.dia_semana ? `📅 ${servico.dia_semana}` : ''}\n${servico.horario ? `🕐 ${servico.horario}` : ''}\n${servico.descricao ? `📝 ${servico.descricao}` : ''}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `Serviço: ${servico.cliente_nome}`, text: shareText });
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          navigator.clipboard.writeText(shareText);
-          toast.success('Informações copiadas!');
-        }
-      }
+  const handleShare = () => {
+    if (onShare) {
+      // Usar o modal de compartilhamento se disponível
+      onShare(servico);
     } else {
-      navigator.clipboard.writeText(shareText);
-      toast.success('Informações copiadas!');
+      // Fallback para compartilhamento nativo
+      const mapsLink = getGoogleMapsLink();
+      const shareText = `📋 *${servico.cliente_nome}* - ${servico.tipo_servico}\n\n📞 Telefone: ${formatPhone(servico.telefone)}\n\n📍 Localização: ${servico.endereco || 'Não informado'}\n${mapsLink ? `🗺️ ${mapsLink}\n` : ''}\n${servico.dia_semana ? `📅 ${servico.dia_semana}` : ''}\n${servico.horario ? `🕐 ${servico.horario}` : ''}\n${servico.descricao ? `📝 ${servico.descricao}` : ''}`;
+
+      if (navigator.share) {
+        navigator.share({ title: `Serviço: ${servico.cliente_nome}`, text: shareText }).catch(error => {
+          if (error.name !== 'AbortError') {
+            navigator.clipboard.writeText(shareText);
+            toast.success('Informações copiadas!');
+          }
+        });
+      } else {
+        navigator.clipboard.writeText(shareText);
+        toast.success('Informações copiadas!');
+      }
     }
   };
 

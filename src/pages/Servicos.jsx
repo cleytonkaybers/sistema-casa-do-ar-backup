@@ -346,6 +346,10 @@ export default function ServicosPage() {
                               onEdit={(isAdmin || hasPermission('servicos_editar')) ? handleEdit : undefined}
                               onDelete={(isAdmin || hasPermission('servicos_deletar')) ? handleDelete : undefined}
                               onStatusChange={(isAdmin || hasPermission('servicos_editar')) ? handleStatusChange : undefined}
+                              onShare={(servico) => {
+                                setServicoConcluido(servico);
+                                setShowCompartilharModal(true);
+                              }}
                               compact
                             />
                           </div>
@@ -378,6 +382,10 @@ export default function ServicosPage() {
                     onEdit={(isAdmin || hasPermission('servicos_editar')) ? handleEdit : undefined}
                     onDelete={(isAdmin || hasPermission('servicos_deletar')) ? handleDelete : undefined}
                     onStatusChange={(isAdmin || hasPermission('servicos_editar')) ? handleStatusChange : undefined}
+                    onShare={(servico) => {
+                      setServicoConcluido(servico);
+                      setShowCompartilharModal(true);
+                    }}
                   />
                 ))}
               </div>
