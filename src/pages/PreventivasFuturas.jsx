@@ -138,9 +138,9 @@ export default function PreventivasFuturasPage() {
     })
     .filter(c => c.proximaManutencao && c.status);
 
-  // Preparar dados de serviços
+  // Preparar dados de serviços (excluir os que estão em andamento)
   const servicosAtivos = servicos
-    .filter(s => s.ativo !== false)
+    .filter(s => s.ativo !== false && s.status !== 'andamento')
     .map(servico => ({
       ...servico,
       tipo: 'servico',

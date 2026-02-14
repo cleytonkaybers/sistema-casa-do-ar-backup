@@ -57,10 +57,10 @@ import HistoricoClientes from './pages/HistoricoClientes';
 import PreferencesNotificacao from './pages/PreferencesNotificacao';
 import PreventivasFuturas from './pages/PreventivasFuturas';
 import Relatorios from './pages/Relatorios';
+import RelatoriosAutomaticos from './pages/RelatoriosAutomaticos';
 import Servicos from './pages/Servicos';
 import Suporte from './pages/Suporte';
 import Usuarios from './pages/Usuarios';
-import RelatoriosAutomaticos from './pages/RelatoriosAutomaticos';
 import __Layout from './Layout.jsx';
 
 
@@ -75,10 +75,10 @@ export const PAGES = {
     "PreferencesNotificacao": PreferencesNotificacao,
     "PreventivasFuturas": PreventivasFuturas,
     "Relatorios": Relatorios,
+    "RelatoriosAutomaticos": RelatoriosAutomaticos,
     "Servicos": Servicos,
     "Suporte": Suporte,
     "Usuarios": Usuarios,
-    "RelatoriosAutomaticos": RelatoriosAutomaticos,
 }
 
 export const pagesConfig = {
