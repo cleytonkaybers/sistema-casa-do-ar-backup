@@ -61,7 +61,7 @@ export default function NotificationCenter() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+        <div className="fixed right-4 top-16 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-[60] max-h-96 overflow-y-auto">
           <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-3 flex items-center justify-between">
             <h3 className="text-white font-bold">Notificações</h3>
             <button
