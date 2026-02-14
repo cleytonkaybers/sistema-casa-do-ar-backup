@@ -297,14 +297,24 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
   };
 
   const handleImportContact = async () => {
-    // Verifica se a API de Contatos está disponível
-    if (!('contacts' in navigator && 'ContactsManager' in window)) {
-      toast.error('Seu navegador não suporta importação de contatos. Use um dispositivo móvel com Chrome ou Edge.');
-      return;
-    }
-
     setLoadingContacts(true);
+    
     try {
+      // Verifica se a API de Contatos está disponível
+      if (!('contacts' in navigator)) {
+        toast.error('Importação de contatos não disponível. Use Chrome ou Edge em um dispositivo móvel Android.');
+        setLoadingContacts(false);
+        return;
+      }
+
+      // Verifica permissões antes de tentar acessar
+      const supported = await navigator.contacts.getProperties();
+      if (!supported || supported.length === 0) {
+        toast.error('Seu dispositivo não suporta a API de Contatos.');
+        setLoadingContacts(false);
+        return;
+      }
+
       const props = ['name', 'tel', 'address'];
       const opts = { multiple: false };
       
@@ -347,11 +357,23 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         }));
         
         toast.success('Contato importado com sucesso!');
+      } else {
+        toast.info('Nenhum contato foi selecionado');
       }
     } catch (error) {
-      if (error.name !== 'TypeError') {
-        console.error('Erro ao importar contato:', error);
-        toast.error('Não foi possível importar o contato');
+      console.error('Erro ao importar contato:', error);
+      
+      // Mensagens de erro mais específicas
+      if (error.name === 'SecurityError') {
+        toast.error('Permissão negada. Permita o acesso aos contatos.');
+      } else if (error.name === 'NotSupportedError') {
+        toast.error('Esta funcionalidade requer Chrome ou Edge em Android.');
+      } else if (error.name === 'InvalidStateError') {
+        toast.error('Use HTTPS para importar contatos.');
+      } else if (error.name === 'AbortError') {
+        toast.info('Importação cancelada');
+      } else {
+        toast.error('Erro ao acessar contatos. Verifique as permissões do navegador.');
       }
     } finally {
       setLoadingContacts(false);
@@ -370,25 +392,30 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           {/* Botão Importar Contato */}
           {!cliente && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleImportContact}
-              disabled={loadingContacts}
-              className="w-full h-12 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
-            >
-              {loadingContacts ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Importando...
-                </>
-              ) : (
-                <>
-                  <Contact className="w-5 h-5 mr-2" />
-                  Importar da Agenda do Telefone
-                </>
-              )}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleImportContact}
+                disabled={loadingContacts}
+                className="w-full h-14 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
+              >
+                {loadingContacts ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <Smartphone className="w-6 h-6 mr-2" />
+                    <span className="font-semibold">Importar da Agenda do Celular</span>
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-center text-gray-500">
+                Funciona apenas em smartphones Android com Chrome ou Edge
+              </p>
+            </div>
           )}
 
           {/* Nome e Telefone */}
