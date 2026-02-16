@@ -47,6 +47,7 @@ const statusColors = {
   'Aberto': 'bg-gray-100 text-gray-700 border-gray-200',
   'Em Andamento': 'bg-blue-100 text-blue-700 border-blue-200',
   'Pausado': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  'Reagendado': 'bg-orange-100 text-orange-700 border-orange-200',
   'Concluído': 'bg-green-100 text-green-700 border-green-200'
 };
 
@@ -122,11 +123,40 @@ export default function Atendimentos() {
     return Array.from(tiposSet).sort();
   }, [atendimentos]);
 
-  // Usar apenas atendimentos reais
-  const atendimentosComServicos = atendimentos;
+  // Combinar atendimentos e serviços
+  const atendimentosComServicos = useMemo(() => {
+    // Converter serviços para formato de atendimento
+    const servicosComoAtendimentos = servicos.map(servico => ({
+      id: servico.id,
+      cliente_nome: servico.cliente_nome,
+      data_atendimento: servico.data_programada,
+      tipo_servico: servico.tipo_servico,
+      descricao: servico.descricao || '',
+      valor: servico.valor || 0,
+      status: servico.status === 'aberto' ? 'Aberto' :
+              servico.status === 'andamento' ? 'Em Andamento' :
+              servico.status === 'pausado' ? 'Pausado' :
+              servico.status === 'reagendado' ? 'Reagendado' :
+              servico.status === 'concluido' ? 'Concluído' : 'Aberto',
+      observacoes: servico.observacoes_conclusao || '',
+      origem: 'servico',
+      servico_id: servico.id,
+      horario: servico.horario,
+      dia_semana: servico.dia_semana
+    }));
+
+    // Atendimentos reais marcados como origem
+    const atendimentosReais = atendimentos.map(a => ({
+      ...a,
+      origem: 'atendimento'
+    }));
+
+    // Combinar todos
+    return [...servicosComoAtendimentos, ...atendimentosReais];
+  }, [servicos, atendimentos]);
 
   const filteredAtendimentos = useMemo(() => {
-    return atendimentosComServicos.filter(atendimento => {
+    const filtered = atendimentosComServicos.filter(atendimento => {
       const matchesSearch = 
         atendimento.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         atendimento.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -135,6 +165,29 @@ export default function Atendimentos() {
       const matchesTipo = filterTipo === 'all' || atendimento.tipo_servico === filterTipo;
       
       return matchesSearch && matchesStatus && matchesTipo;
+    });
+
+    // Ordenar por prioridade de status
+    const statusPrioridade = {
+      'Reagendado': 1,
+      'Aberto': 2,
+      'Em Andamento': 3,
+      'Pausado': 4,
+      'Concluído': 5
+    };
+
+    return filtered.sort((a, b) => {
+      const prioA = statusPrioridade[a.status] || 999;
+      const prioB = statusPrioridade[b.status] || 999;
+      
+      if (prioA !== prioB) {
+        return prioA - prioB;
+      }
+      
+      // Se mesma prioridade, ordenar por data
+      const dataA = new Date(a.data_atendimento);
+      const dataB = new Date(b.data_atendimento);
+      return dataB - dataA;
     });
   }, [atendimentosComServicos, searchTerm, filterStatus, filterTipo]);
 
@@ -189,17 +242,23 @@ export default function Atendimentos() {
   };
 
   const handleVerHistorico = (atendimento) => {
-    // Buscar serviço relacionado ao atendimento
-    const servicoRelacionado = servicos.find(s => 
-      s.cliente_nome?.trim().toLowerCase() === atendimento.cliente_nome?.trim().toLowerCase() &&
-      s.status === 'concluido'
-    );
-    
-    if (servicoRelacionado) {
-      setSelectedServicoId(servicoRelacionado.id);
+    // Se veio de serviço, usar o servico_id diretamente
+    if (atendimento.origem === 'servico') {
+      setSelectedServicoId(atendimento.servico_id);
       setHistoricoOpen(true);
     } else {
-      toast.info('Nenhum histórico de status disponível para este atendimento');
+      // Buscar serviço relacionado ao atendimento
+      const servicoRelacionado = servicos.find(s => 
+        s.cliente_nome?.trim().toLowerCase() === atendimento.cliente_nome?.trim().toLowerCase() &&
+        s.status === 'concluido'
+      );
+      
+      if (servicoRelacionado) {
+        setSelectedServicoId(servicoRelacionado.id);
+        setHistoricoOpen(true);
+      } else {
+        toast.info('Nenhum histórico de status disponível para este atendimento');
+      }
     }
   };
 
@@ -259,6 +318,7 @@ export default function Atendimentos() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="Reagendado">Reagendado</SelectItem>
               <SelectItem value="Aberto">Aberto</SelectItem>
               <SelectItem value="Em Andamento">Em Andamento</SelectItem>
               <SelectItem value="Pausado">Pausado</SelectItem>
@@ -320,36 +380,16 @@ export default function Atendimentos() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Tipo de Serviço</TableHead>
-                  <TableHead>Status Atendimento</TableHead>
-                  <TableHead>Status Serviço</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Origem</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAtendimentos.map((atendimento) => {
-                  // Busca serviço pelo nome do cliente e telefone (mais confiável)
-                  const servicoRelacionado = servicos.find(s => 
-                    s.cliente_nome?.trim().toLowerCase() === atendimento.cliente_nome?.trim().toLowerCase()
-                  );
-                  
-                  // Mapear status do serviço para status do atendimento
-                  const statusAtendimentoSincronizado = servicoRelacionado?.status 
-                    ? (servicoRelacionado.status === 'aberto' ? 'Aberto' :
-                       servicoRelacionado.status === 'andamento' ? 'Em Andamento' :
-                       servicoRelacionado.status === 'concluido' ? 'Concluído' :
-                       servicoRelacionado.status === 'pausado' ? 'Pausado' : atendimento.status)
-                    : atendimento.status;
-                  
-                  const statusServicoColors = {
-                    'aberto': 'bg-gray-100 text-gray-700 border-gray-200',
-                    'andamento': 'bg-blue-100 text-blue-700 border-blue-200',
-                    'concluido': 'bg-green-100 text-green-700 border-green-200',
-                    'pausado': 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                  };
-                  
                   return (
-                    <TableRow key={atendimento.id} className="hover:bg-gray-50">
+                    <TableRow key={`${atendimento.origem}-${atendimento.id}`} className="hover:bg-gray-50">
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white text-sm font-medium">
@@ -371,20 +411,14 @@ export default function Atendimentos() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${statusColors[statusAtendimentoSincronizado]} border`}>
-                          {statusAtendimentoSincronizado}
+                        <Badge className={`${statusColors[atendimento.status]} border`}>
+                          {atendimento.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {servicoRelacionado ? (
-                          <Badge className={`${statusServicoColors[servicoRelacionado.status || 'aberto']} border`}>
-                            {servicoRelacionado.status === 'aberto' ? 'Aberto' : 
-                             servicoRelacionado.status === 'andamento' ? 'Em Andamento' :
-                             servicoRelacionado.status === 'pausado' ? 'Pausado' : 'Concluído'}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-gray-400">Sem serviço</span>
-                        )}
+                        <Badge className={atendimento.origem === 'servico' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-cyan-100 text-cyan-700 border-cyan-200'}>
+                          {atendimento.origem === 'servico' ? 'Serviço' : 'Atendimento'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-green-600">
@@ -393,7 +427,7 @@ export default function Atendimentos() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {atendimento.status === 'Concluído' && (
+                          {atendimento.origem === 'servico' && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -404,22 +438,26 @@ export default function Atendimentos() {
                               <History className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(atendimento)}
-                            className="text-gray-500 hover:text-blue-600"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(atendimento)}
-                            className="text-gray-500 hover:text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {atendimento.origem === 'atendimento' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(atendimento)}
+                                className="text-gray-500 hover:text-blue-600"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(atendimento)}
+                                className="text-gray-500 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -432,28 +470,8 @@ export default function Atendimentos() {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-4">
             {filteredAtendimentos.map((atendimento) => {
-              // Busca serviço pelo nome do cliente (mais confiável)
-              const servicoRelacionado = servicos.find(s => 
-                s.cliente_nome?.trim().toLowerCase() === atendimento.cliente_nome?.trim().toLowerCase()
-              );
-              
-              // Mapear status do serviço para status do atendimento
-              const statusAtendimentoSincronizado = servicoRelacionado?.status 
-                ? (servicoRelacionado.status === 'aberto' ? 'Aberto' :
-                   servicoRelacionado.status === 'andamento' ? 'Em Andamento' :
-                   servicoRelacionado.status === 'concluido' ? 'Concluído' :
-                   servicoRelacionado.status === 'pausado' ? 'Pausado' : atendimento.status)
-                : atendimento.status;
-              
-              const statusServicoColors = {
-                'aberto': 'bg-gray-100 text-gray-700 border-gray-200',
-                'andamento': 'bg-blue-100 text-blue-700 border-blue-200',
-                'concluido': 'bg-green-100 text-green-700 border-green-200',
-                'pausado': 'bg-yellow-100 text-yellow-700 border-yellow-200'
-              };
-              
               return (
-                <Card key={atendimento.id} className="bg-white border-0 shadow-md">
+                <Card key={`${atendimento.origem}-${atendimento.id}`} className="bg-white border-0 shadow-md">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -466,16 +484,12 @@ export default function Atendimentos() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <Badge className={`${statusColors[statusAtendimentoSincronizado]} border text-xs`}>
-                          {statusAtendimentoSincronizado}
+                        <Badge className={`${statusColors[atendimento.status]} border text-xs`}>
+                          {atendimento.status}
                         </Badge>
-                        {servicoRelacionado && (
-                          <Badge className={`${statusServicoColors[servicoRelacionado.status || 'aberto']} border text-xs`}>
-                            {servicoRelacionado.status === 'aberto' ? 'Aberto' : 
-                             servicoRelacionado.status === 'andamento' ? 'Em Andamento' :
-                             servicoRelacionado.status === 'pausado' ? 'Pausado' : 'Concluído'}
-                          </Badge>
-                        )}
+                        <Badge className={atendimento.origem === 'servico' ? 'bg-purple-100 text-purple-700 border-purple-200 text-xs' : 'bg-cyan-100 text-cyan-700 border-cyan-200 text-xs'}>
+                          {atendimento.origem === 'servico' ? 'Serviço' : 'Atendimento'}
+                        </Badge>
                       </div>
                     </div>
 
@@ -496,7 +510,7 @@ export default function Atendimentos() {
                     )}
 
                     <div className="flex items-center gap-2 pt-3 border-t">
-                      {atendimento.status === 'Concluído' && (
+                      {atendimento.origem === 'servico' && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -507,23 +521,27 @@ export default function Atendimentos() {
                           Histórico
                         </Button>
                       )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(atendimento)}
-                        className="flex-1"
-                      >
-                        <Pencil className="w-4 h-4 mr-1.5" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(atendimento)}
-                        className="text-red-600 hover:text-red-700 hover:border-red-300"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {atendimento.origem === 'atendimento' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(atendimento)}
+                            className="flex-1"
+                          >
+                            <Pencil className="w-4 h-4 mr-1.5" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(atendimento)}
+                            className="text-red-600 hover:text-red-700 hover:border-red-300"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
