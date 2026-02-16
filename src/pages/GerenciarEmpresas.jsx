@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Plus, Pencil, Users, Loader2 } from 'lucide-react';
+import { Building2, Plus, Pencil, Users, Loader2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEmpresa } from '@/components/auth/EmpresaGuard';
 import NoPermission from '@/components/NoPermission';
@@ -18,6 +18,9 @@ export default function GerenciarEmpresas() {
   const queryClient = useQueryClient();
   const { isSuperAdmin } = useEmpresa();
   const [formOpen, setFormOpen] = useState(false);
+  const [adminFormOpen, setAdminFormOpen] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState(null);
+  const [adminEmail, setAdminEmail] = useState('');
   const [editingEmpresa, setEditingEmpresa] = useState(null);
   const [formData, setFormData] = useState({
     nome: '',
@@ -57,6 +60,22 @@ export default function GerenciarEmpresas() {
     onError: () => toast.error('Erro ao atualizar empresa')
   });
 
+  const createAdminMutation = useMutation({
+    mutationFn: async ({ email, empresaId }) => {
+      await base44.users.inviteUser(email, 'user');
+      return { email, empresaId };
+    },
+    onSuccess: (data) => {
+      toast.success(`Convite enviado para ${data.email}! Após aceitar, configure-o como admin_empresa na página de Usuários.`);
+      setAdminFormOpen(false);
+      setAdminEmail('');
+      setSelectedEmpresa(null);
+    },
+    onError: (error) => {
+      toast.error('Erro ao convidar administrador: ' + (error.message || 'Tente novamente'));
+    }
+  });
+
   const resetForm = () => {
     setFormData({
       nome: '',
@@ -87,6 +106,19 @@ export default function GerenciarEmpresas() {
     } else {
       createMutation.mutate(formData);
     }
+  };
+
+  const handleConvidarAdmin = (empresa) => {
+    setSelectedEmpresa(empresa);
+    setAdminFormOpen(true);
+  };
+
+  const handleEnviarConvite = () => {
+    if (!adminEmail.trim()) {
+      toast.error('Digite um email válido');
+      return;
+    }
+    createAdminMutation.mutate({ email: adminEmail, empresaId: selectedEmpresa.id });
   };
 
   if (!isSuperAdmin()) {
@@ -137,6 +169,10 @@ export default function GerenciarEmpresas() {
                   <Button variant="outline" size="sm" onClick={() => handleEdit(empresa)} className="flex-1">
                     <Pencil className="w-3 h-3 mr-1" />
                     Editar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleConvidarAdmin(empresa)} className="flex-1 text-blue-600">
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Admin
                   </Button>
                 </div>
               </CardContent>
@@ -223,6 +259,43 @@ export default function GerenciarEmpresas() {
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>
                 ) : (
                   editingEmpresa ? 'Atualizar' : 'Cadastrar'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={adminFormOpen} onOpenChange={setAdminFormOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convidar Administrador - {selectedEmpresa?.nome}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Email do Administrador</Label>
+              <Input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="admin@empresa.com"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                O usuário receberá um convite por email. Após aceitar, você precisa:
+                <br />1. Ir em "Usuários"
+                <br />2. Editar o usuário e definir empresa_id: {selectedEmpresa?.id}
+                <br />3. Definir tipo_usuario como "admin_empresa"
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAdminFormOpen(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={handleEnviarConvite} disabled={createAdminMutation.isPending} className="flex-1 bg-blue-600">
+                {createAdminMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando...</>
+                ) : (
+                  <>Enviar Convite</>
                 )}
               </Button>
             </div>

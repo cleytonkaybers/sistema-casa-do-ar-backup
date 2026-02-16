@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, UserPlus, Users, Shield, Mail, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePermissions } from '../components/auth/PermissionGuard';
+import { useEmpresa } from '../components/auth/EmpresaGuard';
 
 const perfisPreDefinidos = {
   admin: {
@@ -79,6 +80,7 @@ const perfisPreDefinidos = {
 
 export default function UsuariosPage() {
   const { isAdmin, loading: authLoading } = usePermissions();
+  const { currentUser: loggedUser, currentEmpresa, isSuperAdmin, isAdminEmpresa } = useEmpresa();
   const [currentUser, setCurrentUser] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -95,9 +97,14 @@ export default function UsuariosPage() {
   const queryClient = useQueryClient();
 
   const { data: usuarios = [], isLoading } = useQuery({
-    queryKey: ['usuarios'],
-    queryFn: () => base44.entities.User.list(),
-    enabled: !authLoading
+    queryKey: ['usuarios', currentEmpresa?.id],
+    queryFn: async () => {
+      const allUsers = await base44.entities.User.list();
+      // Super admin vê todos, admin da empresa vê apenas da sua empresa
+      if (isSuperAdmin()) return allUsers;
+      return allUsers.filter(u => u.empresa_id === currentEmpresa?.id);
+    },
+    enabled: !authLoading && (isSuperAdmin() || !!currentEmpresa)
   });
 
   const updateUserMutation = useMutation({
@@ -126,17 +133,26 @@ export default function UsuariosPage() {
 
   const inviteUserMutation = useMutation({
     mutationFn: async ({ email, perfil }) => {
+      // Admin da empresa só pode convidar para sua própria empresa
+      if (!isSuperAdmin() && !currentEmpresa) {
+        throw new Error('Empresa não identificada');
+      }
+      
       // Converte perfil para role do sistema
       const role = perfil === 'admin' ? 'admin' : 'user';
       
       // Usa o sistema de convite do Base44
       await base44.users.inviteUser(email, role);
       
-      return { email, perfil };
+      return { email, perfil, empresaId: currentEmpresa?.id };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success(`Convite enviado para ${data.email}! Após o usuário aceitar, você poderá definir o perfil ${perfisPreDefinidos[data.perfil].label}.`);
+      if (data.empresaId) {
+        toast.success(`Convite enviado para ${data.email}! IMPORTANTE: Após aceitar, edite o usuário e defina empresa_id: ${data.empresaId}`);
+      } else {
+        toast.success(`Convite enviado para ${data.email}!`);
+      }
       setShowInviteModal(false);
       setUserEmail('');
       setInvitePerfil('atendente');
