@@ -52,7 +52,8 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         longitude: cliente.longitude || null,
         observacoes: cliente.observacoes || '',
         ultima_manutencao: cliente.ultima_manutencao || '',
-        proxima_manutencao: cliente.proxima_manutencao || ''
+        proxima_manutencao: cliente.proxima_manutencao || '',
+        empresa_id: cliente.empresa_id || currentUser?.empresa_id || ''
       });
     } else {
       setFormData({
@@ -63,10 +64,11 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
         longitude: null,
         observacoes: '',
         ultima_manutencao: '',
-        proxima_manutencao: ''
+        proxima_manutencao: '',
+        empresa_id: currentUser?.empresa_id || ''
       });
     }
-  }, [cliente, open]);
+  }, [cliente, open, currentUser?.empresa_id]);
 
   const formatPhoneInput = (value) => {
     const cleaned = value.replace(/\D/g, '');
