@@ -17,10 +17,6 @@ export default function HistoricoClientes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
 
-  if (!isAdmin) {
-    return <NoPermission />;
-  }
-
   const { data: servicos = [] } = useQuery({
     queryKey: ['servicos'],
     queryFn: () => base44.entities.Servico.list('-data_programada'),
@@ -35,6 +31,10 @@ export default function HistoricoClientes() {
     queryKey: ['alteracoes'],
     queryFn: () => base44.entities.AlteracaoStatus.list('-data_alteracao'),
   });
+
+  if (!isAdmin) {
+    return <NoPermission />;
+  }
 
   // Combinar histórico
   const historico = [
