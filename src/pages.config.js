@@ -61,6 +61,7 @@ import RelatoriosAutomaticos from './pages/RelatoriosAutomaticos';
 import Servicos from './pages/Servicos';
 import Suporte from './pages/Suporte';
 import Usuarios from './pages/Usuarios';
+import GerenciarEmpresas from './pages/GerenciarEmpresas';
 import __Layout from './Layout.jsx';
 
 
@@ -79,6 +80,7 @@ export const PAGES = {
     "Servicos": Servicos,
     "Suporte": Suporte,
     "Usuarios": Usuarios,
+    "GerenciarEmpresas": GerenciarEmpresas,
 }
 
 export const pagesConfig = {

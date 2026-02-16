@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ChatWidget from '@/components/ChatWidget/ChatWidget';
 import NotificationCenter from '@/components/NotificationCenter';
+import { EmpresaProvider, useEmpresa } from '@/components/auth/EmpresaGuard';
 
 // Icon mapping for company icons
 const ICON_MAP = {
@@ -46,15 +47,16 @@ const ICON_MAP = {
   Bell
 };
 
-export default function Layout({ children }) {
+function LayoutContent({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { currentUser, currentEmpresa, isSuperAdmin, isAdminEmpresa } = useEmpresa();
 
-  const [currentUser, setCurrentUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [companySettings, setCompanySettings] = useState({ company_name: 'Casa do Ar', company_icon: 'Snowflake' });
 
   React.useEffect(() => {
-    base44.auth.me().then(user => setCurrentUser(user)).catch(() => setCurrentUser(null));
+    base44.auth.me().then(user => setUser(user)).catch(() => setUser(null));
     
     base44.entities.CompanySettings.list().then(result => {
       if (result.length > 0) {
@@ -62,9 +64,6 @@ export default function Layout({ children }) {
       }
     }).catch(() => {});
   }, []);
-
-  const isAdmin = currentUser?.role === 'admin';
-  const isTecnico = currentUser?.role === 'tecnico';
 
   const baseNavigation = [
     { name: 'Dashboard', href: createPageUrl('Dashboard'), icon: LayoutDashboard },
@@ -76,6 +75,10 @@ export default function Layout({ children }) {
   const preventivasNavigation = [
     { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
     { name: 'Histórico de Clientes', href: createPageUrl('HistoricoClientes'), icon: BarChart3 },
+  ];
+
+  const superAdminNavigation = [
+    { name: 'Gerenciar Empresas', href: createPageUrl('GerenciarEmpresas'), icon: Database },
   ];
 
   const adminNavigation = [
@@ -90,7 +93,9 @@ export default function Layout({ children }) {
     { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
   ];
 
-  const navigation = isTecnico 
+  const navigation = isSuperAdmin() 
+    ? [...superAdminNavigation, ...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation]
+    : currentUser?.tipo_usuario === 'tecnico'
     ? [...baseNavigation, ...preventivasNavigation] 
     : [...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation];
 
@@ -117,7 +122,7 @@ export default function Layout({ children }) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between p-6 border-b border-purple-700/50">
-            <Link to={isAdmin ? createPageUrl('Configuracoes') : '#'} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <Link to={isAdminEmpresa() || isSuperAdmin() ? createPageUrl('Configuracoes') : '#'} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden">
                 {companySettings.company_logo_url ? (
                   <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" />
@@ -131,8 +136,12 @@ export default function Layout({ children }) {
                 )}
               </div>
               <div>
-                <h1 className="font-bold text-white text-lg leading-tight">{companySettings.company_name}</h1>
-                <p className="text-xs text-purple-300/80">Climatização</p>
+                <h1 className="font-bold text-white text-lg leading-tight">
+                  {currentEmpresa?.nome || companySettings.company_name}
+                </h1>
+                <p className="text-xs text-purple-300/80">
+                  {isSuperAdmin() ? 'Super Admin' : currentUser?.tipo_usuario === 'admin_empresa' ? 'Administrador' : 'Climatização'}
+                </p>
               </div>
             </Link>
             <button 
@@ -217,5 +226,13 @@ export default function Layout({ children }) {
         </div>
       </div>
     </ErrorBoundary>
+  );
+}
+
+export default function Layout({ children }) {
+  return (
+    <EmpresaProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </EmpresaProvider>
   );
 }
