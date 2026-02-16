@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
@@ -15,9 +16,10 @@ import {
   Snowflake,
   Clock,
   CheckCircle2,
-  Plus
+  Plus,
+  Filter
 } from 'lucide-react';
-import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const formatPhone = (phone) => {
@@ -30,6 +32,8 @@ const formatPhone = (phone) => {
 };
 
 export default function Dashboard() {
+  const [filtroServicos, setFiltroServicos] = useState('mes');
+  
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list('-created_date'),
@@ -39,6 +43,11 @@ export default function Dashboard() {
     queryKey: ['atendimentos'],
     queryFn: () => base44.entities.Atendimento.list('-created_date'),
     staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
+
+  const { data: servicos = [] } = useQuery({
+    queryKey: ['servicos'],
+    queryFn: () => base44.entities.Servico.list('-created_date'),
   });
 
   // Estatísticas
@@ -61,6 +70,35 @@ export default function Dashboard() {
     const daysB = differenceInDays(new Date(b.proxima_manutencao), new Date());
     return daysA - daysB; // Mais atrasadas primeiro
   });
+
+  // Filtrar serviços por período
+  const servicosFiltrados = servicos.filter(s => {
+    if (!s.data_programada) return false;
+    const dataServico = new Date(s.data_programada);
+    const hoje = new Date();
+    
+    switch(filtroServicos) {
+      case 'dia':
+        return isToday(dataServico);
+      case 'semana':
+        return isWithinInterval(dataServico, {
+          start: startOfWeek(hoje, { locale: ptBR }),
+          end: endOfWeek(hoje, { locale: ptBR })
+        });
+      case 'mes':
+        return isWithinInterval(dataServico, {
+          start: startOfMonth(hoje),
+          end: endOfMonth(hoje)
+        });
+      default:
+        return false;
+    }
+  });
+
+  const servicosConcluidos = servicosFiltrados.filter(s => s.status === 'concluido').length;
+  const servicosAbertos = servicosFiltrados.filter(s => s.status === 'aberto').length;
+  const servicosAndamento = servicosFiltrados.filter(s => s.status === 'andamento').length;
+  const servicosAgendados = servicosFiltrados.filter(s => s.status === 'agendado' || s.status === 'reagendado').length;
 
   const atendimentosDoMes = atendimentos.filter(a => {
     const dataAtendimento = new Date(a.data_atendimento);
@@ -179,6 +217,77 @@ export default function Dashboard() {
           href={createPageUrl('Atendimentos')}
         />
       </div>
+
+      {/* Filtro de Serviços */}
+      <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-600/30 rounded-xl flex items-center justify-center">
+                <Filter className="w-5 h-5 text-purple-400" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-white">
+                Serviços Realizados
+              </CardTitle>
+            </div>
+            <Select value={filtroServicos} onValueChange={setFiltroServicos}>
+              <SelectTrigger className="w-full sm:w-48 bg-purple-900/40 border-purple-700/50 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dia">Hoje</SelectItem>
+                <SelectItem value="semana">Esta Semana</SelectItem>
+                <SelectItem value="mes">Este Mês</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-green-400" />
+                </div>
+                <span className="text-sm text-gray-400">Concluídos</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{servicosConcluidos}</p>
+            </div>
+            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                </div>
+                <span className="text-sm text-gray-400">Em Andamento</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{servicosAndamento}</p>
+            </div>
+            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-yellow-400" />
+                </div>
+                <span className="text-sm text-gray-400">Agendados</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{servicosAgendados}</p>
+            </div>
+            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
+                  <ClipboardList className="w-4 h-4 text-gray-400" />
+                </div>
+                <span className="text-sm text-gray-400">Abertos</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{servicosAbertos}</p>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-purple-700/30">
+            <p className="text-sm text-gray-400 text-center">
+              Total de <span className="text-white font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Manutenções Vencidas - Alerta Destaque */}
       {manutencoesVencidas.length > 0 && (
