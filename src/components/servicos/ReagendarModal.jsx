@@ -3,16 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function ReagendarModal({ open, onClose, onSave, servico, isLoading }) {
   const [novaData, setNovaData] = useState('');
+  const [horario, setHorario] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!novaData) return;
+    if (!novaData || !horario) return;
     
     // Validar que a data não seja anterior à data atual
     const dataAtual = new Date();
@@ -24,8 +25,9 @@ export default function ReagendarModal({ open, onClose, onSave, servico, isLoadi
       return; // O input já previne datas anteriores, mas adiciona validação extra
     }
     
-    onSave(novaData);
+    onSave(novaData, horario);
     setNovaData('');
+    setHorario('');
   };
 
   return (
@@ -63,10 +65,27 @@ export default function ReagendarModal({ open, onClose, onSave, servico, isLoadi
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="horario" className="text-base font-medium">
+                Horário *
+              </Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="horario"
+                  type="time"
+                  value={horario}
+                  onChange={(e) => setHorario(e.target.value)}
+                  required
+                  className="h-11 pl-10"
+                />
+              </div>
+            </div>
+
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button 
                 type="submit" 
-                disabled={isLoading || !novaData}
+                disabled={isLoading || !novaData || !horario}
                 className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
               >
                 {isLoading ? (
