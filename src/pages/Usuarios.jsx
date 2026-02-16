@@ -201,9 +201,13 @@ export default function UsuariosPage() {
       toast.error('Apenas administradores podem editar permissões');
       return;
     }
+    const userData = user.data || {};
     setEditingUser({
       ...user,
-      permissoes: user.permissoes || perfisPreDefinidos.atendente.permissoes
+      perfil: userData.perfil || 'atendente',
+      tipo_usuario: userData.tipo_usuario || 'administrativo',
+      empresa_id: userData.empresa_id,
+      permissoes: userData.permissoes || perfisPreDefinidos.atendente.permissoes
     });
     setShowEditModal(true);
   };
