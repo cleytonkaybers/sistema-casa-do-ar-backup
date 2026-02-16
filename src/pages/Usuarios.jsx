@@ -218,10 +218,12 @@ export default function UsuariosPage() {
     updateUserMutation.mutate({
       id: editingUser.id,
       data: {
-        perfil: editingUser.perfil,
-        permissoes: editingUser.permissoes,
-        empresa_id: editingUser.empresa_id,
-        tipo_usuario: editingUser.tipo_usuario
+        data: {
+          perfil: editingUser.perfil,
+          permissoes: editingUser.permissoes,
+          empresa_id: editingUser.empresa_id,
+          tipo_usuario: editingUser.tipo_usuario
+        }
       }
     });
   };
