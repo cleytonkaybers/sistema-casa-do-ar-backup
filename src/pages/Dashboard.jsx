@@ -65,7 +65,7 @@ export default function Dashboard() {
   }).sort((a, b) => {
     const daysA = differenceInDays(new Date(a.proxima_manutencao), new Date());
     const daysB = differenceInDays(new Date(b.proxima_manutencao), new Date());
-    return daysA - daysB; // Mais atrasadas primeiro
+    return daysA - daysB;
   });
 
   // Filtrar serviços por período
