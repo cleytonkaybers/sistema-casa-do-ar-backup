@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       console.log('Entidade PreventivaFutura não encontrada, pulando...');
     }
 
-    // 7. Migrar CompanySettings se existir
+    // 6. Migrar CompanySettings se existir
     const settings = await base44.asServiceRole.entities.CompanySettings.filter({
       created_by: user.email
     });
