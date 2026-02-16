@@ -33,6 +33,16 @@ export default function BackupRestaurerPage() {
     queryFn: () => base44.entities.Atendimento.list(),
   });
 
+  const { data: alteracaoStatus = [] } = useQuery({
+    queryKey: ['alteracaoStatus'],
+    queryFn: () => base44.entities.AlteracaoStatus.list(),
+  });
+
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+  });
+
   const handleExportBackup = async () => {
     setExporting(true);
     try {
@@ -42,12 +52,16 @@ export default function BackupRestaurerPage() {
         data: {
           clientes: clientes,
           servicos: servicos,
-          atendimentos: atendimentos
+          atendimentos: atendimentos,
+          alteracaoStatus: alteracaoStatus,
+          usuarios: usuarios
         },
         metadata: {
           total_clientes: clientes.length,
           total_servicos: servicos.length,
-          total_atendimentos: atendimentos.length
+          total_atendimentos: atendimentos.length,
+          total_alteracoes: alteracaoStatus.length,
+          total_usuarios: usuarios.length
         }
       };
 
@@ -115,6 +129,15 @@ export default function BackupRestaurerPage() {
         }
       }
 
+      // Importar histórico de alterações
+      if (backup.data.alteracaoStatus && backup.data.alteracaoStatus.length > 0) {
+        for (const alteracao of backup.data.alteracaoStatus) {
+          const { id, created_date, updated_date, created_by, ...alteracaoData } = alteracao;
+          await base44.entities.AlteracaoStatus.create(alteracaoData);
+          importedCount++;
+        }
+      }
+
       queryClient.invalidateQueries();
       toast.success(`Backup restaurado! ${importedCount} registros importados.`);
       setImportFile(null);
@@ -126,7 +149,7 @@ export default function BackupRestaurerPage() {
     }
   };
 
-  const totalRegistros = clientes.length + servicos.length + atendimentos.length;
+  const totalRegistros = clientes.length + servicos.length + atendimentos.length + alteracaoStatus.length;
 
   if (!isAdmin) {
     return <NoPermission />;
@@ -165,7 +188,11 @@ export default function BackupRestaurerPage() {
               <p className="text-sm opacity-90">Atendimentos</p>
               <p className="text-2xl font-bold">{atendimentos.length}</p>
             </div>
-          </div>
+            <div>
+              <p className="text-sm opacity-90">Histórico</p>
+              <p className="text-2xl font-bold">{alteracaoStatus.length}</p>
+            </div>
+            </div>
         </CardContent>
       </Card>
 
@@ -190,6 +217,8 @@ export default function BackupRestaurerPage() {
                 <li>{clientes.length} clientes cadastrados</li>
                 <li>{servicos.length} serviços registrados</li>
                 <li>{atendimentos.length} atendimentos realizados</li>
+                <li>{alteracaoStatus.length} registros históricos</li>
+                <li>{usuarios.length} usuários cadastrados</li>
               </ul>
             </div>
           </div>
