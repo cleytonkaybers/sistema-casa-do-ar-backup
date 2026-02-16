@@ -269,14 +269,18 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
       return;
     }
     
-    // Validar que a data não seja no passado
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    
+    // Validar que a data/hora não seja no passado
+    const agora = new Date();
     const dataProgramada = new Date(formData.data_programada + 'T00:00:00');
     
-    if (dataProgramada < hoje) {
-      toast.error('Data não pode ser no passado!');
+    // Se tem horário, aplica na data
+    if (formData.horario) {
+      const [horas, minutos] = formData.horario.split(':').map(Number);
+      dataProgramada.setHours(horas, minutos, 0, 0);
+    }
+    
+    if (dataProgramada < agora) {
+      toast.error('Data e hora não podem ser no passado!');
       return;
     }
     
