@@ -10,6 +10,7 @@ import ServicoForm from '../components/servicos/ServicoForm';
 import ServicoCard from '../components/servicos/ServicoCard';
 import ReagendarModal from '../components/servicos/ReagendarModal';
 import CompartilharModal from '../components/servicos/CompartilharModal';
+import ConclusaoModal from '../components/servicos/ConclusaoModal';
 import { toast } from 'sonner';
 import { format, parseISO, startOfMonth, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -26,6 +27,8 @@ export default function ServicosPage() {
   const [servicoParaReagendar, setServicoParaReagendar] = useState(null);
   const [showCompartilharModal, setShowCompartilharModal] = useState(false);
   const [servicoConcluido, setServicoConcluido] = useState(null);
+  const [showConclusaoModal, setShowConclusaoModal] = useState(false);
+  const [servicoParaConcluir, setServicoParaConcluir] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -124,16 +127,16 @@ export default function ServicosPage() {
   };
 
   const handleStatusChange = async (servico, novoStatus) => {
-    const currentUser = await base44.auth.me();
-    const updateData = {
-      ...servico,
-      status: novoStatus,
-      usuario_atualizacao_status: currentUser?.email,
-      data_atualizacao_status: new Date().toISOString()
-    };
-
     if (novoStatus === 'pausado') {
       // Abrir modal de reagendamento obrigatório
+      const currentUser = await base44.auth.me();
+      const updateData = {
+        ...servico,
+        status: novoStatus,
+        usuario_atualizacao_status: currentUser?.email,
+        data_atualizacao_status: new Date().toISOString()
+      };
+      
       setServicoParaReagendar(servico);
       setShowReagendarModal(true);
       // Atualizar o status para pausado
@@ -142,21 +145,50 @@ export default function ServicosPage() {
         data: updateData
       });
     } else if (novoStatus === 'concluido') {
-      // Atualizar status e abrir modal de compartilhamento
-      updateMutation.mutate({ 
-        id: servico.id, 
-        data: updateData
-      });
-      setServicoConcluido({ ...servico, isConclusao: true });
-      setShowCompartilharModal(true);
-      toast.success('Serviço concluído! 🎉');
+      // Abrir modal de conclusão para adicionar observações
+      setServicoParaConcluir(servico);
+      setShowConclusaoModal(true);
     } else {
+      const currentUser = await base44.auth.me();
+      const updateData = {
+        ...servico,
+        status: novoStatus,
+        usuario_atualizacao_status: currentUser?.email,
+        data_atualizacao_status: new Date().toISOString()
+      };
+      
       updateMutation.mutate({ 
         id: servico.id, 
         data: updateData
       });
       toast.success(`Status alterado para ${novoStatus}`);
     }
+  };
+
+  const handleConfirmarConclusao = async (observacoes) => {
+    if (!servicoParaConcluir) return;
+    
+    const currentUser = await base44.auth.me();
+    const updateData = {
+      ...servicoParaConcluir,
+      status: 'concluido',
+      observacoes_conclusao: observacoes,
+      usuario_atualizacao_status: currentUser?.email,
+      data_atualizacao_status: new Date().toISOString()
+    };
+
+    updateMutation.mutate({ 
+      id: servicoParaConcluir.id, 
+      data: updateData
+    }, {
+      onSuccess: () => {
+        setShowConclusaoModal(false);
+        setServicoConcluido({ ...servicoParaConcluir, observacoes_conclusao: observacoes, isConclusao: true });
+        setShowCompartilharModal(true);
+        setServicoParaConcluir(null);
+        toast.success('Serviço concluído! 🎉');
+      }
+    });
   };
 
   const handleReagendar = (novaData, horario) => {
@@ -448,6 +480,17 @@ export default function ServicosPage() {
         }}
         servico={servicoConcluido}
         isConclusao={servicoConcluido?.isConclusao}
+      />
+
+      <ConclusaoModal
+        open={showConclusaoModal}
+        onClose={() => {
+          setShowConclusaoModal(false);
+          setServicoParaConcluir(null);
+        }}
+        onConfirm={handleConfirmarConclusao}
+        servico={servicoParaConcluir}
+        isLoading={updateMutation.isPending}
       />
     </div>
   );
