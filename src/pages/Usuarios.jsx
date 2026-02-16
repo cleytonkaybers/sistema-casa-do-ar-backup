@@ -427,7 +427,6 @@ export default function UsuariosPage() {
                   <Select 
                     value={editingUser.empresa_id || ''} 
                     onValueChange={(value) => setEditingUser({...editingUser, empresa_id: value})}
-                    disabled={!isSuperAdmin()}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma empresa" />
