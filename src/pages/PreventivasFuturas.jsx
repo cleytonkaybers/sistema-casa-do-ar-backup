@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Phone, MapPin, Calendar, MessageCircle, Navigation, Search, Loader2, Clock, Wrench, Share2, Eye, Plus, Trash2 } from 'lucide-react';
+import { usePermissions } from '../components/auth/PermissionGuard';
 import { 
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import ServicoForm from '../components/servicos/ServicoForm';
 import { Label } from '@/components/ui/label';
 
 export default function PreventivasFuturasPage() {
+  const { isAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -408,7 +410,7 @@ export default function PreventivasFuturasPage() {
                           >
                             <Share2 className="w-4 h-4" />
                           </Button>
-                          {isCliente && (
+                          {isCliente && isAdmin && (
                             <Button
                               variant="ghost"
                               size="sm"
