@@ -89,7 +89,27 @@ Deno.serve(async (req) => {
       console.log('Entidade PreventivaFutura não encontrada, pulando...');
     }
 
-    // 6. Migrar CompanySettings se existir
+    // 6. Atualizar usuários associados
+    let usuariosMigrados = [];
+    try {
+      const usuarios = await base44.asServiceRole.entities.User.filter({
+        empresa_id: empresaAtual
+      });
+
+      usuariosMigrados = await Promise.all(
+        usuarios.map(usuario => {
+          const updates = { empresa_id: empresaNova.id };
+          if (usuario.email === novoAdminEmail) {
+            updates.tipo_usuario = 'admin_empresa';
+          }
+          return base44.asServiceRole.entities.User.update(usuario.id, updates);
+        })
+      );
+    } catch (e) {
+      console.log('Erro ao migrar usuários:', e.message);
+    }
+
+    // 7. Migrar CompanySettings se existir
     const settings = await base44.asServiceRole.entities.CompanySettings.filter({
       created_by: user.email
     });
