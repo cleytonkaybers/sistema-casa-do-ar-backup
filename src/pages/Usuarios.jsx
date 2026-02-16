@@ -85,6 +85,7 @@ export default function UsuariosPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [userId, setUserId] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [invitePerfil, setInvitePerfil] = useState('atendente');
   const [invitePassword, setInvitePassword] = useState('');
 
@@ -119,14 +120,14 @@ export default function UsuariosPage() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async ({ username, senha, perfil }) => {
+    mutationFn: async ({ userId, email, senha, perfil }) => {
       const perfil_config = perfisPreDefinidos[perfil];
 
-      // Cria usuário com username e senha
+      // Cria usuário com ID, email e senha
       const newUser = await base44.entities.User.create({
-        full_name: username,
-        email: username,
-        username: username,
+        full_name: userId,
+        email: email,
+        username: userId,
         role: 'user',
         perfil: perfil,
         permissoes: perfil_config.permissoes
@@ -139,6 +140,7 @@ export default function UsuariosPage() {
       toast.success('Usuário criado com sucesso!');
       setShowInviteModal(false);
       setUserId('');
+      setUserEmail('');
       setInvitePassword('');
       setInvitePerfil('atendente');
     },
@@ -146,13 +148,14 @@ export default function UsuariosPage() {
   });
 
   const handleInvite = async () => {
-    if (!userId || !invitePassword) {
-      toast.error('Preencha ID e senha');
+    if (!userId || !userEmail || !invitePassword) {
+      toast.error('Preencha ID, e-mail e senha');
       return;
     }
 
     createUserMutation.mutate({
-      username: userId,
+      userId: userId,
+      email: userEmail,
       senha: invitePassword,
       perfil: invitePerfil
     });
@@ -310,6 +313,15 @@ export default function UsuariosPage() {
                placeholder="usuario123"
                value={userId}
                onChange={(e) => setUserId(e.target.value)}
+             />
+           </div>
+           <div className="space-y-2">
+             <Label>E-mail</Label>
+             <Input
+               type="email"
+               placeholder="usuario@email.com"
+               value={userEmail}
+               onChange={(e) => setUserEmail(e.target.value)}
              />
            </div>
            <div className="space-y-2">
