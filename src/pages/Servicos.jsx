@@ -159,7 +159,7 @@ export default function ServicosPage() {
     }
   };
 
-  const handleReagendar = (novaData) => {
+  const handleReagendar = (novaData, horario) => {
     if (!servicoParaReagendar) return;
     
     const dataObj = parseISO(novaData);
@@ -171,6 +171,7 @@ export default function ServicosPage() {
       data: { 
         ...servicoParaReagendar, 
         data_programada: novaData,
+        horario: horario,
         dia_semana: diaSemana,
         status: 'pausado'
       } 
