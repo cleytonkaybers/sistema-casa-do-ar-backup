@@ -58,7 +58,6 @@ export default function Dashboard() {
     return daysUntil <= 30;
   });
 
-  // Manutenções vencidas (180 dias ou mais vencidas)
   const manutencoesVencidas = clientes.filter(c => {
     if (!c.proxima_manutencao) return false;
     const daysUntil = differenceInDays(new Date(c.proxima_manutencao), new Date());
