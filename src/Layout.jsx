@@ -75,13 +75,13 @@ export default function Layout({ children }) {
 
   const preventivasNavigation = [
     { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
+    { name: 'Histórico de Clientes', href: createPageUrl('HistoricoClientes'), icon: BarChart3 },
   ];
 
   const adminNavigation = [
     { name: 'Relatórios', href: createPageUrl('Relatorios'), icon: BarChart3 },
     { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
     { name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users },
-    { name: 'Histórico de Clientes', href: createPageUrl('HistoricoClientes'), icon: BarChart3 },
     { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
     { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
   ];
