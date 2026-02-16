@@ -99,7 +99,9 @@ export default function UsuariosPage() {
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios'],
     queryFn: async () => {
-      return await base44.asServiceRole.entities.User.list(100);
+      const users = await base44.asServiceRole.entities.User.list();
+      console.log('Usuários obtidos:', users);
+      return users;
     },
     enabled: !authLoading
   });
