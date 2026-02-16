@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     });
 
     if (userWithEmpresa && userWithEmpresa.length > 0) {
-      const userData = userWithEmpresa[0].data || {};
+      const userData = userWithEmpresa[0];
       
       // Se já tem empresa_id, não fazer nada
       if (userData.empresa_id) {
@@ -35,15 +35,11 @@ Deno.serve(async (req) => {
         plano: 'profissional'
       });
 
-      // Associar o usuário à empresa
-      const userData2 = userWithEmpresa[0].data || {};
+      // Associar o usuário à empresa como admin
       await base44.asServiceRole.entities.User.update(userWithEmpresa[0].id, {
-        data: {
-          ...userData2,
-          empresa_id: novaEmpresa.id,
-          tipo_usuario: 'admin_empresa',
-          perfil: 'admin'
-        }
+        empresa_id: novaEmpresa.id,
+        tipo_usuario: 'admin_empresa',
+        perfil: 'admin'
       });
 
       return Response.json({ 
