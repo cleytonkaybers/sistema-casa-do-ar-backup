@@ -173,7 +173,7 @@ export default function ServicosPage() {
         data_programada: novaData,
         horario: horario,
         dia_semana: diaSemana,
-        status: 'pausado'
+        status: 'reagendado'
       } 
     });
     

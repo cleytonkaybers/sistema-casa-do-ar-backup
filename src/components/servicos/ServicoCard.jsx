@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Phone, MapPin, Calendar, Pencil, Trash2, MessageCircle, Navigation, Clock, DollarSign, Share2, CreditCard, CheckCircle, Pause, Play } from 'lucide-react';
+import { Phone, MapPin, Calendar, Pencil, Trash2, MessageCircle, Navigation, Clock, DollarSign, Share2, CreditCard, CheckCircle, Pause, Play, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -81,6 +81,8 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
         return { label: 'Em Andamento', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Play };
       case 'pausado':
         return { label: 'Pausado', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Pause };
+      case 'reagendado':
+        return { label: 'Reagendado', color: 'bg-orange-100 text-orange-700 border-orange-200', icon: CalendarClock };
       default:
         return { label: 'Aberto', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Clock };
     }
