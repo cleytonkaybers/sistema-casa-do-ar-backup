@@ -297,6 +297,11 @@ export default function UsuariosPage() {
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
+      ) : usuarios.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>Nenhum usuário encontrado</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {usuarios.map(usuario => {
