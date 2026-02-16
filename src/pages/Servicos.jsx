@@ -215,6 +215,11 @@ export default function ServicosPage() {
   };
 
   const filteredServicos = servicos.filter(s => {
+    // Não mostrar serviços concluídos
+    if (s.status === 'concluido') {
+      return false;
+    }
+    
     const matchSearch = s.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        s.telefone?.includes(searchTerm);
     const matchTipo = tipoFilter === 'todos' || s.tipo_servico === tipoFilter;
