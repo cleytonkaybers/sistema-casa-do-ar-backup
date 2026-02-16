@@ -24,8 +24,10 @@ import { CalendarIcon, Loader2, MapPin, Contact, Smartphone, Search, ExternalLin
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import { useEmpresa } from '@/components/auth/EmpresaGuard';
 
 export default function ClienteForm({ open, onClose, onSave, cliente, isLoading }) {
+  const { currentUser } = useEmpresa();
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,7 +38,8 @@ export default function ClienteForm({ open, onClose, onSave, cliente, isLoading 
     longitude: null,
     observacoes: '',
     ultima_manutencao: '',
-    proxima_manutencao: ''
+    proxima_manutencao: '',
+    empresa_id: currentUser?.empresa_id || ''
   });
 
   useEffect(() => {
