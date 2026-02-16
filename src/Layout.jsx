@@ -209,7 +209,7 @@ function LayoutContent({ children }) {
               <h1 className="font-bold text-white">Casa do Ar</h1>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium text-purple-200">Sistema de Clientes</p>
                 <p className="text-xs text-purple-300/60">Casa do Ar Climatização</p>
@@ -222,6 +222,13 @@ function LayoutContent({ children }) {
                 <RotateCw className="w-5 h-5" />
               </button>
               <NotificationCenter />
+              <button
+                onClick={() => base44.auth.logout()}
+                className="p-2 rounded-lg hover:bg-red-500/30 transition-colors text-purple-300 hover:text-red-300"
+                title="Sair"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </header>
