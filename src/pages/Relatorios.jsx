@@ -14,15 +14,15 @@ import { usePermissions } from '../components/auth/PermissionGuard';
 
 export default function RelatóriosPage() {
   const { isAdmin } = usePermissions();
-
-  if (!isAdmin) {
-    return <NoPermission />;
-  }
   const today = new Date();
   const [startDate, setStartDate] = useState(startOfMonth(today));
   const [endDate, setEndDate] = useState(endOfMonth(today));
   const [filteredStartDate, setFilteredStartDate] = useState(startOfMonth(today));
   const [filteredEndDate, setFilteredEndDate] = useState(endOfMonth(today));
+
+  if (!isAdmin) {
+    return <NoPermission />;
+  }
 
   // Buscar dados
   const { data: servicos = [], isLoading: servLoading } = useQuery({
