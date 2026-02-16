@@ -32,10 +32,6 @@ export default function HistoricoClientes() {
     queryFn: () => base44.entities.AlteracaoStatus.list('-data_alteracao'),
   });
 
-  if (!isAdmin) {
-    return <NoPermission />;
-  }
-
   // Combinar histórico
   const historico = [
     ...servicos.map(s => ({
@@ -61,10 +57,6 @@ export default function HistoricoClientes() {
       data_atualizacao: a.data_atualizacao_status
     }))
   ];
-
-  if (!isAdmin) {
-    return <NoPermission />;
-  }
 
   // Agrupar por cliente
   const clientesAgrupados = useMemo(() => {
@@ -116,6 +108,10 @@ export default function HistoricoClientes() {
 
   const totalServiços = historico.length;
   const totalValor = historico.reduce((sum, item) => sum + (item.valor || 0), 0);
+
+  if (!isAdmin) {
+    return <NoPermission />;
+  }
 
   return (
     <div className="space-y-6">
