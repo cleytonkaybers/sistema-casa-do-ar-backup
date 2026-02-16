@@ -130,32 +130,10 @@ export default function ServicosPage() {
     const currentUser = await base44.auth.me();
     const statusAnterior = servico.status || 'aberto';
     
-    if (novoStatus === 'pausado') {
+    if (novoStatus === 'agendado') {
       // Abrir modal de reagendamento obrigatório
-      const updateData = {
-        ...servico,
-        status: novoStatus,
-        usuario_atualizacao_status: currentUser?.email,
-        data_atualizacao_status: new Date().toISOString()
-      };
-      
-      // Registrar alteração de status
-      await base44.entities.AlteracaoStatus.create({
-        servico_id: servico.id,
-        status_anterior: statusAnterior,
-        status_novo: novoStatus,
-        usuario: currentUser?.email,
-        data_alteracao: new Date().toISOString(),
-        tipo_registro: 'servico'
-      });
-      
       setServicoParaReagendar(servico);
       setShowReagendarModal(true);
-      // Atualizar o status para pausado
-      updateMutation.mutate({ 
-        id: servico.id, 
-        data: updateData
-      });
     } else if (novoStatus === 'concluido') {
       // Abrir modal de conclusão para adicionar observações
       setServicoParaConcluir(servico);

@@ -35,7 +35,7 @@ const TIPOS_SERVICO = [
   'Outro'
 ];
 
-const STATUS_OPTIONS = ['Aberto', 'Em Andamento', 'Pausado', 'Concluído'];
+const STATUS_OPTIONS = ['Aberto', 'Em Andamento', 'Agendado', 'Concluído'];
 
 export default function AtendimentoForm({ open, onClose, onSave, atendimento, cliente, isLoading }) {
   const [formData, setFormData] = useState({

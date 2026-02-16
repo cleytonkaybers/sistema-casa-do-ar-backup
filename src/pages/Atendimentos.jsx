@@ -46,7 +46,7 @@ import HistoricoStatusModal from '@/components/atendimentos/HistoricoStatusModal
 const statusColors = {
   'Aberto': 'bg-gray-100 text-gray-700 border-gray-200',
   'Em Andamento': 'bg-blue-100 text-blue-700 border-blue-200',
-  'Pausado': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  'Agendado': 'bg-yellow-100 text-yellow-700 border-yellow-200',
   'Reagendado': 'bg-orange-100 text-orange-700 border-orange-200',
   'Concluído': 'bg-green-100 text-green-700 border-green-200'
 };
@@ -135,7 +135,7 @@ export default function Atendimentos() {
       valor: servico.valor || 0,
       status: servico.status === 'aberto' ? 'Aberto' :
               servico.status === 'andamento' ? 'Em Andamento' :
-              servico.status === 'pausado' ? 'Pausado' :
+              servico.status === 'agendado' ? 'Agendado' :
               servico.status === 'reagendado' ? 'Reagendado' :
               servico.status === 'concluido' ? 'Concluído' : 'Aberto',
       observacoes: servico.observacoes_conclusao || '',
@@ -172,7 +172,7 @@ export default function Atendimentos() {
       'Reagendado': 1,
       'Aberto': 2,
       'Em Andamento': 3,
-      'Pausado': 4,
+      'Agendado': 4,
       'Concluído': 5
     };
 
@@ -321,7 +321,7 @@ export default function Atendimentos() {
               <SelectItem value="Reagendado">Reagendado</SelectItem>
               <SelectItem value="Aberto">Aberto</SelectItem>
               <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-              <SelectItem value="Pausado">Pausado</SelectItem>
+              <SelectItem value="Agendado">Agendado</SelectItem>
               <SelectItem value="Concluído">Concluído</SelectItem>
             </SelectContent>
           </Select>
