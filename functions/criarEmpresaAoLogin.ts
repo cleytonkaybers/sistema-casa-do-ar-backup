@@ -17,11 +17,17 @@ Deno.serve(async (req) => {
     if (userWithEmpresa && userWithEmpresa.length > 0) {
       const userData = userWithEmpresa[0];
       
-      // Se já tem empresa_id, não fazer nada
+      // Se já tem empresa_id mas não é admin, atualizar para admin
       if (userData.empresa_id) {
+        if (userData.tipo_usuario !== 'admin_empresa') {
+          await base44.asServiceRole.entities.User.update(userData.id, {
+            tipo_usuario: 'admin_empresa'
+          });
+        }
         return Response.json({ 
           message: 'Usuário já tem empresa', 
-          empresa_id: userData.empresa_id 
+          empresa_id: userData.empresa_id,
+          tipo_usuario: 'admin_empresa'
         });
       }
 
