@@ -97,10 +97,12 @@ export default function UsuariosPage() {
   const queryClient = useQueryClient();
 
   const { data: usuarios = [], isLoading } = useQuery({
-    queryKey: ['usuarios', currentEmpresa?.id],
+    queryKey: ['usuarios', currentEmpresa?.id, isSuperAdmin()],
     queryFn: async () => {
+      if (isSuperAdmin()) {
+        return await base44.asServiceRole.entities.User.list();
+      }
       const allUsers = await base44.entities.User.list();
-      if (isSuperAdmin()) return allUsers;
       return allUsers.filter(u => u.empresa_id === currentEmpresa?.id);
     },
     enabled: !authLoading

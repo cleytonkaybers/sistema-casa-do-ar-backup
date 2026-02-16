@@ -55,6 +55,7 @@ import Configuracoes from './pages/Configuracoes';
 import Dashboard from './pages/Dashboard';
 import GerenciarEmpresas from './pages/GerenciarEmpresas';
 import HistoricoClientes from './pages/HistoricoClientes';
+import MigrarDados from './pages/MigrarDados';
 import PreferencesNotificacao from './pages/PreferencesNotificacao';
 import PreventivasFuturas from './pages/PreventivasFuturas';
 import Relatorios from './pages/Relatorios';
@@ -62,7 +63,6 @@ import RelatoriosAutomaticos from './pages/RelatoriosAutomaticos';
 import Servicos from './pages/Servicos';
 import Suporte from './pages/Suporte';
 import Usuarios from './pages/Usuarios';
-import MigrarDados from './pages/MigrarDados';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +75,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "GerenciarEmpresas": GerenciarEmpresas,
     "HistoricoClientes": HistoricoClientes,
+    "MigrarDados": MigrarDados,
     "PreferencesNotificacao": PreferencesNotificacao,
     "PreventivasFuturas": PreventivasFuturas,
     "Relatorios": Relatorios,
@@ -82,7 +83,6 @@ export const PAGES = {
     "Servicos": Servicos,
     "Suporte": Suporte,
     "Usuarios": Usuarios,
-    "MigrarDados": MigrarDados,
 }
 
 export const pagesConfig = {
