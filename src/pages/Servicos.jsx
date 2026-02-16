@@ -217,12 +217,26 @@ export default function ServicosPage() {
     });
   };
 
-  const handleReagendar = (novaData, horario) => {
+  const handleReagendar = async (novaData, horario) => {
     if (!servicoParaReagendar) return;
+    
+    const currentUser = await base44.auth.me();
+    const statusAnterior = servicoParaReagendar.status || 'aberto';
+    const novoStatus = (statusAnterior === 'agendado' || statusAnterior === 'reagendado') ? 'reagendado' : 'agendado';
     
     const dataObj = parseISO(novaData);
     const diaSemanaFormatado = format(dataObj, 'EEEE', { locale: ptBR });
     const diaSemana = diaSemanaFormatado.charAt(0).toUpperCase() + diaSemanaFormatado.slice(1);
+    
+    // Registrar alteração de status
+    await base44.entities.AlteracaoStatus.create({
+      servico_id: servicoParaReagendar.id,
+      status_anterior: statusAnterior,
+      status_novo: novoStatus,
+      usuario: currentUser?.email,
+      data_alteracao: new Date().toISOString(),
+      tipo_registro: 'servico'
+    });
     
     updateMutation.mutate({ 
       id: servicoParaReagendar.id, 
@@ -231,13 +245,15 @@ export default function ServicosPage() {
         data_programada: novaData,
         horario: horario,
         dia_semana: diaSemana,
-        status: 'reagendado'
+        status: novoStatus,
+        usuario_atualizacao_status: currentUser?.email,
+        data_atualizacao_status: new Date().toISOString()
       } 
     });
     
     setShowReagendarModal(false);
     setServicoParaReagendar(null);
-    toast.success('Serviço reagendado com sucesso!');
+    toast.success(`Serviço ${novoStatus} com sucesso! 📅`);
   };
 
   const filteredServicos = servicos.filter(s => {
