@@ -71,34 +71,23 @@ Deno.serve(async (req) => {
       )
     );
 
-    // 5. Migrar preventivas futuras
-    const preventivas = await base44.asServiceRole.entities.PreventivaFutura.filter({
-      empresa_id: empresaAtual
-    });
+    // 5. Migrar preventivas (se existir a entidade)
+    let preventivasMigradas = [];
+    try {
+      const preventivas = await base44.asServiceRole.entities.PreventivaFutura.filter({
+        empresa_id: empresaAtual
+      });
 
-    const preventivasMigradas = await Promise.all(
-      preventivas.map(preventiva =>
-        base44.asServiceRole.entities.PreventivaFutura.update(preventiva.id, {
-          empresa_id: empresaNova.id
-        })
-      )
-    );
-
-    // 6. Atualizar usuários associados
-    const usuarios = await base44.asServiceRole.entities.User.filter({
-      empresa_id: empresaAtual
-    });
-
-    const usuariosMigrados = await Promise.all(
-      usuarios.map(usuario => {
-        // Se é o novo admin, marcar como admin_empresa
-        const updates = { empresa_id: empresaNova.id };
-        if (usuario.email === novoAdminEmail) {
-          updates.tipo_usuario = 'admin_empresa';
-        }
-        return base44.asServiceRole.entities.User.update(usuario.id, updates);
-      })
-    );
+      preventivasMigradas = await Promise.all(
+        preventivas.map(preventiva =>
+          base44.asServiceRole.entities.PreventivaFutura.update(preventiva.id, {
+            empresa_id: empresaNova.id
+          })
+        )
+      );
+    } catch (e) {
+      console.log('Entidade PreventivaFutura não encontrada, pulando...');
+    }
 
     // 7. Migrar CompanySettings se existir
     const settings = await base44.asServiceRole.entities.CompanySettings.filter({
