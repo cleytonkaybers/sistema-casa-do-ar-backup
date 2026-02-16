@@ -32,10 +32,7 @@ export default function Clientes() {
   const queryClient = useQueryClient();
   const { hasPermission, isAdmin } = usePermissions();
   
-  // Estados
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Modais
   const [formOpen, setFormOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -44,7 +41,6 @@ export default function Clientes() {
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
 
-  // Queries
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list('-created_date'),
@@ -55,7 +51,6 @@ export default function Clientes() {
     queryFn: () => base44.entities.Atendimento.list('-created_date'),
   });
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Cliente.create(data),
     onSuccess: () => {
@@ -108,7 +103,6 @@ export default function Clientes() {
     });
   }, [clientes, searchTerm]);
 
-  // Handlers
   const handleSave = (data) => {
     if (editingCliente) {
       updateMutation.mutate({ id: editingCliente.id, data });
@@ -148,7 +142,6 @@ export default function Clientes() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Clientes</h1>
@@ -165,7 +158,6 @@ export default function Clientes() {
         )}
       </div>
 
-      {/* Filtros */}
       <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 text-gray-700 mb-2">
           <Filter className="w-5 h-5" />
@@ -194,7 +186,6 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Lista de Clientes */}
       {isLoading ? (
         <LoadingSpinner text="Carregando clientes..." />
       ) : filteredClientes.length === 0 ? (
@@ -218,7 +209,6 @@ export default function Clientes() {
         />
       )}
 
-      {/* Modais */}
       <ClienteForm
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditingCliente(null); }}

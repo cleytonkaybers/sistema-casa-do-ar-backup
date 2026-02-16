@@ -56,12 +56,9 @@ const statusColors = {
 export default function Atendimentos() {
   const queryClient = useQueryClient();
   
-  // Estados
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTipo, setFilterTipo] = useState('all');
-  
-  // Modais
   const [formOpen, setFormOpen] = useState(false);
   const [editingAtendimento, setEditingAtendimento] = useState(null);
   const [selectedCliente, setSelectedCliente] = useState(null);
@@ -72,7 +69,6 @@ export default function Atendimentos() {
   const [detalhesOpen, setDetalhesOpen] = useState(false);
   const [selectedAtendimento, setSelectedAtendimento] = useState(null);
 
-  // Queries
   const { data: atendimentos = [], isLoading } = useQuery({
     queryKey: ['atendimentos'],
     queryFn: () => base44.entities.Atendimento.list('-data_atendimento'),
@@ -88,7 +84,6 @@ export default function Atendimentos() {
     queryFn: () => base44.entities.Servico.list(),
   });
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Atendimento.create(data),
     onSuccess: () => {
@@ -121,15 +116,12 @@ export default function Atendimentos() {
     onError: () => toast.error('Erro ao excluir atendimento'),
   });
 
-  // Filtros
   const tiposServico = useMemo(() => {
     const tiposSet = new Set(atendimentos.map(a => a.tipo_servico).filter(Boolean));
     return Array.from(tiposSet).sort();
   }, [atendimentos]);
 
-  // Combinar atendimentos e serviços
   const atendimentosComServicos = useMemo(() => {
-    // Converter serviços para formato de atendimento
     const servicosComoAtendimentos = servicos.map(servico => ({
       id: servico.id,
       cliente_nome: servico.cliente_nome,
@@ -149,13 +141,11 @@ export default function Atendimentos() {
       dia_semana: servico.dia_semana
     }));
 
-    // Atendimentos reais marcados como origem
     const atendimentosReais = atendimentos.map(a => ({
       ...a,
       origem: 'atendimento'
     }));
 
-    // Combinar todos
     return [...servicosComoAtendimentos, ...atendimentosReais];
   }, [servicos, atendimentos]);
 
@@ -171,7 +161,6 @@ export default function Atendimentos() {
       return matchesSearch && matchesStatus && matchesTipo;
     });
 
-    // Ordenar por prioridade de status
     const statusPrioridade = {
       'Agendado': 1,
       'Reagendado': 2,
@@ -188,14 +177,12 @@ export default function Atendimentos() {
         return prioA - prioB;
       }
       
-      // Se mesma prioridade, ordenar por data
       const dataA = new Date(a.data_atendimento);
       const dataB = new Date(b.data_atendimento);
       return dataB - dataA;
     });
   }, [atendimentosComServicos, searchTerm, filterStatus, filterTipo]);
 
-  // Handlers
   const handleSave = async (data) => {
     const currentUser = await base44.auth.me();
     const dataWithUser = {
@@ -251,12 +238,10 @@ export default function Atendimentos() {
   };
 
   const handleVerHistorico = (atendimento) => {
-    // Se veio de serviço, usar o servico_id diretamente
     if (atendimento.origem === 'servico') {
       setSelectedServicoId(atendimento.servico_id);
       setHistoricoOpen(true);
     } else {
-      // Buscar serviço relacionado ao atendimento
       const servicoRelacionado = servicos.find(s => 
         s.cliente_nome?.trim().toLowerCase() === atendimento.cliente_nome?.trim().toLowerCase() &&
         s.status === 'concluido'
@@ -273,7 +258,6 @@ export default function Atendimentos() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Atendimentos</h1>
@@ -288,7 +272,6 @@ export default function Atendimentos() {
         </Button>
       </div>
 
-      {/* Filtros */}
       <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 text-gray-700 mb-2">
           <Filter className="w-5 h-5" />
@@ -307,7 +290,6 @@ export default function Atendimentos() {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Busca */}
           <div className="sm:col-span-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -320,7 +302,6 @@ export default function Atendimentos() {
             </div>
           </div>
 
-          {/* Filtro Status */}
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="h-11 bg-gray-50 border-gray-200">
               <SelectValue placeholder="Status" />
@@ -335,7 +316,6 @@ export default function Atendimentos() {
             </SelectContent>
           </Select>
 
-          {/* Filtro Tipo */}
           <Select value={filterTipo} onValueChange={setFilterTipo}>
             <SelectTrigger className="h-11 bg-gray-50 border-gray-200">
               <SelectValue placeholder="Tipo de Serviço" />
@@ -350,7 +330,6 @@ export default function Atendimentos() {
         </div>
       </div>
 
-      {/* Lista de Atendimentos */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -578,7 +557,6 @@ export default function Atendimentos() {
         </>
       )}
 
-      {/* Modais */}
       <AtendimentoForm
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditingAtendimento(null); setSelectedCliente(null); }}

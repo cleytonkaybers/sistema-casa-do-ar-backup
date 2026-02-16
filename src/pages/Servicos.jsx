@@ -40,14 +40,10 @@ export default function ServicosPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      // Criar o serviço
       const servico = await base44.entities.Servico.create(data);
-      
-      // Verificar se já existe cliente com esse telefone
       const clientes = await base44.entities.Cliente.filter({ telefone: data.telefone });
       
       if (clientes.length === 0) {
-        // Criar cliente automaticamente
         const proximaManutencao = new Date(data.data_programada);
         proximaManutencao.setMonth(proximaManutencao.getMonth() + 6);
         
@@ -63,7 +59,6 @@ export default function ServicosPage() {
         
         toast.success('Cliente cadastrado automaticamente!');
       } else {
-        // Atualizar data da próxima manutenção do cliente existente
         const cliente = clientes[0];
         const proximaManutencao = new Date(data.data_programada);
         proximaManutencao.setMonth(proximaManutencao.getMonth() + 6);
@@ -132,11 +127,9 @@ export default function ServicosPage() {
     const statusAnterior = servico.status || 'aberto';
     
     if (novoStatus === 'agendado') {
-      // Abrir modal de reagendamento obrigatório
       setServicoParaReagendar(servico);
       setShowReagendarModal(true);
     } else if (novoStatus === 'concluido') {
-      // Abrir modal de conclusão para adicionar observações
       setServicoParaConcluir(servico);
       setShowConclusaoModal(true);
     } else {
@@ -147,7 +140,6 @@ export default function ServicosPage() {
         data_atualizacao_status: new Date().toISOString()
       };
       
-      // Registrar alteração de status
       await base44.entities.AlteracaoStatus.create({
         servico_id: servico.id,
         status_anterior: statusAnterior,
@@ -179,7 +171,6 @@ export default function ServicosPage() {
       data_atualizacao_status: new Date().toISOString()
     };
 
-    // Registrar alteração de status
     await base44.entities.AlteracaoStatus.create({
       servico_id: servicoParaConcluir.id,
       status_anterior: statusAnterior,
@@ -194,7 +185,6 @@ export default function ServicosPage() {
       data: updateData
     }, {
       onSuccess: async () => {
-        // Criar atendimento a partir do serviço concluído
         await base44.entities.Atendimento.create({
           cliente_nome: servicoParaConcluir.cliente_nome,
           data_atendimento: servicoParaConcluir.data_programada,
@@ -229,7 +219,6 @@ export default function ServicosPage() {
     const diaSemanaFormatado = format(dataObj, 'EEEE', { locale: ptBR });
     const diaSemana = diaSemanaFormatado.charAt(0).toUpperCase() + diaSemanaFormatado.slice(1);
     
-    // Registrar alteração de status
     await base44.entities.AlteracaoStatus.create({
       servico_id: servicoParaReagendar.id,
       status_anterior: statusAnterior,
@@ -258,10 +247,7 @@ export default function ServicosPage() {
   };
 
   const filteredServicos = servicos.filter(s => {
-    // Não mostrar apenas serviços concluídos
-    if (s.status === 'concluido') {
-      return false;
-    }
+    if (s.status === 'concluido') return false;
     
     const matchSearch = s.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        s.telefone?.includes(searchTerm);
@@ -270,7 +256,6 @@ export default function ServicosPage() {
     return matchSearch && matchTipo;
   });
 
-  // Organizar serviços por dia da semana
   const servicosComData = filteredServicos.filter(s => s.data_programada);
   const servicosSemData = filteredServicos.filter(s => !s.data_programada);
 
@@ -285,17 +270,14 @@ export default function ServicosPage() {
     return acc;
   }, {});
 
-  // Ordenar serviços dentro de cada dia por data programada (mais próximo no topo)
   Object.keys(servicosPorDia).forEach(dia => {
     servicosPorDia[dia].sort((a, b) => {
-      // Ordenar por data programada (mais próximo = menos dias = topo)
       const dateA = new Date(a.data_programada);
       const dateB = new Date(b.data_programada);
       
       if (dateA < dateB) return -1;
       if (dateA > dateB) return 1;
       
-      // Se datas iguais, ordenar por horário
       if (a.horario && !b.horario) return -1;
       if (!a.horario && b.horario) return 1;
       
@@ -329,7 +311,6 @@ export default function ServicosPage() {
 
   return (
     <div className="space-y-6">
-      {/* Alerta de serviços atrasados */}
       <AlertaAtraso />
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -411,14 +392,12 @@ export default function ServicosPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Serviços organizados em colunas por dia da semana */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
             {diasDaSemana.map(dia => {
               const servicosDoDia = servicosPorDia[dia] || [];
               
               return (
                 <div key={dia} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
-                  {/* Cabeçalho do dia */}
                   <div className={`bg-gradient-to-r ${diaColors[dia]} px-4 py-3 sticky top-0 z-10`}>
                     <h3 className="font-bold text-white text-center text-sm lg:text-base">
                       {dia}
@@ -428,7 +407,6 @@ export default function ServicosPage() {
                     </p>
                   </div>
 
-                  {/* Lista de serviços do dia */}
                   <div className="p-3 space-y-3 flex-1 overflow-y-auto">
                     {servicosDoDia.length === 0 ? (
                       <p className="text-gray-400 text-center text-sm py-4">
@@ -459,7 +437,6 @@ export default function ServicosPage() {
             })}
           </div>
 
-          {/* Serviços sem data programada */}
           {servicosSemData.length > 0 && (
             <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
               <div className="bg-gradient-to-r from-gray-500 to-gray-600 px-4 py-3 flex items-center justify-between">
