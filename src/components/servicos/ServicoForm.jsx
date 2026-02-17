@@ -297,7 +297,9 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     };
     delete dataToSave.tipos_servico;
     
-    console.log('Salvando serviço:', dataToSave);
+    console.log('Tipos de serviço selecionados:', formData.tipos_servico);
+    console.log('Tipo concatenado para salvar:', dataToSave.tipo_servico);
+    console.log('Dados completos para salvar:', dataToSave);
     onSave(dataToSave);
   };
 
