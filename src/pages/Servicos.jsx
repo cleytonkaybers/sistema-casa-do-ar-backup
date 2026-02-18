@@ -41,32 +41,18 @@ export default function ServicosPage() {
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const servico = await base44.entities.Servico.create(data);
-      const clientes = await base44.entities.Cliente.filter({ telefone: data.telefone });
       
+      // Apenas cadastra o cliente automaticamente se não existir, sem definir preventiva
+      const clientes = await base44.entities.Cliente.filter({ telefone: data.telefone });
       if (clientes.length === 0) {
-        const proximaManutencao = new Date(data.data_programada);
-        proximaManutencao.setMonth(proximaManutencao.getMonth() + 6);
-        
         await base44.entities.Cliente.create({
           nome: data.cliente_nome,
           telefone: data.telefone,
           endereco: data.endereco || '',
           latitude: data.latitude || null,
           longitude: data.longitude || null,
-          ultima_manutencao: data.data_programada,
-          proxima_manutencao: proximaManutencao.toISOString().split('T')[0]
         });
-        
         toast.success('Cliente cadastrado automaticamente!');
-      } else {
-        const cliente = clientes[0];
-        const proximaManutencao = new Date(data.data_programada);
-        proximaManutencao.setMonth(proximaManutencao.getMonth() + 6);
-        
-        await base44.entities.Cliente.update(cliente.id, {
-          ultima_manutencao: data.data_programada,
-          proxima_manutencao: proximaManutencao.toISOString().split('T')[0]
-        });
       }
       
       return servico;
@@ -76,7 +62,7 @@ export default function ServicosPage() {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
       setShowForm(false);
       setEditingServico(null);
-      toast.success('Serviço cadastrado e preventiva agendada!');
+      toast.success('Serviço cadastrado com sucesso!');
     },
     onError: () => toast.error('Erro ao cadastrar serviço'),
   });
