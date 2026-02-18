@@ -13,7 +13,7 @@ import CompartilharModal from '../components/servicos/CompartilharModal';
 import ConclusaoModal from '../components/servicos/ConclusaoModal';
 import AlertaAtraso from '../components/servicos/AlertaAtraso';
 import { toast } from 'sonner';
-import { format, parseISO, startOfMonth, isSameMonth } from 'date-fns';
+import { format, parseISO, startOfMonth, isSameMonth, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePermissions } from '@/components/auth/PermissionGuard';
 
