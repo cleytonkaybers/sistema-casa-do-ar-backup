@@ -405,10 +405,20 @@ export default function HistoricoClientes() {
                             )}
                           </div>
 
-                          <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
                             <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-300">
                               {item.tipo}
                             </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 px-2"
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              Excluir
+                            </Button>
                           </div>
                         </div>
                       </div>
