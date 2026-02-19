@@ -133,8 +133,8 @@ export default function AlertaAtraso() {
               </CardTitle>
               <p className="text-red-700 text-sm mt-1">
                 {servicosAtrasados.length === 1 
-                  ? 'Um serviço está com mais de 24 horas de atraso'
-                  : `${servicosAtrasados.length} serviços estão com mais de 24 horas de atraso`
+                  ? 'Um serviço criado há mais de 48 horas ainda não foi concluído'
+                  : `${servicosAtrasados.length} serviços criados há mais de 48 horas ainda não foram concluídos`
                 }
               </p>
             </div>
