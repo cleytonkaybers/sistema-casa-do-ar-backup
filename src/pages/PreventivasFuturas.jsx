@@ -59,7 +59,7 @@ export default function PreventivasFuturasPage() {
   const getWhatsAppLink = (phone) => {
     const cleaned = phone?.replace(/\D/g, '') || '';
     const mensagem = encodeURIComponent(
-      `Olá! 👋\nEstá na hora da manutenção do seu ar-condicionado. A limpeza preventiva melhora o rendimento, reduz o consumo de energia e aumenta a vida útil do equipamento.\nAgende sua manutenção e evite problemas futuros!`
+      `Olá! 👋\nNotamos que já está no período recomendado para a manutenção do seu ar-condicionado.\nA limpeza preventiva melhora o desempenho, reduz o consumo de energia, evita mau cheiro e aumenta a vida útil do aparelho.\nQuer que eu agende um horário para você?`
     );
     return `https://wa.me/55${cleaned}?text=${mensagem}`;
   };
