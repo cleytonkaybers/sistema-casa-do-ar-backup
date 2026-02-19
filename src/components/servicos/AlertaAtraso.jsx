@@ -172,9 +172,9 @@ export default function AlertaAtraso() {
                   
                   <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Previsto: {format(dataPrograma, "dd/MM/yyyy", { locale: ptBR })}
-                    </div>
+                        <Calendar className="w-3.5 h-3.5" />
+                        Criado em: {format(dataCriacao, "dd/MM/yyyy", { locale: ptBR })}
+                      </div>
                     {servico.horario && (
                       <div className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
