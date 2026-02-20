@@ -68,7 +68,7 @@ export default function AlertaAtraso() {
     const agora = new Date();
     const horasAtraso = differenceInHours(agora, dataPrograma);
     
-    return horasAtraso >= 24;
+    return horasAtraso >= 48;
   });
 
   // Enviar notificações para técnicos
