@@ -126,6 +126,12 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
             </div>
           )}
 
+          {servico.descricao && (
+            <div className="text-xs text-gray-500 bg-gray-50 px-2 py-1.5 rounded-md line-clamp-2">
+              {servico.descricao}
+            </div>
+          )}
+
           {servico.valor > 0 && (
             <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
               <DollarSign className="w-3.5 h-3.5" />
