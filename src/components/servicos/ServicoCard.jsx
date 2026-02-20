@@ -105,14 +105,25 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               {statusConfig.label}
             </Badge>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleShare}
-            className="h-8 w-8 text-gray-400 hover:text-blue-600 flex-shrink-0"
-          >
-            <Share2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDetalhes(true)}
+              className="h-8 w-8 text-gray-400 hover:text-purple-600"
+              title="Ver detalhes"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShare}
+              className="h-8 w-8 text-gray-400 hover:text-blue-600"
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-2">
