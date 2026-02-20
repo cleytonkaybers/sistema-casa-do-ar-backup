@@ -342,25 +342,53 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {!servico && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleImportContact}
-              disabled={loadingContacts}
-              className="w-full h-12 border-dashed border-2 border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400"
-            >
-              {loadingContacts ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Importando...
-                </>
-              ) : (
-                <>
-                  <Contact className="w-5 h-5 mr-2" />
-                  Buscar na Agenda do Telefone
-                </>
-              )}
-            </Button>
+            <div className="space-y-1">
+              <Label>Buscar Cliente Cadastrado</Label>
+              <div className="relative" ref={clienteSearchRef}>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />
+                  <Input
+                    value={clienteSearch}
+                    onChange={(e) => {
+                      setClienteSearch(e.target.value);
+                      setShowClienteDropdown(true);
+                    }}
+                    onFocus={() => setShowClienteDropdown(true)}
+                    placeholder="Digite o nome ou telefone do cliente..."
+                    className="pl-9 border-purple-200 focus:border-purple-400"
+                  />
+                  {clienteSearch && (
+                    <button
+                      type="button"
+                      onClick={() => { setClienteSearch(''); setShowClienteDropdown(false); }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {showClienteDropdown && clientesFiltrados.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {clientesFiltrados.map(cliente => (
+                      <button
+                        key={cliente.id}
+                        type="button"
+                        onClick={() => handleSelectCliente(cliente)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-0"
+                      >
+                        <p className="font-medium text-gray-800 text-sm">{cliente.nome}</p>
+                        <p className="text-xs text-gray-500">{cliente.telefone}{cliente.endereco ? ` • ${cliente.endereco.slice(0, 40)}...` : ''}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showClienteDropdown && clienteSearch.trim().length > 0 && clientesFiltrados.length === 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-center text-sm text-gray-500">
+                    Nenhum cliente encontrado
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
