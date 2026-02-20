@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, MapPin, Search, ExternalLink, Contact, Plus, X } from 'lucide-react';
+import { Loader2, MapPin, Search, ExternalLink, Users, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import TimePickerClock from '@/components/ui/time-picker-clock';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ServicoForm({ open, onClose, onSave, servico, isLoading, prefilledData }) {
   const [loadingLocation, setLoadingLocation] = useState(false);
