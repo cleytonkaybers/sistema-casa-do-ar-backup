@@ -105,14 +105,6 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
                 <StatusIcon className="w-3 h-3 mr-1" />
                 {statusConfig.label}
               </Badge>
-              <button
-                onClick={() => setShowDetalhes(true)}
-                className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 hover:underline"
-                title="Ver detalhes"
-              >
-                <Eye className="w-3 h-3" />
-                detalhes
-              </button>
             </div>
           </div>
           <Button
