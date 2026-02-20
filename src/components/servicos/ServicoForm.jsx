@@ -24,6 +24,16 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     queryFn: () => base44.entities.Cliente.list(),
   });
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (clienteSearchRef.current && !clienteSearchRef.current.contains(e.target)) {
+        setShowClienteDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const clientesFiltrados = clienteSearch.trim().length > 0
     ? clientes.filter(c =>
         c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()) ||
