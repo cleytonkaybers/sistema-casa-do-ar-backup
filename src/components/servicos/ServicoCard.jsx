@@ -144,24 +144,32 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           )}
         </div>
 
-        <div className="flex gap-2 pt-2 border-t border-gray-100">
+        <div className="flex gap-1.5 pt-2 border-t border-gray-100">
           <a
             href={getWhatsAppLink(servico.telefone)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors"
+            className="flex items-center justify-center gap-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors"
           >
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>WhatsApp</span>
+            <MessageCircle className="w-3 h-3" />
+            <span>WA</span>
           </a>
+          <button
+            onClick={() => setShowDetalhes(true)}
+            className="flex items-center justify-center gap-1 px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-medium rounded-md transition-colors"
+            title="Ver detalhes"
+          >
+            <Eye className="w-3 h-3" />
+            <span>Ver</span>
+          </button>
           {mapsLink && (
             <a
               href={mapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center px-2 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md transition-colors"
+              className="flex items-center justify-center px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md transition-colors"
             >
-              <Navigation className="w-3.5 h-3.5" />
+              <Navigation className="w-3 h-3" />
             </a>
           )}
         </div>
