@@ -15,7 +15,36 @@ import { useQuery } from '@tanstack/react-query';
 
 export default function ServicoForm({ open, onClose, onSave, servico, isLoading, prefilledData }) {
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [clienteSearch, setClienteSearch] = useState('');
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false);
+  const clienteSearchRef = useRef(null);
+
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => base44.entities.Cliente.list(),
+  });
+
+  const clientesFiltrados = clienteSearch.trim().length > 0
+    ? clientes.filter(c =>
+        c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()) ||
+        c.telefone?.includes(clienteSearch)
+      )
+    : clientes.slice(0, 8);
+
+  const handleSelectCliente = (cliente) => {
+    setFormData(prev => ({
+      ...prev,
+      cliente_nome: cliente.nome || '',
+      telefone: cliente.telefone || '',
+      cpf: cliente.cpf || '',
+      endereco: cliente.endereco || '',
+      latitude: cliente.latitude || null,
+      longitude: cliente.longitude || null,
+    }));
+    setClienteSearch(cliente.nome || '');
+    setShowClienteDropdown(false);
+    toast.success(`Cliente "${cliente.nome}" selecionado!`);
+  };
   const [formData, setFormData] = useState({
     cliente_nome: '',
     cpf: '',
