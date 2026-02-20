@@ -149,10 +149,10 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
             href={getWhatsAppLink(servico.telefone)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-md transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded-md transition-opacity hover:opacity-80"
+            title="WhatsApp"
           >
-            <MessageCircle className="w-3 h-3" />
-            <span>WA</span>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" className="w-6 h-6" />
           </a>
           <button
             onClick={() => setShowDetalhes(true)}
