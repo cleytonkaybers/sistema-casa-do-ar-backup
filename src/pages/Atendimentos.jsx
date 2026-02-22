@@ -122,31 +122,33 @@ export default function Atendimentos() {
   }, [atendimentos]);
 
   const atendimentosComServicos = useMemo(() => {
-    const servicosComoAtendimentos = servicos.map(servico => ({
-      id: servico.id,
-      cliente_nome: servico.cliente_nome,
-      data_atendimento: servico.data_programada,
-      tipo_servico: servico.tipo_servico,
-      descricao: servico.descricao || '',
-      valor: servico.valor || 0,
-      status: servico.status === 'aberto' ? 'Aberto' :
-              servico.status === 'andamento' ? 'Em Andamento' :
-              servico.status === 'agendado' ? 'Agendado' :
-              servico.status === 'reagendado' ? 'Reagendado' :
-              servico.status === 'concluido' ? 'Concluído' : 'Aberto',
-      observacoes: servico.observacoes_conclusao || '',
-      origem: 'servico',
-      servico_id: servico.id,
-      horario: servico.horario,
-      dia_semana: servico.dia_semana
-    }));
+    // Serviços concluídos já viram atendimentos reais - não incluir para evitar duplicatas
+    const servicosNaoConcluidos = servicos
+      .filter(s => s.status !== 'concluido')
+      .map(servico => ({
+        id: servico.id,
+        cliente_nome: servico.cliente_nome,
+        data_atendimento: servico.data_programada,
+        tipo_servico: servico.tipo_servico,
+        descricao: servico.descricao || '',
+        valor: servico.valor || 0,
+        status: servico.status === 'aberto' ? 'Aberto' :
+                servico.status === 'andamento' ? 'Em Andamento' :
+                servico.status === 'agendado' ? 'Agendado' :
+                servico.status === 'reagendado' ? 'Reagendado' : 'Aberto',
+        observacoes: servico.observacoes_conclusao || '',
+        origem: 'servico',
+        servico_id: servico.id,
+        horario: servico.horario,
+        dia_semana: servico.dia_semana
+      }));
 
     const atendimentosReais = atendimentos.map(a => ({
       ...a,
       origem: 'atendimento'
     }));
 
-    return [...servicosComoAtendimentos, ...atendimentosReais];
+    return [...servicosNaoConcluidos, ...atendimentosReais];
   }, [servicos, atendimentos]);
 
   const filteredAtendimentos = useMemo(() => {
