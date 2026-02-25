@@ -37,7 +37,8 @@ import {
   X,
   User,
   History,
-  Info
+  Info,
+  Share2
 } from 'lucide-react';
 
 import AtendimentoForm from '@/components/atendimentos/AtendimentoForm';
