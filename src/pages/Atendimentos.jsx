@@ -69,6 +69,8 @@ export default function Atendimentos() {
   const [selectedServicoId, setSelectedServicoId] = useState(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
   const [selectedAtendimento, setSelectedAtendimento] = useState(null);
+  const [compartilharOpen, setCompartilharOpen] = useState(false);
+  const [atendimentoCompartilhar, setAtendimentoCompartilhar] = useState(null);
 
   const { data: atendimentos = [], isLoading } = useQuery({
     queryKey: ['atendimentos'],
