@@ -601,6 +601,28 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
             />
           </div>
 
+          {equipes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Equipe Responsável</Label>
+              <Select
+                value={formData.equipe_id || 'sem-equipe'}
+                onValueChange={(value) => setFormData({ ...formData, equipe_id: value === 'sem-equipe' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar equipe..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sem-equipe">Sem equipe específica</SelectItem>
+                  {equipes.map(eq => (
+                    <SelectItem key={eq.id} value={eq.id}>
+                      {eq.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancelar
