@@ -210,9 +210,15 @@ export default function AlertaAtraso({ onConcluirServico }) {
                       <Play className="w-4 h-4 mr-2 text-blue-600" />
                       Em Andamento
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ servico, novoStatus: 'concluido' })}>
-                      <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-                      Concluir
+                    <DropdownMenuItem onClick={() => {
+                       if (onConcluirServico) {
+                         onConcluirServico(servico);
+                       } else {
+                         updateStatusMutation.mutate({ servico, novoStatus: 'concluido' });
+                       }
+                     }}>
+                     <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
+                     Concluir
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
