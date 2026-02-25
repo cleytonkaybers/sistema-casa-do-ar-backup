@@ -299,6 +299,11 @@ export default function UsuariosPage() {
         </Button>
       </div>
 
+      {/* Gerenciamento de Equipes */}
+      <div className="bg-slate-800/40 rounded-2xl p-6 border border-slate-700/50">
+        <GerenciarEquipes />
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
