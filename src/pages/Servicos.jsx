@@ -540,6 +540,8 @@ export default function ServicosPage() {
         onSave={handleSave}
         servico={editingServico}
         isLoading={createMutation.isPending || updateMutation.isPending}
+        equipes={equipes}
+        currentUserEquipeId={equipeIdUsuario}
       />
 
       <ReagendarModal
