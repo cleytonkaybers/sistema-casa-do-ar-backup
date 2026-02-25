@@ -68,7 +68,9 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     horario: '',
     descricao: '',
     valor: '',
-    ativo: true
+    ativo: true,
+    equipe_id: '',
+    equipe_nome: ''
   });
 
   useEffect(() => {
