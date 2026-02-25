@@ -128,7 +128,14 @@ export default function Atendimentos() {
       .map(servico => ({
         id: servico.id,
         cliente_nome: servico.cliente_nome,
+        cpf: servico.cpf || '',
+        telefone: servico.telefone || '',
+        endereco: servico.endereco || '',
+        latitude: servico.latitude,
+        longitude: servico.longitude,
         data_atendimento: servico.data_programada,
+        horario: servico.horario || '',
+        dia_semana: servico.dia_semana || '',
         tipo_servico: servico.tipo_servico,
         descricao: servico.descricao || '',
         valor: servico.valor || 0,
@@ -137,10 +144,10 @@ export default function Atendimentos() {
                 servico.status === 'agendado' ? 'Agendado' :
                 servico.status === 'reagendado' ? 'Reagendado' : 'Aberto',
         observacoes: servico.observacoes_conclusao || '',
+        equipe_id: servico.equipe_id || '',
+        equipe_nome: servico.equipe_nome || '',
         origem: 'servico',
         servico_id: servico.id,
-        horario: servico.horario,
-        dia_semana: servico.dia_semana
       }));
 
     const atendimentosReais = atendimentos.map(a => ({
