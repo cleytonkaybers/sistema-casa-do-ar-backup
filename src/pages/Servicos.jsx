@@ -34,9 +34,23 @@ export default function ServicosPage() {
 
   const queryClient = useQueryClient();
 
+  React.useEffect(() => {
+    base44.auth.me().then(u => setCurrentUser(u)).catch(() => {});
+  }, []);
+
   const { data: servicos = [], isLoading } = useQuery({
     queryKey: ['servicos'],
     queryFn: () => base44.entities.Servico.list('-created_date'),
+  });
+
+  const { data: equipes = [] } = useQuery({
+    queryKey: ['equipes'],
+    queryFn: () => base44.entities.Equipe.list(),
+  });
+
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
   });
 
   const createMutation = useMutation({
