@@ -15,7 +15,7 @@ import { format, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-export default function AlertaAtraso() {
+export default function AlertaAtraso({ onConcluirServico }) {
   const [dismissed, setDismissed] = useState(false);
   const [notificacaoEnviada, setNotificacaoEnviada] = useState(false);
   const queryClient = useQueryClient();
