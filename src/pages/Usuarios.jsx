@@ -14,6 +14,7 @@ import { Loader2, Users, Shield, Mail, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePermissions } from '../components/auth/PermissionGuard';
 import { useEmpresa } from '../components/auth/EmpresaGuard';
+import GerenciarEquipes from '../components/equipes/GerenciarEquipes';
 
 const perfisPreDefinidos = {
   admin: {
