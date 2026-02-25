@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ServicoDetalhesModal from './ServicoDetalhesModal';
 
-export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange, onShare, compact = false }) {
+export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange, onShare, compact = false, equipes = [] }) {
   const [showDetalhes, setShowDetalhes] = useState(false);
   const formatPhone = (phone) => {
     if (!phone) return '';
