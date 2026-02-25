@@ -632,6 +632,13 @@ export default function Atendimentos() {
         onClose={() => { setDetalhesOpen(false); setSelectedAtendimento(null); }}
         atendimento={selectedAtendimento}
       />
+
+      <CompartilharModal
+        open={compartilharOpen}
+        onClose={() => { setCompartilharOpen(false); setAtendimentoCompartilhar(null); }}
+        servico={atendimentoCompartilhar}
+        isConclusao={false}
+      />
     </div>
   );
 }
