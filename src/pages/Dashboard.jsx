@@ -152,41 +152,41 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-3xl font-bold text-white">
             Dashboard
           </h1>
-          <p className="text-purple-300/70 mt-1 flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Visão geral - {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          <p className="text-blue-300/70 mt-1 flex items-center gap-2 text-xs sm:text-sm">
+            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+            {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
            <Link to={createPageUrl('Servicos')}>
-             <Button className="bg-gradient-to-r from-pink-500 via-purple-500 to-violet-600 hover:from-pink-600 hover:via-purple-600 hover:to-violet-700 shadow-xl shadow-purple-500/50">
-               <Plus className="w-4 h-4 mr-2" />
-               Novo Serviço
+             <Button className="text-xs sm:text-sm px-3 sm:px-4 h-9 text-white font-bold" style={{background: 'linear-gradient(135deg, #1e40af, #2563eb)'}}>
+               <Plus className="w-4 h-4 mr-1" />
+               <span className="hidden xs:inline">Novo </span>Serviço
              </Button>
            </Link>
            <Link to={createPageUrl('Clientes')}>
-             <Button className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 hover:from-cyan-600 hover:via-blue-600 hover:to-purple-700 shadow-xl shadow-blue-500/50">
-               <Users className="w-4 h-4 mr-2" />
-               Ver Clientes
+             <Button className="text-xs sm:text-sm px-3 sm:px-4 h-9 text-white font-bold" style={{background: 'linear-gradient(135deg, #f59e0b, #d97706)'}}>
+               <Users className="w-4 h-4 mr-1" />
+               <span className="hidden xs:inline">Ver </span>Clientes
              </Button>
            </Link>
          </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Total de Clientes"
           value={totalClientes}
           icon={Users}
-          color="bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600"
+          color="bg-blue-700"
           subtitle={`${clientesAtivos} ativos`}
           href={createPageUrl('Clientes')}
         />
@@ -194,15 +194,15 @@ export default function Dashboard() {
           title="Atendimentos do Mês"
           value={atendimentosDoMes.length}
           icon={ClipboardList}
-          color="bg-gradient-to-br from-blue-500 to-cyan-500"
-          subtitle={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
+          color="bg-yellow-500"
+          subtitle={format(new Date(), "MMMM", { locale: ptBR })}
           href={createPageUrl('Atendimentos')}
         />
         <StatCard
           title="Manutenções Pendentes"
           value={manutencoesPendentes.length}
           icon={AlertTriangle}
-          color={manutencoesPendentes.length > 0 ? "bg-gradient-to-br from-orange-500 to-red-500" : "bg-gradient-to-br from-emerald-500 to-teal-600"}
+          color={manutencoesPendentes.length > 0 ? "bg-orange-500" : "bg-emerald-600"}
           subtitle="Próximos 30 dias"
           href={createPageUrl('PreventivasFuturas')}
         />
@@ -210,26 +210,26 @@ export default function Dashboard() {
           title="Serviços Concluídos"
           value={atendimentosConcluidos}
           icon={CheckCircle2}
-          color="bg-gradient-to-br from-emerald-500 to-teal-600"
+          color="bg-emerald-600"
           subtitle="Total histórico"
           href={createPageUrl('Atendimentos')}
         />
       </div>
 
       {/* Filtro de Serviços */}
-      <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <Card className="border border-blue-800/40 shadow-xl" style={{backgroundColor: '#243447'}}>
+        <CardHeader className="pb-3 px-4 pt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-600/30 rounded-xl flex items-center justify-center">
-                <Filter className="w-5 h-5 text-purple-400" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{backgroundColor: 'rgba(245,158,11,0.2)'}}>
+                <Filter className="w-4 h-4 text-yellow-400" />
               </div>
-              <CardTitle className="text-lg font-semibold text-white">
+              <CardTitle className="text-base sm:text-lg font-semibold text-white">
                 Serviços Realizados
               </CardTitle>
             </div>
             <Select value={filtroServicos} onValueChange={setFiltroServicos}>
-              <SelectTrigger className="w-full sm:w-48 bg-purple-900/40 border-purple-700/50 text-white">
+              <SelectTrigger className="w-full sm:w-40 border-blue-800/50 text-white text-sm" style={{backgroundColor: 'rgba(30,64,175,0.2)'}}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -240,47 +240,47 @@ export default function Dashboard() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+        <CardContent className="px-4 pb-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-7 h-7 bg-green-500/20 rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-green-400" />
                 </div>
-                <span className="text-sm text-gray-400">Concluídos</span>
+                <span className="text-xs text-blue-300/70">Concluídos</span>
               </div>
-              <p className="text-2xl font-bold text-white">{servicosConcluidos}</p>
+              <p className="text-xl font-bold text-white">{servicosConcluidos}</p>
             </div>
-            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-7 h-7 bg-blue-500/20 rounded-lg flex items-center justify-center">
                   <Clock className="w-4 h-4 text-blue-400" />
                 </div>
-                <span className="text-sm text-gray-400">Em Andamento</span>
+                <span className="text-xs text-blue-300/70">Andamento</span>
               </div>
-              <p className="text-2xl font-bold text-white">{servicosAndamento}</p>
+              <p className="text-xl font-bold text-white">{servicosAndamento}</p>
             </div>
-            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-7 h-7 bg-yellow-500/20 rounded-lg flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-yellow-400" />
                 </div>
-                <span className="text-sm text-gray-400">Agendados</span>
+                <span className="text-xs text-blue-300/70">Agendados</span>
               </div>
-              <p className="text-2xl font-bold text-white">{servicosAgendados}</p>
+              <p className="text-xl font-bold text-white">{servicosAgendados}</p>
             </div>
-            <div className="bg-purple-900/40 border border-purple-700/30 rounded-xl p-4">
+            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-7 h-7 bg-gray-500/20 rounded-lg flex items-center justify-center">
                   <ClipboardList className="w-4 h-4 text-gray-400" />
                 </div>
-                <span className="text-sm text-gray-400">Abertos</span>
+                <span className="text-xs text-blue-300/70">Abertos</span>
               </div>
-              <p className="text-2xl font-bold text-white">{servicosAbertos}</p>
+              <p className="text-xl font-bold text-white">{servicosAbertos}</p>
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-purple-700/30">
-            <p className="text-sm text-gray-400 text-center">
+          <div className="mt-3 pt-3 border-t border-blue-800/40">
+            <p className="text-xs text-blue-300/60 text-center">
               Total de <span className="text-white font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
             </p>
           </div>
@@ -289,59 +289,48 @@ export default function Dashboard() {
 
       {/* Manutenções Vencidas - Alerta Destaque */}
       {manutencoesVencidas.length > 0 && (
-        <Card className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 border-0 shadow-2xl shadow-red-500/40">
-          <CardHeader className="pb-3">
+        <Card className="border-0 shadow-2xl shadow-red-500/30" style={{background: 'linear-gradient(135deg, #dc2626, #ea580c)'}}>
+          <CardHeader className="pb-2 px-4 pt-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <AlertTriangle className="w-7 h-7 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold text-white">
+                  <CardTitle className="text-base sm:text-xl font-bold text-white">
                     Manutenções Vencidas
                   </CardTitle>
-                  <p className="text-white/90 text-sm mt-1">
-                    {manutencoesVencidas.length} {manutencoesVencidas.length === 1 ? 'cliente precisa' : 'clientes precisam'} de atenção urgente
+                  <p className="text-white/90 text-xs sm:text-sm">
+                    {manutencoesVencidas.length} {manutencoesVencidas.length === 1 ? 'cliente precisa' : 'clientes precisam'} de atenção
                   </p>
                 </div>
               </div>
               <Link to={createPageUrl('PreventivasFuturas')}>
-                <Button variant="ghost" className="text-white hover:bg-white/20 hover:text-white">
-                  Ver todas <ArrowRight className="w-4 h-4 ml-1" />
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 hover:text-white text-xs sm:text-sm">
+                  Ver <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                 </Button>
               </Link>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="px-4 pb-4">
+            <div className="space-y-2">
               {manutencoesVencidas.slice(0, 5).map((cliente) => {
                 const daysOverdue = Math.abs(differenceInDays(new Date(cliente.proxima_manutencao), new Date()));
-
                 return (
-                  <Link 
-                    key={cliente.id} 
-                    to={createPageUrl('PreventivasFuturas')}
-                    className="block"
-                  >
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-white/95 hover:bg-white hover:shadow-md transition-all cursor-pointer group">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Snowflake className="w-6 h-6 text-red-600" />
+                  <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/95 hover:bg-white transition-all cursor-pointer">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-9 h-9 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                          <Snowflake className="w-4 h-4 sm:w-6 sm:h-6 text-red-600" />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-800 group-hover:text-red-600 transition-colors">{cliente.nome}</p>
-                          <p className="text-sm text-gray-600">
-                            {cliente.telefone && formatPhone(cliente.telefone)}
-                          </p>
+                          <p className="font-semibold text-gray-800 text-sm sm:text-base">{cliente.nome}</p>
+                          <p className="text-xs text-gray-600">{cliente.telefone && formatPhone(cliente.telefone)}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-base font-bold text-red-600">
-                          {daysOverdue} {daysOverdue === 1 ? 'dia' : 'dias'} atrasado
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Desde {format(new Date(cliente.proxima_manutencao), "dd/MM/yyyy")}
-                        </p>
+                        <p className="text-sm font-bold text-red-600">{daysOverdue}d atrasado</p>
+                        <p className="text-xs text-gray-500">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
                       </div>
                     </div>
                   </Link>
@@ -353,56 +342,47 @@ export default function Dashboard() {
       )}
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Manutenções Pendentes */}
-        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold text-white">
+        <Card className="border border-blue-800/40 shadow-xl" style={{backgroundColor: '#243447'}}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
+            <CardTitle className="text-base sm:text-lg font-semibold text-white">
               Manutenções Pendentes
             </CardTitle>
             <AlertTriangle className="w-5 h-5 text-orange-400" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4">
             {manutencoesPendentes.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-green-600" />
+              <div className="text-center py-6">
+                <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-400" />
                 </div>
-                <p className="text-gray-500">Nenhuma manutenção pendente</p>
+                <p className="text-blue-300/60 text-sm">Nenhuma manutenção pendente</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {manutencoesPendentes.slice(0, 5).map((cliente) => {
                   const daysUntil = differenceInDays(new Date(cliente.proxima_manutencao), new Date());
                   const isOverdue = daysUntil < 0;
-                  
                   return (
-                    <Link 
-                      key={cliente.id}
-                      to={createPageUrl('PreventivasFuturas')}
-                      className="block"
-                    >
-                      <div className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:shadow-md transition-all group ${
-                        isOverdue ? 'bg-red-50 border border-red-100 hover:bg-red-100' : 'bg-amber-50 border border-amber-100 hover:bg-amber-100'
+                    <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block">
+                      <div className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
+                        isOverdue ? 'bg-red-900/30 border border-red-700/40' : 'bg-yellow-900/20 border border-yellow-700/30'
                       }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform ${
-                            isOverdue ? 'bg-red-100' : 'bg-amber-100'
-                          }`}>
-                            <Snowflake className={`w-5 h-5 ${isOverdue ? 'text-red-600' : 'text-amber-600'}`} />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isOverdue ? 'bg-red-500/20' : 'bg-yellow-500/20'}`}>
+                            <Snowflake className={`w-4 h-4 ${isOverdue ? 'text-red-400' : 'text-yellow-400'}`} />
                           </div>
                           <div>
-                            <p className="font-medium text-black">{cliente.nome}</p>
-                            <p className="text-xs text-gray-600">{cliente.tipo_equipamento || 'Não especificado'}</p>
+                            <p className="font-medium text-white text-sm">{cliente.nome}</p>
+                            <p className="text-xs text-blue-300/60">{cliente.tipo_equipamento || 'N/A'}</p>
                           </div>
                         </div>
-                        <div className={`text-right ${isOverdue ? 'text-red-400' : 'text-orange-400'}`}>
-                          <p className="text-sm font-medium">
-                            {isOverdue ? `${Math.abs(daysUntil)} dias atrasado` : `em ${daysUntil} dias`}
+                        <div className={`text-right ${isOverdue ? 'text-red-400' : 'text-yellow-400'}`}>
+                          <p className="text-xs font-medium">
+                            {isOverdue ? `${Math.abs(daysUntil)}d atrasado` : `em ${daysUntil}d`}
                           </p>
-                          <p className="text-xs text-gray-400">
-                            {format(new Date(cliente.proxima_manutencao), "dd/MM/yyyy")}
-                          </p>
+                          <p className="text-xs text-blue-300/50">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
                         </div>
                       </div>
                     </Link>
@@ -414,61 +394,53 @@ export default function Dashboard() {
         </Card>
 
         {/* Últimos Clientes */}
-        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30 shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold text-white">
+        <Card className="border border-blue-800/40 shadow-xl" style={{backgroundColor: '#243447'}}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
+            <CardTitle className="text-base sm:text-lg font-semibold text-white">
               Últimos Clientes
             </CardTitle>
             <Link to={createPageUrl('Clientes')}>
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                Ver todos <ArrowRight className="w-4 h-4 ml-1" />
+              <Button variant="ghost" size="sm" className="text-yellow-400 hover:text-yellow-300 text-xs sm:text-sm">
+                Ver todos <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
               </Button>
             </Link>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4">
             {clientes.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-gray-400" />
+              <div className="text-center py-6">
+                <div className="w-12 h-12 bg-blue-800/40 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-blue-400" />
                 </div>
-                <p className="text-gray-500">Nenhum cliente cadastrado</p>
+                <p className="text-blue-300/60 text-sm">Nenhum cliente cadastrado</p>
                 <Link to={createPageUrl('Clientes')}>
-                  <Button variant="outline" className="mt-4">
+                  <Button variant="outline" className="mt-3 text-sm border-blue-700 text-blue-300">
                     Cadastrar primeiro cliente
                   </Button>
                 </Link>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {clientes.slice(0, 5).map((cliente) => (
-                  <Link 
-                    key={cliente.id}
-                    to={createPageUrl('Clientes')}
-                    className="block"
-                  >
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-purple-900/40 hover:bg-purple-800/50 hover:shadow-md hover:shadow-purple-500/20 transition-all cursor-pointer group border border-purple-700/30">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-semibold group-hover:scale-110 transition-transform shadow-md">
+                  <Link key={cliente.id} to={createPageUrl('Clientes')} className="block">
+                    <div className="flex items-center justify-between p-3 rounded-lg transition-all cursor-pointer group border border-blue-800/30 hover:border-yellow-600/40" style={{backgroundColor: 'rgba(30,64,175,0.12)'}}>
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md" style={{background: 'linear-gradient(135deg, #1e40af, #f59e0b)'}}>
                           {cliente.nome?.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-white group-hover:text-cyan-400 transition-colors">{cliente.nome}</p>
-                          <p className="text-xs text-gray-400">{cliente.cidade || 'Sem cidade'}</p>
+                          <p className="font-medium text-white text-sm group-hover:text-yellow-400 transition-colors">{cliente.nome}</p>
+                          <p className="text-xs text-blue-300/50">{cliente.cidade || 'Sem cidade'}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400">
-                          {format(new Date(cliente.created_date), "dd/MM/yyyy")}
-                        </p>
-                      </div>
+                      <p className="text-xs text-blue-300/50">{format(new Date(cliente.created_date), "dd/MM/yy")}</p>
                     </div>
                   </Link>
                 ))}
               </div>
             )}
           </CardContent>
-          </Card>
-          </div>
-          </div>
-          );
+        </Card>
+      </div>
+    </div>
+  );
           }
