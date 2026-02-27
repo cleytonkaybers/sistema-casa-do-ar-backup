@@ -293,12 +293,13 @@ export default function PreventivasFuturasPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
         <Input
           placeholder="Buscar por nome ou telefone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 h-11"
+          className="pl-10 h-11 border-blue-800/50 text-white placeholder:text-blue-400/60"
+          style={{backgroundColor: 'rgba(30,64,175,0.2)'}}
         />
       </div>
 
