@@ -76,7 +76,7 @@ export default function RelatóriosPage() {
     });
 
     return { servicosFiltrados, atendimentosFiltrados };
-  }, [servicos, atendimentos, filteredStartDate, filteredEndDate]);
+  }, [servicos, atendimentos, filteredStartDate, filteredEndDate, filtroCategoria]);
 
   // Preparar dados para gráfico de tendências
   const trendsData = useMemo(() => {
