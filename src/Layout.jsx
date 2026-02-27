@@ -141,7 +141,7 @@ function LayoutContent({ children }) {
                 <h1 className="font-bold text-white text-lg leading-tight">
                   {currentEmpresa?.nome || companySettings.company_name}
                 </h1>
-                <p className="text-xs text-purple-300/80">
+                <p className="text-xs text-blue-300/80">
                   {isSuperAdmin() ? 'Super Admin' : currentUser?.tipo_usuario === 'admin_empresa' ? 'Administrador' : 'Climatização'}
                 </p>
               </div>
