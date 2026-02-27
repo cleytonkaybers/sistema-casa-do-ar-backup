@@ -213,19 +213,21 @@ export default function ServicosPage() {
           data_atualizacao_status: new Date().toISOString()
         });
 
-        // Gerar preventiva futura: atualiza última manutenção e define próxima 6 meses à frente
-        const dataConc = servicoParaConcluir.data_programada || new Date().toISOString().split('T')[0];
-        const proxima = new Date(dataConc);
-        proxima.setMonth(proxima.getMonth() + 6);
-        const proximaStr = proxima.toISOString().split('T')[0];
+        // Gerar preventiva futura apenas se não for serviço avulso
+        if (!servicoParaConcluir.sem_registro_cliente) {
+          const dataConc = servicoParaConcluir.data_programada || new Date().toISOString().split('T')[0];
+          const proxima = new Date(dataConc);
+          proxima.setMonth(proxima.getMonth() + 6);
+          const proximaStr = proxima.toISOString().split('T')[0];
 
-        const clientesMatch = await base44.entities.Cliente.filter({ telefone: servicoParaConcluir.telefone });
-        if (clientesMatch.length > 0) {
-          await base44.entities.Cliente.update(clientesMatch[0].id, {
-            ultima_manutencao: dataConc,
-            proxima_manutencao: proximaStr
-          });
-          queryClient.invalidateQueries({ queryKey: ['clientes'] });
+          const clientesMatch = await base44.entities.Cliente.filter({ telefone: servicoParaConcluir.telefone });
+          if (clientesMatch.length > 0) {
+            await base44.entities.Cliente.update(clientesMatch[0].id, {
+              ultima_manutencao: dataConc,
+              proxima_manutencao: proximaStr
+            });
+            queryClient.invalidateQueries({ queryKey: ['clientes'] });
+          }
         }
 
         // Remover notificações de atraso relacionadas a este serviço
