@@ -459,7 +459,7 @@ export default function Atendimentos() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleVerDetalhes(atendimento)}
-                            className="text-gray-500 hover:text-blue-600"
+                            className="text-blue-300 hover:text-blue-400"
                             title="Ver Detalhes"
                           >
                             <Info className="w-4 h-4" />
@@ -469,7 +469,7 @@ export default function Atendimentos() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleVerHistorico(atendimento)}
-                              className="text-gray-500 hover:text-purple-600"
+                              className="text-blue-300 hover:text-purple-400"
                               title="Ver Histórico"
                             >
                               <History className="w-4 h-4" />
@@ -481,7 +481,7 @@ export default function Atendimentos() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleEdit(atendimento)}
-                                className="text-gray-500 hover:text-blue-600"
+                                className="text-blue-300 hover:text-yellow-400"
                               >
                                 <Pencil className="w-4 h-4" />
                               </Button>
@@ -489,7 +489,7 @@ export default function Atendimentos() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDelete(atendimento)}
-                                className="text-gray-500 hover:text-red-600"
+                                className="text-blue-300 hover:text-red-400"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
