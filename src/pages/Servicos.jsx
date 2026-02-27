@@ -55,29 +55,32 @@ export default function ServicosPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const servico = await base44.entities.Servico.create(data);
+      const { sem_registro_cliente, ...servicoData } = data;
+      const servico = await base44.entities.Servico.create(servicoData);
       
-      // Verificar duplicata por telefone OU por nome (normalizado)
-      const telefoneLimpo = data.telefone?.replace(/\D/g, '') || '';
-      const nomeLower = data.cliente_nome?.trim().toLowerCase() || '';
+      if (!sem_registro_cliente) {
+        // Verificar duplicata por telefone OU por nome (normalizado)
+        const telefoneLimpo = data.telefone?.replace(/\D/g, '') || '';
+        const nomeLower = data.cliente_nome?.trim().toLowerCase() || '';
 
-      const [porTelefone, porNome] = await Promise.all([
-        telefoneLimpo ? base44.entities.Cliente.filter({ telefone: data.telefone }) : Promise.resolve([]),
-        base44.entities.Cliente.list(),
-      ]);
+        const [porTelefone, porNome] = await Promise.all([
+          telefoneLimpo ? base44.entities.Cliente.filter({ telefone: data.telefone }) : Promise.resolve([]),
+          base44.entities.Cliente.list(),
+        ]);
 
-      const jaExistePorTelefone = porTelefone.length > 0;
-      const jaExistePorNome = porNome.some(c => c.nome?.trim().toLowerCase() === nomeLower);
+        const jaExistePorTelefone = porTelefone.length > 0;
+        const jaExistePorNome = porNome.some(c => c.nome?.trim().toLowerCase() === nomeLower);
 
-      if (!jaExistePorTelefone && !jaExistePorNome) {
-        await base44.entities.Cliente.create({
-          nome: data.cliente_nome,
-          telefone: data.telefone,
-          endereco: data.endereco || '',
-          latitude: data.latitude || null,
-          longitude: data.longitude || null,
-        });
-        toast.success('Cliente cadastrado automaticamente!');
+        if (!jaExistePorTelefone && !jaExistePorNome) {
+          await base44.entities.Cliente.create({
+            nome: data.cliente_nome,
+            telefone: data.telefone,
+            endereco: data.endereco || '',
+            latitude: data.latitude || null,
+            longitude: data.longitude || null,
+          });
+          toast.success('Cliente cadastrado automaticamente!');
+        }
       }
       
       return servico;
