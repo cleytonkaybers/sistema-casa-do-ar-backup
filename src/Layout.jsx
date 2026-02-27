@@ -198,7 +198,7 @@ function LayoutContent({ children }) {
       <div className="lg:pl-72">
         <ChatWidget />
         {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-gradient-to-r from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-lg border-b border-purple-700/30">
+        <header className="sticky top-0 z-30 backdrop-blur-lg border-b border-blue-900/50" style={{backgroundColor: 'rgba(15,25,35,0.97)'}}>
           <div className="flex items-center justify-between px-4 lg:px-8 py-4">
             <button
               onClick={() => setSidebarOpen(true)}
