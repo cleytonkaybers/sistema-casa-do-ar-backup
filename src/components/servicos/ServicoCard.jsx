@@ -127,7 +127,7 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
             variant="ghost"
             size="icon"
             onClick={handleShare}
-            className="h-8 w-8 text-gray-400 hover:text-blue-600 flex-shrink-0"
+            className="h-8 w-8 text-blue-300 hover:text-white flex-shrink-0"
           >
             <Share2 className="w-4 h-4" />
           </Button>
