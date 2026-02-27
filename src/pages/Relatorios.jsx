@@ -147,6 +147,23 @@ export default function RelatóriosPage() {
         <p className="text-gray-400 mt-1">Análise detalhada de serviços, clientes e performance</p>
       </div>
 
+      {/* Filtro por categoria de serviço */}
+      <div className="flex flex-wrap gap-2">
+        {['todas', ...CATEGORIAS_SERVICO.map(c => c.label)].map(cat => (
+          <button
+            key={cat}
+            onClick={() => setFiltroCategoria(cat)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${
+              filtroCategoria === cat
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-slate-800 border-slate-600 text-gray-300 hover:border-blue-500 hover:text-white'
+            }`}
+          >
+            {cat === 'todas' ? 'Todos os tipos' : cat}
+          </button>
+        ))}
+      </div>
+
       {/* Date Range Selector */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
