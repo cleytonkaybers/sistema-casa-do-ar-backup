@@ -377,10 +377,10 @@ export default function ServicosPage() {
         setShowConclusaoModal(true);
       }} />
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Serviços</h1>
-          <p className="text-gray-500 mt-1">Gerencie serviços diários e semanais</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-white">Serviços</h1>
+          <p className="text-blue-300/60 mt-1 text-xs sm:text-sm">Gerencie serviços diários e semanais</p>
         </div>
         <Button
           onClick={() => {
