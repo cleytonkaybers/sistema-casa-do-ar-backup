@@ -508,7 +508,7 @@ export default function Atendimentos() {
           <div className="lg:hidden space-y-4">
             {filteredAtendimentos.map((atendimento) => {
               return (
-                <Card key={`${atendimento.origem}-${atendimento.id}`} className="bg-white border-0 shadow-md">
+                <Card key={`${atendimento.origem}-${atendimento.id}`} className="border border-blue-800/40 shadow-md" style={{backgroundColor: '#243447'}}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -516,8 +516,8 @@ export default function Atendimentos() {
                           {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{atendimento.cliente_nome || 'Cliente não identificado'}</p>
-                          <p className="text-sm text-gray-500">{atendimento.tipo_servico}</p>
+                          <p className="font-medium text-white">{atendimento.cliente_nome || 'Cliente não identificado'}</p>
+                          <p className="text-sm text-blue-300/70">{atendimento.tipo_servico}</p>
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
@@ -530,23 +530,23 @@ export default function Atendimentos() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                    <div className="flex items-center justify-between text-sm text-blue-200 mb-3">
                       <div className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <Calendar className="w-4 h-4 text-blue-400" />
                         {format(new Date(atendimento.data_atendimento), "dd/MM/yyyy", { locale: ptBR })}
                       </div>
-                      <span className="font-medium text-green-600">
+                      <span className="font-medium text-green-400">
                         {formatCurrency(atendimento.valor)}
                       </span>
                     </div>
 
                     {atendimento.descricao && (
-                      <p className="text-sm text-gray-500 bg-gray-50 p-2 rounded-lg mb-3 line-clamp-2">
+                      <p className="text-sm text-blue-300/70 border border-blue-800/40 p-2 rounded-lg mb-3 line-clamp-2" style={{backgroundColor: 'rgba(30,64,175,0.1)'}}>
                         {atendimento.descricao}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-2 pt-3 border-t">
+                    <div className="flex items-center gap-2 pt-3 border-t border-blue-800/40">
                       <Button
                         variant="outline"
                         size="sm"
