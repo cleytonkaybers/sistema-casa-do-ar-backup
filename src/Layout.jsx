@@ -167,10 +167,11 @@ function LayoutContent({ children }) {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                     ${active 
-                      ? 'bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 text-white shadow-xl shadow-purple-500/50' 
-                      : 'text-purple-200/70 hover:bg-purple-700/40 hover:text-purple-100'
+                      ? 'text-white shadow-xl' 
+                      : 'text-blue-200/80 hover:text-white'
                     }
                   `}
+                  style={active ? {background: 'linear-gradient(90deg, #1e40af, #f59e0b)'} : {}}
                 >
                   <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-purple-300/60'}`} />
                   <span className="font-medium">{item.name}</span>
