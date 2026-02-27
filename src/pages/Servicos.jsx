@@ -461,7 +461,7 @@ export default function ServicosPage() {
               const servicosDoDia = servicosPorDia[dia] || [];
               
               return (
-                <div key={dia} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+                <div key={dia} className="rounded-xl shadow-lg border border-blue-800/40 overflow-hidden flex flex-col h-full" style={{backgroundColor: '#243447'}}>
                   <div className={`bg-gradient-to-r ${diaColors[dia]} px-4 py-3 sticky top-0 z-10`}>
                     <h3 className="font-bold text-white text-center text-sm lg:text-base">
                       {dia}
