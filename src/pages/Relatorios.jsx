@@ -2,294 +2,417 @@ import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, TrendingUp, Users, DollarSign } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import DateRangeSelector from '../components/reporting/DateRangeSelector';
-import ServiceTrendsChart from '../components/reporting/ServiceTrendsChart';
-import ClientDemographicsChart from '../components/reporting/ClientDemographicsChart';
-import ExportButtons from '../components/reporting/ExportButtons';
+import { Loader2, TrendingUp, DollarSign, CheckCircle, Clock, Filter, BarChart2, List } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval, parseISO } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import NoPermission from '../components/NoPermission';
 import { usePermissions } from '../components/auth/PermissionGuard';
 
-const CATEGORIAS_SERVICO = [
-  { label: 'Limpeza', keywords: ['limpeza'] },
-  { label: 'Instalação', keywords: ['instalação', 'instalacao'] },
-  { label: 'Recarga de Gás', keywords: ['recarga', 'carga de gás', 'carga de gas'] },
-  { label: 'Conserto / Reparo', keywords: ['troca', 'conserto', 'reparo', 'solda', 'capacitor', 'relé', 'sensor', 'chave', 'placa', 'defeito'] },
-  { label: 'Retirada', keywords: ['retirada'] },
-  { label: 'Outros', keywords: [] },
+const TIPOS_SERVICO = [
+  "Limpeza de 9k", "Limpeza de 12k", "Limpeza de 18k", "Limpeza de 22 a 24k",
+  "Limpeza de 24k", "Limpeza de 30 a 32k", "Limpeza piso e teto",
+  "Instalação de 9k", "Instalação de 12k", "Instalação de 18k", "Instalação de 22 a 24k",
+  "Instalação de 24k", "Instalação de 30 a 32k", "Instalação piso e teto",
+  "Troca de capacitor", "Recarga de gás", "Carga de gás completa", "Serviço de solda",
+  "Troca de relé da placa", "Troca de sensor", "Troca de chave contadora",
+  "Conserto de placa eletrônica", "Retirada de ar condicionado",
+  "Serviço de passar tubulação de infra", "Ver defeito", "Troca de local", "Outro tipo de serviço"
+];
+
+const CATEGORIAS = [
+  { label: 'Limpeza', keywords: ['limpeza'], color: '#06b6d4' },
+  { label: 'Instalação', keywords: ['instalação', 'instalacao'], color: '#8b5cf6' },
+  { label: 'Recarga / Gás', keywords: ['recarga', 'carga de gás', 'carga de gas'], color: '#f59e0b' },
+  { label: 'Conserto / Reparo', keywords: ['troca', 'conserto', 'solda', 'capacitor', 'relé', 'sensor', 'chave', 'placa', 'defeito'], color: '#ef4444' },
+  { label: 'Retirada', keywords: ['retirada'], color: '#ec4899' },
+  { label: 'Outros', keywords: [], color: '#6b7280' },
 ];
 
 function getCategoria(tipoServico) {
   if (!tipoServico) return 'Outros';
   const lower = tipoServico.toLowerCase();
-  for (const cat of CATEGORIAS_SERVICO) {
+  for (const cat of CATEGORIAS) {
     if (cat.keywords.length === 0) continue;
     if (cat.keywords.some(k => lower.includes(k))) return cat.label;
   }
   return 'Outros';
 }
 
+const PERIODOS = [
+  { label: 'Este mês', getValue: () => { const t = new Date(); return { start: startOfMonth(t), end: endOfMonth(t) }; } },
+  { label: 'Mês passado', getValue: () => { const t = subMonths(new Date(), 1); return { start: startOfMonth(t), end: endOfMonth(t) }; } },
+  { label: 'Últimos 3 meses', getValue: () => ({ start: startOfMonth(subMonths(new Date(), 2)), end: endOfMonth(new Date()) }) },
+  { label: 'Últimos 6 meses', getValue: () => ({ start: startOfMonth(subMonths(new Date(), 5)), end: endOfMonth(new Date()) }) },
+  { label: 'Este ano', getValue: () => ({ start: new Date(new Date().getFullYear(), 0, 1), end: new Date(new Date().getFullYear(), 11, 31) }) },
+  { label: 'Personalizado', getValue: null },
+];
+
+const COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#6b7280', '#10b981', '#3b82f6'];
+
 export default function RelatóriosPage() {
   const { isAdmin } = usePermissions();
   const today = new Date();
-  const [startDate, setStartDate] = useState(startOfMonth(today));
-  const [endDate, setEndDate] = useState(endOfMonth(today));
-  const [filteredStartDate, setFilteredStartDate] = useState(startOfMonth(today));
-  const [filteredEndDate, setFilteredEndDate] = useState(endOfMonth(today));
+
+  const [periodoSelecionado, setPeriodoSelecionado] = useState(0);
+  const [customStart, setCustomStart] = useState(format(startOfMonth(today), 'yyyy-MM-dd'));
+  const [customEnd, setCustomEnd] = useState(format(endOfMonth(today), 'yyyy-MM-dd'));
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
+  const [filtroTipoEspecifico, setFiltroTipoEspecifico] = useState('todos');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [viewMode, setViewMode] = useState('resumo'); // 'resumo' | 'detalhado'
 
-  // Buscar dados
-  const { data: servicos = [], isLoading: servLoading } = useQuery({
+  const dateRange = useMemo(() => {
+    if (periodoSelecionado === 5) {
+      return { start: parseISO(customStart), end: parseISO(customEnd) };
+    }
+    return PERIODOS[periodoSelecionado].getValue();
+  }, [periodoSelecionado, customStart, customEnd]);
+
+  const { data: servicos = [], isLoading } = useQuery({
     queryKey: ['servicos'],
-    queryFn: () => base44.entities.Servico.list('-data_programada')
+    queryFn: () => base44.entities.Servico.list('-data_programada', 2000)
   });
 
-  const { data: clientes = [], isLoading: clientLoading } = useQuery({
-    queryKey: ['clientes'],
-    queryFn: () => base44.entities.Cliente.list('-created_date')
-  });
-
-  const { data: atendimentos = [], isLoading: atendLoading } = useQuery({
-    queryKey: ['atendimentos'],
-    queryFn: () => base44.entities.Atendimento.list('-data_atendimento')
-  });
-
-  const isLoading = servLoading || clientLoading || atendLoading;
-
-  // Filtrar dados pelo período
-  const filteredData = useMemo(() => {
-    const servicosFiltrados = servicos.filter(s => {
+  const servicosFiltrados = useMemo(() => {
+    return servicos.filter(s => {
       if (!s.data_programada) return false;
-      const date = new Date(s.data_programada);
-      const noIntervalo = isWithinInterval(date, { start: filteredStartDate, end: filteredEndDate });
-      if (!noIntervalo) return false;
-      if (filtroCategoria !== 'todas') return getCategoria(s.tipo_servico) === filtroCategoria;
+      const date = parseISO(s.data_programada);
+      if (!isWithinInterval(date, { start: dateRange.start, end: dateRange.end })) return false;
+      if (filtroCategoria !== 'todas' && getCategoria(s.tipo_servico) !== filtroCategoria) return false;
+      if (filtroTipoEspecifico !== 'todos' && s.tipo_servico !== filtroTipoEspecifico) return false;
+      if (filtroStatus !== 'todos' && s.status !== filtroStatus) return false;
       return true;
     });
+  }, [servicos, dateRange, filtroCategoria, filtroTipoEspecifico, filtroStatus]);
 
-    const atendimentosFiltrados = atendimentos.filter(a => {
-      if (!a.data_atendimento) return false;
-      const date = new Date(a.data_atendimento);
-      return isWithinInterval(date, { start: filteredStartDate, end: filteredEndDate });
-    });
-
-    return { servicosFiltrados, atendimentosFiltrados };
-  }, [servicos, atendimentos, filteredStartDate, filteredEndDate, filtroCategoria]);
-
-  // Preparar dados para gráfico de tendências
-  const trendsData = useMemo(() => {
-    const days = eachDayOfInterval({ start: filteredStartDate, end: filteredEndDate });
-    
-    return days.map(day => {
-      const dayStr = format(day, 'yyyy-MM-dd');
-      const total = filteredData.servicosFiltrados.filter(
-        s => format(new Date(s.data_programada), 'yyyy-MM-dd') === dayStr
-      ).length;
-      
-      const concluidos = filteredData.atendimentosFiltrados.filter(
-        a => format(new Date(a.data_atendimento), 'yyyy-MM-dd') === dayStr && a.status === 'Concluído'
-      ).length;
-      
-      const pendentes = total - concluidos;
-
-      return {
-        date: format(day, 'dd/MM'),
-        total,
-        concluidos,
-        pendentes
-      };
-    });
-  }, [filteredData, filteredStartDate, filteredEndDate]);
-
-  // Preparar dados para gráfico de clientes por tipo de serviço
-  const demographicsData = useMemo(() => {
-    const tiposMap = {};
-    
-    filteredData.servicosFiltrados.forEach(s => {
-      const tipo = s.tipo_servico || 'Outros';
-      tiposMap[tipo] = (tiposMap[tipo] || 0) + 1;
-    });
-
-    return Object.entries(tiposMap).map(([name, quantidade]) => ({
-      name: name.length > 20 ? name.substring(0, 20) + '...' : name,
-      quantidade
-    }));
-  }, [filteredData.servicosFiltrados]);
-
-  // Calcular métricas
+  // Métricas gerais
   const metrics = useMemo(() => {
-    const totalServicos = filteredData.servicosFiltrados.length;
-    const totalAtendimentos = filteredData.atendimentosFiltrados.length;
-    const totalValor = filteredData.servicosFiltrados.reduce((sum, s) => sum + (s.valor || 0), 0);
+    const total = servicosFiltrados.length;
+    const concluidos = servicosFiltrados.filter(s => s.status === 'concluido').length;
+    const emAndamento = servicosFiltrados.filter(s => s.status === 'andamento').length;
+    const abertos = servicosFiltrados.filter(s => s.status === 'aberto' || s.status === 'agendado' || s.status === 'reagendado').length;
+    const valorTotal = servicosFiltrados.reduce((sum, s) => sum + (s.valor || 0), 0);
+    const valorConcluidos = servicosFiltrados.filter(s => s.status === 'concluido').reduce((sum, s) => sum + (s.valor || 0), 0);
+    return { total, concluidos, emAndamento, abertos, valorTotal, valorConcluidos };
+  }, [servicosFiltrados]);
 
-    return { totalServicos, totalAtendimentos, totalValor };
-  }, [filteredData]);
+  // Dados por categoria
+  const dadosPorCategoria = useMemo(() => {
+    const map = {};
+    CATEGORIAS.forEach(c => { map[c.label] = { quantidade: 0, valor: 0, color: c.color }; });
+    servicosFiltrados.forEach(s => {
+      const cat = getCategoria(s.tipo_servico);
+      map[cat].quantidade++;
+      map[cat].valor += s.valor || 0;
+    });
+    return Object.entries(map).map(([name, data]) => ({ name, ...data })).filter(d => d.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
+  }, [servicosFiltrados]);
 
-  const reportData = {
-    services: filteredData.servicosFiltrados,
-    clients: clientes,
-    attendances: filteredData.atendimentosFiltrados
-  };
+  // Dados por tipo específico
+  const dadosPorTipo = useMemo(() => {
+    const map = {};
+    servicosFiltrados.forEach(s => {
+      const tipo = s.tipo_servico || 'Sem tipo';
+      if (!map[tipo]) map[tipo] = { quantidade: 0, valor: 0 };
+      map[tipo].quantidade++;
+      map[tipo].valor += s.valor || 0;
+    });
+    return Object.entries(map).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.quantidade - a.quantidade);
+  }, [servicosFiltrados]);
 
-  if (!isAdmin) {
-    return <NoPermission />;
-  }
+  // Tipos disponíveis no período filtrado (para o select)
+  const tiposDisponiveis = useMemo(() => {
+    const set = new Set(servicos.filter(s => {
+      if (!s.data_programada) return false;
+      const date = parseISO(s.data_programada);
+      return isWithinInterval(date, { start: dateRange.start, end: dateRange.end });
+    }).map(s => s.tipo_servico).filter(Boolean));
+    return [...set].sort();
+  }, [servicos, dateRange]);
+
+  if (!isAdmin) return <NoPermission />;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-          Relatórios
-        </h1>
-        <p className="text-gray-400 mt-1">Análise detalhada de serviços, clientes e performance</p>
-      </div>
-
-      {/* Filtro por categoria de serviço */}
-      <div className="flex flex-wrap gap-2">
-        {['todas', ...CATEGORIAS_SERVICO.map(c => c.label)].map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFiltroCategoria(cat)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${
-              filtroCategoria === cat
-                ? 'bg-blue-600 border-blue-500 text-white'
-                : 'bg-slate-800 border-slate-600 text-gray-300 hover:border-blue-500 hover:text-white'
-            }`}
-          >
-            {cat === 'todas' ? 'Todos os tipos' : cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Date Range Selector */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <DateRangeSelector
-            startDate={startDate}
-            endDate={endDate}
-            onStartChange={setStartDate}
-            onEndChange={setEndDate}
-            onApply={() => {
-              setFilteredStartDate(startDate);
-              setFilteredEndDate(endDate);
-            }}
-          />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+            Relatórios
+          </h1>
+          <p className="text-gray-400 mt-1">
+            {format(dateRange.start, 'dd/MM/yyyy')} — {format(dateRange.end, 'dd/MM/yyyy')}
+            {filtroCategoria !== 'todas' && <span className="ml-2 text-cyan-400">· {filtroCategoria}</span>}
+          </p>
         </div>
-
-        {/* Métricas */}
-        <div className="space-y-4">
-          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Total de Serviços</p>
-                  <p className="text-3xl font-bold text-cyan-400">{metrics.totalServicos}</p>
-                </div>
-                <TrendingUp className="w-10 h-10 text-cyan-500/30" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Total de Atendimentos</p>
-                  <p className="text-3xl font-bold text-green-400">{metrics.totalAtendimentos}</p>
-                </div>
-                <Users className="w-10 h-10 text-green-500/30" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-400 text-sm">Valor Total</p>
-                  <p className="text-2xl font-bold text-purple-400">
-                    R$ {metrics.totalValor.toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <DollarSign className="w-10 h-10 text-purple-500/30" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Export Buttons */}
-        <div className="flex flex-col items-end gap-2">
-          <ExportButtons
-            reportData={reportData}
-            dateRange={{
-              start: format(filteredStartDate, 'dd/MM/yyyy'),
-              end: format(filteredEndDate, 'dd/MM/yyyy')
-            }}
-          />
+        <div className="flex gap-2">
+          <button onClick={() => setViewMode('resumo')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-all ${viewMode === 'resumo' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-600 text-gray-300'}`}>
+            <BarChart2 className="w-4 h-4" /> Resumo
+          </button>
+          <button onClick={() => setViewMode('detalhado')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-all ${viewMode === 'detalhado' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-600 text-gray-300'}`}>
+            <List className="w-4 h-4" /> Detalhado
+          </button>
         </div>
       </div>
 
-      {/* Charts */}
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-        </div>
-      ) : (
-        <div id="report-container" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ServiceTrendsChart data={trendsData} />
-            <ClientDemographicsChart data={demographicsData} />
+      {/* Filtros */}
+      <Card className="border border-blue-800/40" style={{ backgroundColor: '#152032' }}>
+        <CardContent className="p-4 space-y-4">
+          {/* Período */}
+          <div>
+            <p className="text-xs text-gray-400 mb-2 flex items-center gap-1"><Filter className="w-3 h-3" /> Período</p>
+            <div className="flex flex-wrap gap-2">
+              {PERIODOS.map((p, i) => (
+                <button key={i} onClick={() => setPeriodoSelecionado(i)}
+                  className={`px-3 py-1.5 rounded-lg text-sm border transition-all ${periodoSelecionado === i ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-600 text-gray-300 hover:border-blue-500'}`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            {periodoSelecionado === 5 && (
+              <div className="flex gap-3 mt-3">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">De</p>
+                  <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                    className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Até</p>
+                  <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                    className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm" />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Tabela de Serviços */}
-          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border border-purple-700/30">
-            <CardHeader>
-              <CardTitle className="text-white">📋 Detalhes de Serviços</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-gray-300">
-                  <thead className="border-b border-purple-700/30 text-gray-400">
-                    <tr>
-                      <th className="text-left py-3 px-2">Cliente</th>
-                      <th className="text-left py-3 px-2">Tipo</th>
-                      <th className="text-left py-3 px-2">Data</th>
-                      <th className="text-left py-3 px-2">Status</th>
-                      <th className="text-left py-3 px-2">Usuário</th>
-                      <th className="text-right py-3 px-2">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.servicosFiltrados.slice(0, 10).map(s => (
-                      <tr key={s.id} className="border-b border-purple-700/10 hover:bg-purple-900/20">
-                        <td className="py-2 px-2">{s.cliente_nome}</td>
-                        <td className="py-2 px-2 text-xs text-purple-300">{s.tipo_servico?.substring(0, 15)}...</td>
-                        <td className="py-2 px-2">{format(new Date(s.data_programada), 'dd/MM/yyyy')}</td>
-                        <td className="py-2 px-2">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            s.status === 'concluido' ? 'bg-green-900/40 text-green-300' :
-                            s.status === 'andamento' ? 'bg-blue-900/40 text-blue-300' :
-                            'bg-yellow-900/40 text-yellow-300'
-                          }`}>
-                            {s.status}
-                          </span>
-                        </td>
-                        <td className="py-2 px-2 text-xs text-gray-400">{s.usuario_atualizacao_status || '-'}</td>
-                        <td className="py-2 px-2 text-right font-semibold">R$ {s.valor?.toLocaleString('pt-BR') || '0'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {filteredData.servicosFiltrados.length === 0 && (
-                  <p className="text-center py-6 text-gray-400">Nenhum serviço neste período</p>
-                )}
+          {/* Categoria */}
+          <div>
+            <p className="text-xs text-gray-400 mb-2">Categoria</p>
+            <div className="flex flex-wrap gap-2">
+              {['todas', ...CATEGORIAS.map(c => c.label)].map(cat => (
+                <button key={cat} onClick={() => { setFiltroCategoria(cat); setFiltroTipoEspecifico('todos'); }}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${filtroCategoria === cat ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-800 border-slate-600 text-gray-300 hover:border-purple-500'}`}>
+                  {cat === 'todas' ? 'Todas' : cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tipo específico e Status */}
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Tipo específico</p>
+              <select value={filtroTipoEspecifico} onChange={e => setFiltroTipoEspecifico(e.target.value)}
+                className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm min-w-48">
+                <option value="todos">Todos os tipos</option>
+                {tiposDisponiveis.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Status</p>
+              <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+                className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm">
+                <option value="todos">Todos</option>
+                <option value="concluido">Concluído</option>
+                <option value="andamento">Em andamento</option>
+                <option value="aberto">Aberto</option>
+                <option value="agendado">Agendado</option>
+                <option value="reagendado">Reagendado</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-purple-400" /></div>
+      ) : (
+        <>
+          {/* Métricas */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { label: 'Total', value: metrics.total, color: 'text-cyan-400', icon: <TrendingUp className="w-5 h-5 text-cyan-400/40" /> },
+              { label: 'Concluídos', value: metrics.concluidos, color: 'text-green-400', icon: <CheckCircle className="w-5 h-5 text-green-400/40" /> },
+              { label: 'Em andamento', value: metrics.emAndamento, color: 'text-blue-400', icon: <Clock className="w-5 h-5 text-blue-400/40" /> },
+              { label: 'Abertos', value: metrics.abertos, color: 'text-yellow-400', icon: <Clock className="w-5 h-5 text-yellow-400/40" /> },
+              { label: 'Faturamento Total', value: `R$ ${metrics.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, color: 'text-purple-400', icon: <DollarSign className="w-5 h-5 text-purple-400/40" />, small: true },
+              { label: 'Fat. Concluídos', value: `R$ ${metrics.valorConcluidos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, color: 'text-emerald-400', icon: <DollarSign className="w-5 h-5 text-emerald-400/40" />, small: true },
+            ].map((m, i) => (
+              <Card key={i} className="border border-blue-800/30" style={{ backgroundColor: '#152032' }}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-gray-400 text-xs">{m.label}</p>
+                      <p className={`font-bold mt-1 ${m.color} ${m.small ? 'text-lg' : 'text-3xl'}`}>{m.value}</p>
+                    </div>
+                    {m.icon}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {viewMode === 'resumo' && (
+            <div className="space-y-6">
+              {/* Gráfico por Categoria */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border border-blue-800/30" style={{ backgroundColor: '#152032' }}>
+                  <CardHeader><CardTitle className="text-white text-base">Serviços por Categoria</CardTitle></CardHeader>
+                  <CardContent>
+                    {dadosPorCategoria.length === 0 ? (
+                      <p className="text-gray-400 text-center py-8">Nenhum dado no período</p>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={dadosPorCategoria} margin={{ top: 5, right: 10, left: -10, bottom: 60 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                          <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                          <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} allowDecimals={false} />
+                          <Tooltip contentStyle={{ backgroundColor: '#0f1923', border: '1px solid #1e3a5f', borderRadius: 8, color: '#fff' }}
+                            formatter={(value, name) => [value, name === 'quantidade' ? 'Qtd' : 'Valor']} />
+                          <Bar dataKey="quantidade" radius={[4, 4, 0, 0]}>
+                            {dadosPorCategoria.map((entry, index) => (
+                              <Cell key={index} fill={entry.color || COLORS[index % COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-blue-800/30" style={{ backgroundColor: '#152032' }}>
+                  <CardHeader><CardTitle className="text-white text-base">Distribuição por Categoria</CardTitle></CardHeader>
+                  <CardContent>
+                    {dadosPorCategoria.length === 0 ? (
+                      <p className="text-gray-400 text-center py-8">Nenhum dado no período</p>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie data={dadosPorCategoria} dataKey="quantidade" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                            {dadosPorCategoria.map((entry, index) => (
+                              <Cell key={index} fill={entry.color || COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ backgroundColor: '#0f1923', border: '1px solid #1e3a5f', borderRadius: 8, color: '#fff' }} />
+                          <Legend formatter={(value) => <span style={{ color: '#94a3b8', fontSize: 12 }}>{value}</span>} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+
+              {/* Tabela resumo por tipo */}
+              <Card className="border border-blue-800/30" style={{ backgroundColor: '#152032' }}>
+                <CardHeader><CardTitle className="text-white text-base">📊 Quantidade por Tipo de Serviço</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-blue-800/40 text-gray-400 text-xs uppercase">
+                          <th className="text-left py-2 px-3">Tipo de Serviço</th>
+                          <th className="text-left py-2 px-3">Categoria</th>
+                          <th className="text-center py-2 px-3">Quantidade</th>
+                          <th className="text-right py-2 px-3">Valor Total</th>
+                          <th className="text-right py-2 px-3">% do Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dadosPorTipo.map((row, i) => {
+                          const cat = CATEGORIAS.find(c => c.label === getCategoria(row.name));
+                          return (
+                            <tr key={i} className="border-b border-blue-900/20 hover:bg-blue-900/10 transition-colors">
+                              <td className="py-2 px-3 text-gray-200">{row.name}</td>
+                              <td className="py-2 px-3">
+                                <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: (cat?.color || '#6b7280') + '30', color: cat?.color || '#6b7280' }}>
+                                  {getCategoria(row.name)}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                <span className="text-cyan-400 font-bold text-base">{row.quantidade}</span>
+                                <div className="w-full bg-slate-700/50 rounded-full h-1 mt-1">
+                                  <div className="h-1 rounded-full bg-cyan-500" style={{ width: `${Math.round((row.quantidade / metrics.total) * 100)}%` }} />
+                                </div>
+                              </td>
+                              <td className="py-2 px-3 text-right text-green-400 font-medium">
+                                R$ {row.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-2 px-3 text-right text-gray-400">
+                                {metrics.total > 0 ? Math.round((row.quantidade / metrics.total) * 100) : 0}%
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {dadosPorTipo.length === 0 && (
+                          <tr><td colSpan={5} className="text-center py-8 text-gray-400">Nenhum serviço no período com os filtros selecionados</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {viewMode === 'detalhado' && (
+            <Card className="border border-blue-800/30" style={{ backgroundColor: '#152032' }}>
+              <CardHeader>
+                <CardTitle className="text-white text-base flex items-center justify-between">
+                  <span>📋 Serviços Detalhados</span>
+                  <span className="text-sm font-normal text-gray-400">{servicosFiltrados.length} registros</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-blue-800/40 text-gray-400 text-xs uppercase">
+                        <th className="text-left py-2 px-3">Cliente</th>
+                        <th className="text-left py-2 px-3">Tipo de Serviço</th>
+                        <th className="text-left py-2 px-3">Categoria</th>
+                        <th className="text-left py-2 px-3">Data</th>
+                        <th className="text-left py-2 px-3">Status</th>
+                        <th className="text-right py-2 px-3">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {servicosFiltrados.map(s => {
+                        const cat = CATEGORIAS.find(c => c.label === getCategoria(s.tipo_servico));
+                        return (
+                          <tr key={s.id} className="border-b border-blue-900/20 hover:bg-blue-900/10 transition-colors">
+                            <td className="py-2 px-3 text-gray-200 font-medium">{s.cliente_nome}</td>
+                            <td className="py-2 px-3 text-gray-300 text-xs">{s.tipo_servico}</td>
+                            <td className="py-2 px-3">
+                              <span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: (cat?.color || '#6b7280') + '25', color: cat?.color || '#6b7280' }}>
+                                {getCategoria(s.tipo_servico)}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-gray-400">{format(parseISO(s.data_programada), 'dd/MM/yyyy')}</td>
+                            <td className="py-2 px-3">
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                s.status === 'concluido' ? 'bg-green-900/40 text-green-300' :
+                                s.status === 'andamento' ? 'bg-blue-900/40 text-blue-300' :
+                                'bg-yellow-900/40 text-yellow-300'
+                              }`}>
+                                {s.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-right text-green-400 font-semibold">
+                              {s.valor ? `R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {servicosFiltrados.length === 0 && (
+                        <tr><td colSpan={6} className="text-center py-8 text-gray-400">Nenhum serviço no período com os filtros selecionados</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
