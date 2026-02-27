@@ -148,9 +148,9 @@ function LayoutContent({ children }) {
             </Link>
             <button 
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-purple-700/30 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-blue-800/40 transition-colors"
             >
-              <X className="w-5 h-5 text-purple-300" />
+              <X className="w-5 h-5 text-blue-300" />
             </button>
           </div>
 
