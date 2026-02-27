@@ -601,7 +601,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
             />
           </div>
 
-          {equipes.length > 0 && (
+          {equipes.length > 0 && isAdmin && (
             <div className="space-y-2">
               <Label>Equipe Responsável</Label>
               <Select
