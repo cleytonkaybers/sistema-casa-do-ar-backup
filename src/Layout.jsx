@@ -129,7 +129,7 @@ function LayoutContent({ children }) {
                 {companySettings.company_logo_url ? (
                   <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl shadow-purple-500/50">
+                  <div className="w-full h-full rounded-xl flex items-center justify-center shadow-2xl" style={{background: 'linear-gradient(135deg, #1e40af, #f59e0b)'}}>
                     {(() => {
                       const Icon = ICON_MAP[companySettings.company_icon];
                       return Icon ? <Icon className="w-7 h-7 text-white" /> : <Snowflake className="w-7 h-7 text-white" />;
