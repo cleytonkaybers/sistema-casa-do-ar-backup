@@ -627,6 +627,27 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
             </div>
           )}
 
+          {!servico && (
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-orange-200 bg-orange-50">
+              <input
+                type="checkbox"
+                id="sem_registro_cliente"
+                checked={semRegistroCliente}
+                onChange={(e) => setSemRegistroCliente(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-orange-300 accent-orange-500 cursor-pointer"
+              />
+              <div>
+                <label htmlFor="sem_registro_cliente" className="text-sm font-medium text-orange-800 cursor-pointer flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4" />
+                  Serviço avulso (sem vínculo)
+                </label>
+                <p className="text-xs text-orange-600 mt-0.5">
+                  Não salva como cliente e não sincroniza com preventivas futuras.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancelar
