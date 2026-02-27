@@ -173,7 +173,7 @@ function LayoutContent({ children }) {
                   `}
                   style={active ? {background: 'linear-gradient(90deg, #1e40af, #f59e0b)'} : {}}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-purple-300/60'}`} />
+                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-blue-300/60'}`} />
                   <span className="font-medium">{item.name}</span>
                 </Link>
               );
