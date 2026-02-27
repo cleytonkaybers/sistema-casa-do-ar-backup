@@ -308,8 +308,8 @@ export default function PreventivasFuturasPage() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       ) : todosItens.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
-          <p className="text-gray-500">
+        <div className="text-center py-12 rounded-xl border-2 border-dashed border-blue-800/40" style={{backgroundColor: '#243447'}}>
+          <p className="text-blue-300/70">
             {searchTerm 
               ? 'Nenhum resultado encontrado'
               : 'Nenhuma manutenção programada ou serviço ativo'
@@ -317,18 +317,18 @@ export default function PreventivasFuturasPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div className="rounded-xl shadow-md border border-blue-800/40 overflow-hidden" style={{backgroundColor: '#243447'}}>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gradient-to-r from-blue-500 to-cyan-500">
-                  <TableHead className="text-white font-semibold">Tipo</TableHead>
-                  <TableHead className="text-white font-semibold">Nome</TableHead>
-                  <TableHead className="text-white font-semibold">Telefone</TableHead>
-                  <TableHead className="text-white font-semibold">Endereço</TableHead>
-                  <TableHead className="text-white font-semibold">Serviço/Data</TableHead>
-                  <TableHead className="text-white font-semibold">Status</TableHead>
-                  <TableHead className="text-white font-semibold text-center">Ações</TableHead>
+                <TableRow className="border-blue-800/40" style={{backgroundColor: 'rgba(30,64,175,0.3)'}}>
+                  <TableHead className="text-blue-200 font-semibold">Tipo</TableHead>
+                  <TableHead className="text-blue-200 font-semibold">Nome</TableHead>
+                  <TableHead className="text-blue-200 font-semibold">Telefone</TableHead>
+                  <TableHead className="text-blue-200 font-semibold">Endereço</TableHead>
+                  <TableHead className="text-blue-200 font-semibold">Serviço/Data</TableHead>
+                  <TableHead className="text-blue-200 font-semibold">Status</TableHead>
+                  <TableHead className="text-blue-200 font-semibold text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -337,44 +337,44 @@ export default function PreventivasFuturasPage() {
                   const mapsLink = getGoogleMapsLink(item);
 
                   return (
-                    <TableRow key={`${item.tipo}-${item.id}`} className="hover:bg-gray-50">
+                    <TableRow key={`${item.tipo}-${item.id}`} className="border-blue-800/30 hover:bg-blue-900/20">
                       <TableCell>
-                        <Badge className={isCliente ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}>
+                        <Badge className={isCliente ? 'bg-blue-900/60 text-blue-200 border-blue-700/50' : 'bg-purple-900/60 text-purple-200 border-purple-700/50'}>
                           {isCliente ? 'Cliente' : 'Serviço'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-white">
                         {isCliente ? item.nome : item.cliente_nome}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-gray-400" />
+                        <div className="flex items-center gap-2 text-blue-200">
+                          <Phone className="w-4 h-4 text-blue-400" />
                           {formatPhone(item.telefone)}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-xs">
                           {item.endereco ? (
-                            <div className="flex items-start gap-2">
-                              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div className="flex items-start gap-2 text-blue-200">
+                              <MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                               <span className="text-sm line-clamp-2">{item.endereco}</span>
                             </div>
                           ) : (
-                            <span className="text-gray-400 text-sm">-</span>
+                            <span className="text-blue-400/50 text-sm">-</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         {isCliente && item.proximaManutencao ? (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="w-4 h-4 text-gray-400" />
+                          <div className="flex items-center gap-2 text-sm text-blue-200">
+                            <Calendar className="w-4 h-4 text-blue-400" />
                             {format(new Date(item.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
                           </div>
                         ) : !isCliente ? (
                           <div className="text-sm space-y-1">
-                            <div className="font-medium text-gray-700">{item.tipo_servico}</div>
+                            <div className="font-medium text-white">{item.tipo_servico}</div>
                             {item.dia_semana && (
-                              <div className="flex items-center gap-1 text-gray-500">
+                              <div className="flex items-center gap-1 text-blue-300/70">
                                 <Calendar className="w-3 h-3" />
                                 {item.dia_semana}
                                 {item.horario && ` - ${item.horario}`}
@@ -382,7 +382,7 @@ export default function PreventivasFuturasPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-blue-400/50 text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -396,7 +396,7 @@ export default function PreventivasFuturasPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewDetails(item)}
-                            className="text-gray-600 hover:text-blue-600"
+                            className="text-blue-300 hover:text-blue-100"
                             title="Ver Detalhes"
                           >
                             <Eye className="w-4 h-4" />
@@ -405,7 +405,7 @@ export default function PreventivasFuturasPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleCreateServico(item)}
-                            className="text-gray-600 hover:text-purple-600"
+                            className="text-blue-300 hover:text-purple-400"
                             title="Agendar Serviço"
                           >
                             <Plus className="w-4 h-4" />
@@ -414,7 +414,7 @@ export default function PreventivasFuturasPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleShare(item)}
-                            className="text-gray-600 hover:text-blue-600"
+                            className="text-blue-300 hover:text-yellow-400"
                             title="Compartilhar"
                           >
                             <Share2 className="w-4 h-4" />
@@ -424,7 +424,7 @@ export default function PreventivasFuturasPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(item)}
-                              className="text-gray-600 hover:text-red-600"
+                              className="text-blue-300 hover:text-red-400"
                               title="Excluir"
                             >
                               <Trash2 className="w-4 h-4" />
