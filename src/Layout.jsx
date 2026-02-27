@@ -181,7 +181,7 @@ function LayoutContent({ children }) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-purple-700/50">
+          <div className="p-4 border-t border-blue-800/50">
             <Button
               variant="ghost"
               onClick={() => base44.auth.logout()}
