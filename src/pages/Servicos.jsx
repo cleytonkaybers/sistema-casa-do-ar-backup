@@ -478,7 +478,7 @@ export default function ServicosPage() {
                       </p>
                     ) : (
                       servicosDoDia.map(servico => (
-                        <div key={servico.id} className="bg-gray-50 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div key={servico.id} className="rounded-lg shadow-sm border border-blue-900/40 overflow-hidden" style={{backgroundColor: 'rgba(15,25,35,0.5)'}}>
                           <div className="p-3">
                             <ServicoCard
                               servico={servico}
