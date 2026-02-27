@@ -243,7 +243,7 @@ export default function ServicosPage() {
         setServicoConcluido({ ...servicoParaConcluir, observacoes_conclusao: observacoes, isConclusao: true });
         setShowCompartilharModal(true);
         setServicoParaConcluir(null);
-        toast.success('Serviço concluído! Preventiva gerada para 6 meses. 🎉');
+        toast.success(servicoParaConcluir.sem_registro_cliente ? 'Serviço avulso concluído! 🎉' : 'Serviço concluído! Preventiva gerada para 6 meses. 🎉');
       }
     });
   };
