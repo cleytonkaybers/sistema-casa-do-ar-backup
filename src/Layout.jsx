@@ -202,9 +202,9 @@ function LayoutContent({ children }) {
           <div className="flex items-center justify-between px-4 lg:px-8 py-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-purple-700/30 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-blue-800/40 transition-colors"
             >
-              <Menu className="w-6 h-6 text-purple-300" />
+              <Menu className="w-6 h-6 text-blue-300" />
             </button>
 
             <div className="flex-1 lg:hidden text-center">
