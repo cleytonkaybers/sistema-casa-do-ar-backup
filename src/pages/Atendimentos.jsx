@@ -126,9 +126,8 @@ export default function Atendimentos() {
   }, [atendimentos]);
 
   const atendimentosComServicos = useMemo(() => {
-    // Serviços concluídos já viram atendimentos reais - não incluir para evitar duplicatas
+    // Todos os serviços aparecem em atendimentos, independente do status
     const servicosNaoConcluidos = servicos
-      .filter(s => s.status !== 'concluido')
       .map(servico => ({
         id: servico.id,
         cliente_nome: servico.cliente_nome,
