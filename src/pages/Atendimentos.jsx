@@ -145,7 +145,8 @@ export default function Atendimentos() {
         status: servico.status === 'aberto' ? 'Aberto' :
                 servico.status === 'andamento' ? 'Em Andamento' :
                 servico.status === 'agendado' ? 'Agendado' :
-                servico.status === 'reagendado' ? 'Reagendado' : 'Aberto',
+                servico.status === 'reagendado' ? 'Reagendado' :
+                servico.status === 'concluido' ? 'Concluído' : 'Aberto',
         observacoes: servico.observacoes_conclusao || '',
         equipe_id: servico.equipe_id || '',
         equipe_nome: servico.equipe_nome || '',
