@@ -333,9 +333,9 @@ export default function Dashboard() {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Manutenções Pendentes */}
-        <Card className="border border-blue-800/40 shadow-xl" style={{backgroundColor: '#243447'}}>
+        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-            <CardTitle className="text-base sm:text-lg font-semibold text-white">
+            <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
               Manutenções Pendentes
             </CardTitle>
             <AlertTriangle className="w-5 h-5 text-orange-400" />
@@ -343,10 +343,10 @@ export default function Dashboard() {
           <CardContent className="px-4 pb-4">
             {manutencoesPendentes.length === 0 ? (
               <div className="text-center py-6">
-                <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-400" />
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-500" />
                 </div>
-                <p className="text-blue-300/60 text-sm">Nenhuma manutenção pendente</p>
+                <p className="text-gray-400 text-sm">Nenhuma manutenção pendente</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -355,23 +355,23 @@ export default function Dashboard() {
                   const isOverdue = daysUntil < 0;
                   return (
                     <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                      <div className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
-                        isOverdue ? 'bg-red-900/30 border border-red-700/40' : 'bg-yellow-900/20 border border-yellow-700/30'
+                      <div className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
+                        isOverdue ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'
                       }`}>
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isOverdue ? 'bg-red-500/20' : 'bg-yellow-500/20'}`}>
-                            <Snowflake className={`w-4 h-4 ${isOverdue ? 'text-red-400' : 'text-yellow-400'}`} />
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isOverdue ? 'bg-red-100' : 'bg-amber-100'}`}>
+                            <Snowflake className={`w-4 h-4 ${isOverdue ? 'text-red-500' : 'text-amber-500'}`} />
                           </div>
                           <div>
-                            <p className="font-medium text-white text-sm">{cliente.nome}</p>
-                            <p className="text-xs text-blue-300/60">{cliente.tipo_equipamento || 'N/A'}</p>
+                            <p className="font-medium text-gray-800 text-sm">{cliente.nome}</p>
+                            <p className="text-xs text-gray-400">{cliente.tipo_equipamento || 'N/A'}</p>
                           </div>
                         </div>
-                        <div className={`text-right ${isOverdue ? 'text-red-400' : 'text-yellow-400'}`}>
+                        <div className={`text-right ${isOverdue ? 'text-red-500' : 'text-amber-600'}`}>
                           <p className="text-xs font-medium">
                             {isOverdue ? `${Math.abs(daysUntil)}d atrasado` : `em ${daysUntil}d`}
                           </p>
-                          <p className="text-xs text-blue-300/50">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
+                          <p className="text-xs text-gray-400">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
                         </div>
                       </div>
                     </Link>
@@ -383,13 +383,13 @@ export default function Dashboard() {
         </Card>
 
         {/* Últimos Clientes */}
-        <Card className="border border-blue-800/40 shadow-xl" style={{backgroundColor: '#243447'}}>
+        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-            <CardTitle className="text-base sm:text-lg font-semibold text-white">
+            <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
               Últimos Clientes
             </CardTitle>
             <Link to={createPageUrl('Clientes')}>
-              <Button variant="ghost" size="sm" className="text-yellow-400 hover:text-yellow-300 text-xs sm:text-sm">
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm">
                 Ver todos <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
               </Button>
             </Link>
@@ -397,12 +397,12 @@ export default function Dashboard() {
           <CardContent className="px-4 pb-4">
             {clientes.length === 0 ? (
               <div className="text-center py-6">
-                <div className="w-12 h-12 bg-blue-800/40 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-6 h-6 text-blue-400" />
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-blue-500" />
                 </div>
-                <p className="text-blue-300/60 text-sm">Nenhum cliente cadastrado</p>
+                <p className="text-gray-400 text-sm">Nenhum cliente cadastrado</p>
                 <Link to={createPageUrl('Clientes')}>
-                  <Button variant="outline" className="mt-3 text-sm border-blue-700 text-blue-300">
+                  <Button variant="outline" className="mt-3 text-sm">
                     Cadastrar primeiro cliente
                   </Button>
                 </Link>
@@ -411,17 +411,17 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {clientes.slice(0, 5).map((cliente) => (
                   <Link key={cliente.id} to={createPageUrl('Clientes')} className="block">
-                    <div className="flex items-center justify-between p-3 rounded-lg transition-all cursor-pointer group border border-blue-800/30 hover:border-yellow-600/40" style={{backgroundColor: 'rgba(30,64,175,0.12)'}}>
+                    <div className="flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer group border border-gray-100 hover:border-blue-200 hover:bg-blue-50">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md" style={{background: 'linear-gradient(135deg, #1e40af, #f59e0b)'}}>
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}>
                           {cliente.nome?.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-white text-sm group-hover:text-yellow-400 transition-colors">{cliente.nome}</p>
-                          <p className="text-xs text-blue-300/50">{cliente.cidade || 'Sem cidade'}</p>
+                          <p className="font-medium text-gray-800 text-sm group-hover:text-blue-600 transition-colors">{cliente.nome}</p>
+                          <p className="text-xs text-gray-400">{cliente.cidade || 'Sem cidade'}</p>
                         </div>
                       </div>
-                      <p className="text-xs text-blue-300/50">{format(new Date(cliente.created_date), "dd/MM/yy")}</p>
+                      <p className="text-xs text-gray-400">{format(new Date(cliente.created_date), "dd/MM/yy")}</p>
                     </div>
                   </Link>
                 ))}
