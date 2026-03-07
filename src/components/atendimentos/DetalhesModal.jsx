@@ -81,14 +81,9 @@ export default function DetalhesModal({ open, onClose, atendimento }) {
                 {atendimento.cliente_nome || 'Cliente não identificado'}
               </p>
             </div>
-            <div className="flex flex-col gap-1 items-end">
-              <Badge className={`${statusColors[atendimento.status]} border`}>
-                {atendimento.status}
-              </Badge>
-              <Badge className={atendimento.origem === 'servico' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-cyan-100 text-cyan-700 border-cyan-200'}>
-                {atendimento.origem === 'servico' ? 'Serviço' : 'Atendimento'}
-              </Badge>
-            </div>
+            <Badge className="bg-green-100 text-green-700 border border-green-200">
+              Concluído
+            </Badge>
           </div>
 
           {/* Dados de Contato */}
