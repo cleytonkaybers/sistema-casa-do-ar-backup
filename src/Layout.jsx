@@ -127,14 +127,14 @@ function LayoutContent({ children }) {
                   )}
                 </div>
                 <div>
-                  <p className="font-bold text-white text-base leading-tight">
+                  <p className="font-bold text-white text-lg leading-tight">
                     {currentEmpresa?.nome || companySettings.company_name}
                   </p>
-                  <p className="text-xs text-blue-200/70">
+                  <p className="text-xs font-medium" style={{ color: '#93c5fd' }}>
                     {isSuperAdmin() ? 'Super Admin' : currentUser?.tipo_usuario === 'admin_empresa' ? 'Administrador' : 'Climatização'}
                   </p>
                   {user?.full_name && (
-                    <p className="text-xs font-medium" style={{ color: '#f59e0b' }}>{user.full_name}</p>
+                    <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>{user.full_name}</p>
                   )}
                 </div>
               </Link>
