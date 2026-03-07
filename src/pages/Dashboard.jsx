@@ -206,19 +206,19 @@ export default function Dashboard() {
       </div>
 
       {/* Filtro de Serviços */}
-      <Card className="border border-blue-800/40 shadow-xl" style={{backgroundColor: '#243447'}}>
+      <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
         <CardHeader className="pb-3 px-4 pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{backgroundColor: 'rgba(245,158,11,0.2)'}}>
-                <Filter className="w-4 h-4 text-yellow-400" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-100">
+                <Filter className="w-4 h-4 text-blue-600" />
               </div>
-              <CardTitle className="text-base sm:text-lg font-semibold text-white">
-                Serviços Realizados
+              <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
+                Serviços
               </CardTitle>
             </div>
             <Select value={filtroServicos} onValueChange={setFiltroServicos}>
-              <SelectTrigger className="w-full sm:w-40 border-blue-800/50 text-white text-sm" style={{backgroundColor: 'rgba(30,64,175,0.2)'}}>
+              <SelectTrigger className="w-full sm:w-44 border-gray-200 text-gray-700 text-sm bg-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -231,46 +231,46 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
+            <div className="rounded-xl p-3 border border-gray-100 bg-green-50">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
                 </div>
-                <span className="text-xs text-blue-300/70">Concluídos</span>
+                <span className="text-xs text-gray-500 font-medium">Concluídos</span>
               </div>
-              <p className="text-xl font-bold text-white">{servicosConcluidos}</p>
+              <p className="text-xl font-bold text-green-700">{servicosConcluidos}</p>
             </div>
-            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
+            <div className="rounded-xl p-3 border border-gray-100 bg-blue-50">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-blue-400" />
+                <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-blue-600" />
                 </div>
-                <span className="text-xs text-blue-300/70">Andamento</span>
+                <span className="text-xs text-gray-500 font-medium">Andamento</span>
               </div>
-              <p className="text-xl font-bold text-white">{servicosAndamento}</p>
+              <p className="text-xl font-bold text-blue-700">{servicosAndamento}</p>
             </div>
-            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
+            <div className="rounded-xl p-3 border border-gray-100 bg-amber-50">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-yellow-400" />
+                <div className="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-amber-600" />
                 </div>
-                <span className="text-xs text-blue-300/70">Agendados</span>
+                <span className="text-xs text-gray-500 font-medium">Agendados</span>
               </div>
-              <p className="text-xl font-bold text-white">{servicosAgendados}</p>
+              <p className="text-xl font-bold text-amber-700">{servicosAgendados}</p>
             </div>
-            <div className="border border-blue-800/40 rounded-xl p-3" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
+            <div className="rounded-xl p-3 border border-gray-100 bg-gray-50">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-gray-500/20 rounded-lg flex items-center justify-center">
-                  <ClipboardList className="w-4 h-4 text-gray-400" />
+                <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <ClipboardList className="w-4 h-4 text-gray-500" />
                 </div>
-                <span className="text-xs text-blue-300/70">Abertos</span>
+                <span className="text-xs text-gray-500 font-medium">Abertos</span>
               </div>
-              <p className="text-xl font-bold text-white">{servicosAbertos}</p>
+              <p className="text-xl font-bold text-gray-700">{servicosAbertos}</p>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-blue-800/40">
-            <p className="text-xs text-blue-300/60 text-center">
-              Total de <span className="text-white font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <p className="text-xs text-gray-400 text-center">
+              Total de <span className="text-gray-700 font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
             </p>
           </div>
         </CardContent>
