@@ -200,20 +200,6 @@ export default function Atendimentos() {
             </div>
           </div>
 
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="h-11 border-gray-200 text-gray-700 bg-white">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="Reagendado">Reagendado</SelectItem>
-              <SelectItem value="Aberto">Aberto</SelectItem>
-              <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-              <SelectItem value="Agendado">Agendado</SelectItem>
-              <SelectItem value="Concluído">Concluído</SelectItem>
-            </SelectContent>
-          </Select>
-
           <Select value={filterTipo} onValueChange={setFilterTipo}>
             <SelectTrigger className="h-11 border-gray-200 text-gray-700 bg-white">
               <SelectValue placeholder="Tipo de Serviço" />
