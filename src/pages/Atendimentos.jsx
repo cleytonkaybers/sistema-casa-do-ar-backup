@@ -366,7 +366,7 @@ export default function Atendimentos() {
         open={compartilharOpen}
         onClose={() => { setCompartilharOpen(false); setAtendimentoCompartilhar(null); }}
         servico={atendimentoCompartilhar}
-        isConclusao={false}
+        isConclusao={true}
       />
     </div>
   );
