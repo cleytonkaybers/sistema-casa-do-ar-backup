@@ -379,7 +379,7 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               variant="outline"
               size="sm"
               onClick={() => onEdit(servico)}
-              className="border-blue-700/50 text-blue-300 hover:text-yellow-400 hover:border-yellow-600/50"
+              className="text-gray-600 hover:text-blue-600 hover:border-blue-300"
             >
               <Pencil className="w-4 h-4" />
             </Button>
@@ -387,7 +387,7 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               variant="outline"
               size="sm"
               onClick={() => onDelete(servico)}
-              className="border-blue-700/50 text-blue-300 hover:text-red-400 hover:border-red-600/50"
+              className="text-gray-600 hover:text-red-500 hover:border-red-300"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
