@@ -287,8 +287,8 @@ export default function PreventivasFuturasPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Preventivas Futuras</h1>
-          <p className="text-blue-300/70 mt-1">Manutenções programadas e serviços ativos</p>
+          <h1 className="text-3xl font-bold text-gray-800">Preventivas Futuras</h1>
+          <p className="text-gray-500 mt-1">Manutenções programadas e serviços ativos</p>
         </div>
       </div>
 
@@ -298,8 +298,7 @@ export default function PreventivasFuturasPage() {
           placeholder="Buscar por nome ou telefone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 h-11 border-blue-800/50 text-white placeholder:text-blue-400/60"
-          style={{backgroundColor: 'rgba(30,64,175,0.2)'}}
+          className="pl-10 h-11 border-gray-200 text-gray-700 placeholder:text-gray-400 bg-white"
         />
       </div>
 
@@ -308,8 +307,8 @@ export default function PreventivasFuturasPage() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       ) : todosItens.length === 0 ? (
-        <div className="text-center py-12 rounded-xl border-2 border-dashed border-blue-800/40" style={{backgroundColor: '#243447'}}>
-          <p className="text-blue-300/70">
+        <div className="text-center py-12 rounded-xl border-2 border-dashed border-gray-200 bg-white">
+          <p className="text-gray-400">
             {searchTerm 
               ? 'Nenhum resultado encontrado'
               : 'Nenhuma manutenção programada ou serviço ativo'
@@ -317,18 +316,18 @@ export default function PreventivasFuturasPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl shadow-md border border-blue-800/40 overflow-hidden" style={{backgroundColor: '#243447'}}>
+        <div className="rounded-xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-blue-800/40" style={{backgroundColor: 'rgba(30,64,175,0.3)'}}>
-                  <TableHead className="text-blue-200 font-semibold">Tipo</TableHead>
-                  <TableHead className="text-blue-200 font-semibold">Nome</TableHead>
-                  <TableHead className="text-blue-200 font-semibold">Telefone</TableHead>
-                  <TableHead className="text-blue-200 font-semibold">Endereço</TableHead>
-                  <TableHead className="text-blue-200 font-semibold">Serviço/Data</TableHead>
-                  <TableHead className="text-blue-200 font-semibold">Status</TableHead>
-                  <TableHead className="text-blue-200 font-semibold text-center">Ações</TableHead>
+                <TableRow className="border-gray-200" style={{ backgroundColor: '#1e3a8a' }}>
+                  <TableHead className="text-white font-semibold">Tipo</TableHead>
+                  <TableHead className="text-white font-semibold">Nome</TableHead>
+                  <TableHead className="text-white font-semibold">Telefone</TableHead>
+                  <TableHead className="text-white font-semibold">Endereço</TableHead>
+                  <TableHead className="text-white font-semibold">Serviço/Data</TableHead>
+                  <TableHead className="text-white font-semibold">Status</TableHead>
+                  <TableHead className="text-white font-semibold text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -337,44 +336,44 @@ export default function PreventivasFuturasPage() {
                   const mapsLink = getGoogleMapsLink(item);
 
                   return (
-                    <TableRow key={`${item.tipo}-${item.id}`} className="border-blue-800/30 hover:bg-blue-900/20">
+                    <TableRow key={`${item.tipo}-${item.id}`} className="border-gray-100 hover:bg-gray-50">
                       <TableCell>
-                        <Badge className={isCliente ? 'bg-blue-900/60 text-blue-200 border-blue-700/50' : 'bg-purple-900/60 text-purple-200 border-purple-700/50'}>
+                        <Badge className={isCliente ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-purple-100 text-purple-700 border-purple-200'}>
                           {isCliente ? 'Cliente' : 'Serviço'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium text-white">
+                      <TableCell className="font-medium text-gray-800">
                         {isCliente ? item.nome : item.cliente_nome}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-blue-200">
-                          <Phone className="w-4 h-4 text-blue-400" />
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Phone className="w-4 h-4 text-gray-400" />
                           {formatPhone(item.telefone)}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-xs">
                           {item.endereco ? (
-                            <div className="flex items-start gap-2 text-blue-200">
-                              <MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                            <div className="flex items-start gap-2 text-gray-600">
+                              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                               <span className="text-sm line-clamp-2">{item.endereco}</span>
                             </div>
                           ) : (
-                            <span className="text-blue-400/50 text-sm">-</span>
+                            <span className="text-gray-300 text-sm">-</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         {isCliente && item.proximaManutencao ? (
-                          <div className="flex items-center gap-2 text-sm text-blue-200">
-                            <Calendar className="w-4 h-4 text-blue-400" />
+                          <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <Calendar className="w-4 h-4 text-blue-500" />
                             {format(new Date(item.proximaManutencao), "dd/MM/yyyy", { locale: ptBR })}
                           </div>
                         ) : !isCliente ? (
                           <div className="text-sm space-y-1">
-                            <div className="font-medium text-white">{item.tipo_servico}</div>
+                            <div className="font-medium text-gray-800">{item.tipo_servico}</div>
                             {item.dia_semana && (
-                              <div className="flex items-center gap-1 text-blue-300/70">
+                              <div className="flex items-center gap-1 text-gray-500">
                                 <Calendar className="w-3 h-3" />
                                 {item.dia_semana}
                                 {item.horario && ` - ${item.horario}`}
@@ -382,7 +381,7 @@ export default function PreventivasFuturasPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-blue-400/50 text-sm">-</span>
+                          <span className="text-gray-300 text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -396,7 +395,7 @@ export default function PreventivasFuturasPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewDetails(item)}
-                            className="text-blue-300 hover:text-blue-100"
+                            className="text-gray-500 hover:text-blue-600"
                             title="Ver Detalhes"
                           >
                             <Eye className="w-4 h-4" />
@@ -405,7 +404,7 @@ export default function PreventivasFuturasPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleCreateServico(item)}
-                            className="text-blue-300 hover:text-purple-400"
+                            className="text-gray-500 hover:text-purple-600"
                             title="Agendar Serviço"
                           >
                             <Plus className="w-4 h-4" />
@@ -414,7 +413,7 @@ export default function PreventivasFuturasPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleShare(item)}
-                            className="text-blue-300 hover:text-yellow-400"
+                            className="text-gray-500 hover:text-amber-500"
                             title="Compartilhar"
                           >
                             <Share2 className="w-4 h-4" />
@@ -424,7 +423,7 @@ export default function PreventivasFuturasPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(item)}
-                              className="text-blue-300 hover:text-red-400"
+                              className="text-gray-500 hover:text-red-500"
                               title="Excluir"
                             >
                               <Trash2 className="w-4 h-4" />
