@@ -291,14 +291,14 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           </div>
 
           {servico.cpf && (
-            <div className="flex items-center gap-2 text-sm text-blue-200 bg-blue-900/30 px-3 py-2 rounded-lg border border-blue-800/40">
+            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
               <CreditCard className="w-4 h-4 text-blue-400" />
               <span>CPF: {servico.cpf}</span>
             </div>
           )}
 
           {servico.endereco && (
-            <div className="flex items-start gap-2 text-blue-200">
+            <div className="flex items-start gap-2 text-gray-600">
               <MapPin className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
               <span className="text-sm line-clamp-2">{servico.endereco}</span>
             </div>
@@ -309,8 +309,7 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               href={mapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors font-semibold border border-blue-700/50 hover:border-yellow-600/50 text-blue-200 hover:text-yellow-400"
-              style={{backgroundColor: 'rgba(30,64,175,0.2)'}}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors font-semibold border border-gray-200 hover:border-blue-400 text-gray-600 hover:text-blue-600 bg-gray-50"
             >
               <Navigation className="w-4 h-4" />
               <span className="text-sm">
@@ -324,19 +323,19 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
 
           <div className="flex flex-wrap gap-2">
             {servico.dia_semana && (
-              <div className="flex items-center gap-1.5 text-sm text-blue-200 border border-blue-800/40 px-3 py-1.5 rounded-lg" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
+              <div className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg bg-gray-50">
                 <Calendar className="w-4 h-4 text-blue-400" />
                 {servico.dia_semana}
               </div>
             )}
             {servico.horario && (
-              <div className="flex items-center gap-1.5 text-sm text-blue-200 border border-blue-800/40 px-3 py-1.5 rounded-lg" style={{backgroundColor: 'rgba(30,64,175,0.15)'}}>
+              <div className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg bg-gray-50">
                 <Clock className="w-4 h-4 text-blue-400" />
                 {servico.horario}
               </div>
             )}
             {servico.valor > 0 && (
-              <div className="flex items-center gap-1.5 text-sm text-green-300 border border-green-800/40 px-3 py-1.5 rounded-lg font-semibold" style={{backgroundColor: 'rgba(16,185,129,0.1)'}}>
+              <div className="flex items-center gap-1.5 text-sm text-green-600 border border-green-200 px-3 py-1.5 rounded-lg font-semibold bg-green-50">
                 <DollarSign className="w-4 h-4" />
                 R$ {servico.valor.toFixed(2)}
               </div>
@@ -344,15 +343,15 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           </div>
 
           {servico.descricao && (
-            <p className="text-sm text-blue-300/70 border border-blue-800/40 p-3 rounded-lg line-clamp-2" style={{backgroundColor: 'rgba(30,64,175,0.1)'}}>
+            <p className="text-sm text-gray-500 border border-gray-100 p-3 rounded-lg line-clamp-2 bg-gray-50">
               {servico.descricao}
             </p>
           )}
 
-          <div className="flex items-center gap-2 pt-2 border-t border-blue-800/40">
+          <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 border-blue-700/50 text-blue-200 hover:text-white hover:bg-blue-800/40">
+                <Button size="sm" variant="outline" className="flex-1 text-gray-700 hover:bg-gray-50">
                   <StatusIcon className="w-4 h-4 mr-1.5" />
                   {statusConfig.label}
                 </Button>
