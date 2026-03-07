@@ -119,7 +119,7 @@ function LayoutContent({ children }) {
 
                 {/* Logo box */}
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg flex-shrink-0"
-                style={{ backgroundColor: '#F5C800' }}>
+                style={{ backgroundColor: '#FFF347' }}>
                   {companySettings.company_logo_url ?
                   <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" /> :
 
@@ -193,7 +193,7 @@ function LayoutContent({ children }) {
 
           {/* Top bar */}
           <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-            <div className="px-4 py-3 flex items-center justify-between lg:px-6" style={{ backgroundColor: '#1e3a8a' }}>
+            <div className="bg-[#1293e2] px-4 py-3 flex items-center justify-between lg:px-6">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setSidebarOpen(true)}
@@ -205,14 +205,14 @@ function LayoutContent({ children }) {
                 {/* Logo visível no mobile topbar */}
                 <div className="flex items-center gap-2 lg:hidden">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow"
-                  style={{ backgroundColor: '#F5C800' }}>
+                  style={{ backgroundColor: '#FFF347' }}>
                     {companySettings.company_logo_url ?
                     <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" /> :
 
                     <LogoIcon className="w-4 h-4 text-white" />
                     }
                   </div>
-                  <span className="font-bold text-white">{currentEmpresa?.nome || companySettings.company_name}</span>
+                  <span className="font-bold text-gray-800">{currentEmpresa?.nome || companySettings.company_name}</span>
                 </div>
               </div>
 
