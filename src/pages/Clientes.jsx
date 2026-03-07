@@ -150,6 +150,27 @@ export default function Clientes() {
 
   const hasActiveFilters = searchTerm !== '';
 
+  const [exportandoDrive, setExportandoDrive] = useState(false);
+
+  const handleExportarDrive = async () => {
+    setExportandoDrive(true);
+    try {
+      const response = await base44.functions.invoke('exportarClientesDrive');
+      const { success, fileName, total, driveLink } = response.data;
+      if (success) {
+        toast.success(`${total} clientes exportados para o Google Drive!`, {
+          description: fileName,
+          action: { label: 'Abrir Drive', onClick: () => window.open(driveLink, '_blank') },
+          duration: 8000,
+        });
+      }
+    } catch (e) {
+      toast.error('Erro ao exportar para o Google Drive');
+    } finally {
+      setExportandoDrive(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
