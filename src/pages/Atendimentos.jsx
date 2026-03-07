@@ -439,7 +439,7 @@ export default function Atendimentos() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium text-green-400">
+                        <span className="font-medium text-green-600">
                           {formatCurrency(atendimento.valor)}
                         </span>
                       </TableCell>
@@ -449,7 +449,7 @@ export default function Atendimentos() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleCompartilhar(atendimento)}
-                            className="text-blue-300 hover:text-green-400"
+                            className="text-gray-400 hover:text-green-600"
                             title="Compartilhar"
                           >
                             <Share2 className="w-4 h-4" />
@@ -458,7 +458,7 @@ export default function Atendimentos() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleVerDetalhes(atendimento)}
-                            className="text-blue-300 hover:text-blue-400"
+                            className="text-gray-400 hover:text-blue-600"
                             title="Ver Detalhes"
                           >
                             <Info className="w-4 h-4" />
@@ -468,7 +468,7 @@ export default function Atendimentos() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleVerHistorico(atendimento)}
-                              className="text-blue-300 hover:text-purple-400"
+                              className="text-gray-400 hover:text-purple-600"
                               title="Ver Histórico"
                             >
                               <History className="w-4 h-4" />
@@ -480,7 +480,7 @@ export default function Atendimentos() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleEdit(atendimento)}
-                                className="text-blue-300 hover:text-yellow-400"
+                                className="text-gray-400 hover:text-amber-500"
                               >
                                 <Pencil className="w-4 h-4" />
                               </Button>
@@ -488,7 +488,7 @@ export default function Atendimentos() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDelete(atendimento)}
-                                className="text-blue-300 hover:text-red-400"
+                                className="text-gray-400 hover:text-red-500"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -507,7 +507,7 @@ export default function Atendimentos() {
           <div className="lg:hidden space-y-4">
             {filteredAtendimentos.map((atendimento) => {
               return (
-                <Card key={`${atendimento.origem}-${atendimento.id}`} className="border border-blue-800/40 shadow-md" style={{backgroundColor: '#243447'}}>
+                <Card key={`${atendimento.origem}-${atendimento.id}`} className="border border-gray-200 shadow-sm bg-white">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -515,8 +515,8 @@ export default function Atendimentos() {
                           {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
-                          <p className="font-medium text-white">{atendimento.cliente_nome || 'Cliente não identificado'}</p>
-                          <p className="text-sm text-blue-300/70">{atendimento.tipo_servico}</p>
+                          <p className="font-medium text-gray-800">{atendimento.cliente_nome || 'Cliente não identificado'}</p>
+                          <p className="text-sm text-gray-500">{atendimento.tipo_servico}</p>
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
