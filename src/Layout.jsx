@@ -134,7 +134,7 @@ function LayoutContent({ children }) {
                     {isSuperAdmin() ? 'Super Admin' : currentUser?.tipo_usuario === 'admin_empresa' ? 'Administrador' : 'Climatização'}
                   </p>
                   {user?.full_name &&
-                  <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>{user.full_name}</p>
+                  <p className="text-xs font-semibold" style={{ color: '#FFF347' }}>{user.full_name}</p>
                   }
                 </div>
               </Link>
