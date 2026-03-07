@@ -65,6 +65,11 @@ export default function Atendimentos() {
     queryFn: () => base44.entities.Atendimento.list('-data_atendimento'),
   });
 
+  const { data: servicos = [] } = useQuery({
+    queryKey: ['servicos-atendimentos'],
+    queryFn: () => base44.entities.Servico.list(),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Atendimento.delete(id),
     onSuccess: () => {
