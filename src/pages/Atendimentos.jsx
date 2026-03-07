@@ -126,9 +126,18 @@ export default function Atendimentos() {
   };
 
   const handleCompartilhar = (atendimento) => {
+    // Tenta buscar telefone do campo detalhes (JSON) se não estiver direto no atendimento
+    let telefone = atendimento.telefone;
+    if (!telefone && atendimento.detalhes) {
+      try {
+        const det = typeof atendimento.detalhes === 'string' ? JSON.parse(atendimento.detalhes) : atendimento.detalhes;
+        telefone = det?.dados_ordem_servico?.telefone || '';
+      } catch {}
+    }
+
     setAtendimentoCompartilhar({
       cliente_nome: atendimento.cliente_nome,
-      telefone: atendimento.telefone,
+      telefone: telefone || '',
       tipo_servico: atendimento.tipo_servico,
       data_programada: atendimento.data_atendimento,
       horario: atendimento.horario,
