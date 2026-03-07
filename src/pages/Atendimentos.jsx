@@ -166,6 +166,7 @@ export default function Atendimentos() {
       valor: atendimento.valor,
       descricao: atendimento.descricao,
       observacoes_conclusao: atendimento.observacoes_conclusao,
+      equipe_nome: atendimento.equipe_nome,
       status: 'concluido',
     });
     setCompartilharOpen(true);
