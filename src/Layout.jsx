@@ -205,7 +205,7 @@ function LayoutContent({ children }) {
                 {/* Logo visível no mobile topbar */}
                 <div className="flex items-center gap-2 lg:hidden">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow"
-                  style={{ backgroundColor: '#FFF347' }}>
+                  style={{ backgroundColor: '#F5C800' }}>
                     {companySettings.company_logo_url ?
                     <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" /> :
 
