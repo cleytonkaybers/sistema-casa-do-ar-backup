@@ -226,21 +226,11 @@ export default function Atendimentos() {
           <h3 className="text-lg font-medium text-gray-800 mb-2">
             {hasActiveFilters ? 'Nenhum atendimento encontrado' : 'Nenhum atendimento registrado'}
           </h3>
-          <p className="text-gray-500 mb-6">
-            {hasActiveFilters 
+          <p className="text-gray-500">
+            {hasActiveFilters
               ? 'Tente ajustar os filtros de busca'
-              : 'Comece registrando seu primeiro atendimento'
-            }
+              : 'Os atendimentos são gerados automaticamente ao concluir um serviço'}
           </p>
-          {!hasActiveFilters && (
-            <Button 
-              onClick={handleNewAtendimento}
-              className="bg-gradient-to-r from-blue-500 to-cyan-500"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Registrar Atendimento
-            </Button>
-          )}
         </div>
       ) : (
         <>
@@ -250,222 +240,114 @@ export default function Atendimentos() {
               <TableHeader>
                 <TableRow style={{ backgroundColor: '#1e3a8a' }}>
                   <TableHead className="text-white">Cliente</TableHead>
-                  <TableHead className="text-white">Data</TableHead>
+                  <TableHead className="text-white">Data Conclusão</TableHead>
                   <TableHead className="text-white">Tipo de Serviço</TableHead>
-                  <TableHead className="text-white">Status</TableHead>
-                  <TableHead className="text-white">Origem</TableHead>
                   <TableHead className="text-white">Valor</TableHead>
+                  <TableHead className="text-white">Concluído por</TableHead>
                   <TableHead className="text-right text-white">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAtendimentos.map((atendimento) => {
-                  return (
-                    <TableRow key={`${atendimento.origem}-${atendimento.id}`} className="border-gray-100 hover:bg-gray-50">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white text-sm font-medium">
-                            {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
-                          </div>
-                          <span className="font-medium text-gray-800">{atendimento.cliente_nome || 'Cliente não identificado'}</span>
+                {filteredAtendimentos.map((atendimento) => (
+                  <TableRow key={atendimento.id} className="border-gray-100 hover:bg-gray-50">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-medium">
+                          {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <Calendar className="w-4 h-4 text-blue-400" />
-                          {format(new Date(atendimento.data_atendimento), "dd/MM/yyyy", { locale: ptBR })}
+                        <div>
+                          <p className="font-medium text-gray-800">{atendimento.cliente_nome || '-'}</p>
+                          {atendimento.telefone && <p className="text-xs text-gray-400">{atendimento.telefone}</p>}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <Wrench className="w-4 h-4 text-blue-400" />
-                          {atendimento.tipo_servico}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${statusColors[atendimento.status]} border`}>
-                          {atendimento.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={atendimento.origem === 'servico' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-cyan-100 text-cyan-700 border-cyan-200'}>
-                          {atendimento.origem === 'servico' ? 'Serviço' : 'Atendimento'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium text-green-600">
-                          {formatCurrency(atendimento.valor)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleCompartilhar(atendimento)}
-                            className="text-gray-400 hover:text-green-600"
-                            title="Compartilhar"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleVerDetalhes(atendimento)}
-                            className="text-gray-400 hover:text-blue-600"
-                            title="Ver Detalhes"
-                          >
-                            <Info className="w-4 h-4" />
-                          </Button>
-                          {atendimento.origem === 'servico' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleVerHistorico(atendimento)}
-                              className="text-gray-400 hover:text-purple-600"
-                              title="Ver Histórico"
-                            >
-                              <History className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {atendimento.origem === 'atendimento' && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEdit(atendimento)}
-                                className="text-gray-400 hover:text-amber-500"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(atendimento)}
-                                className="text-gray-400 hover:text-red-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <Calendar className="w-4 h-4 text-green-400" />
+                        {formatDate(atendimento.data_conclusao || atendimento.data_atendimento)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <Wrench className="w-4 h-4 text-blue-400" />
+                        {atendimento.tipo_servico}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium text-green-600">
+                        {formatCurrency(atendimento.valor)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-gray-500">{atendimento.usuario_conclusao || '-'}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleCompartilhar(atendimento)} className="text-gray-400 hover:text-green-600" title="Compartilhar">
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleVerDetalhes(atendimento)} className="text-gray-400 hover:text-blue-600" title="Ver Detalhes">
+                          <Info className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(atendimento)} className="text-gray-400 hover:text-red-500" title="Excluir">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </Card>
 
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-4">
-            {filteredAtendimentos.map((atendimento) => {
-              return (
-                <Card key={`${atendimento.origem}-${atendimento.id}`} className="border border-gray-200 shadow-sm bg-white">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white font-medium">
-                          {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">{atendimento.cliente_nome || 'Cliente não identificado'}</p>
-                          <p className="text-sm text-gray-500">{atendimento.tipo_servico}</p>
-                        </div>
+            {filteredAtendimentos.map((atendimento) => (
+              <Card key={atendimento.id} className="border border-gray-200 shadow-sm bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white font-medium">
+                        {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <Badge className={`${statusColors[atendimento.status]} border text-xs`}>
-                          {atendimento.status}
-                        </Badge>
-                        <Badge className={atendimento.origem === 'servico' ? 'bg-purple-100 text-purple-700 border-purple-200 text-xs' : 'bg-cyan-100 text-cyan-700 border-cyan-200 text-xs'}>
-                          {atendimento.origem === 'servico' ? 'Serviço' : 'Atendimento'}
-                        </Badge>
+                      <div>
+                        <p className="font-medium text-gray-800">{atendimento.cliente_nome || '-'}</p>
+                        <p className="text-sm text-gray-500">{atendimento.tipo_servico}</p>
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-blue-400" />
-                        {format(new Date(atendimento.data_atendimento), "dd/MM/yyyy", { locale: ptBR })}
-                      </div>
-                      <span className="font-medium text-green-600">
-                        {formatCurrency(atendimento.valor)}
-                      </span>
+                    <Badge className="bg-green-100 text-green-700 border-green-200 border text-xs flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Concluído
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-green-400" />
+                      {formatDate(atendimento.data_conclusao || atendimento.data_atendimento)}
                     </div>
-
-                    {atendimento.descricao && (
-                      <p className="text-sm text-gray-500 border border-gray-100 p-2 rounded-lg mb-3 line-clamp-2 bg-gray-50">
-                        {atendimento.descricao}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCompartilhar(atendimento)}
-                        className="border-gray-200 text-gray-500 hover:text-green-600"
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleVerDetalhes(atendimento)}
-                        className="flex-1 border-gray-200 text-gray-600 hover:text-blue-600"
-                      >
-                        <Info className="w-4 h-4 mr-1.5" />
-                        Ver Detalhes
-                      </Button>
-                      {atendimento.origem === 'servico' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleVerHistorico(atendimento)}
-                          className="flex-1 border-gray-200 text-gray-600 hover:text-purple-600"
-                        >
-                          <History className="w-4 h-4 mr-1.5" />
-                          Histórico
-                        </Button>
-                      )}
-                      {atendimento.origem === 'atendimento' && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(atendimento)}
-                            className="flex-1 border-gray-200 text-gray-600 hover:text-amber-500"
-                          >
-                            <Pencil className="w-4 h-4 mr-1.5" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(atendimento)}
-                            className="border-gray-200 text-gray-500 hover:text-red-500"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    <span className="font-medium text-green-600">{formatCurrency(atendimento.valor)}</span>
+                  </div>
+                  {atendimento.observacoes_conclusao && (
+                    <p className="text-sm text-gray-500 border border-gray-100 p-2 rounded-lg mb-3 line-clamp-2 bg-gray-50">
+                      {atendimento.observacoes_conclusao}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                    <Button variant="outline" size="sm" onClick={() => handleCompartilhar(atendimento)} className="border-gray-200 text-gray-500 hover:text-green-600">
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleVerDetalhes(atendimento)} className="flex-1 border-gray-200 text-gray-600 hover:text-blue-600">
+                      <Info className="w-4 h-4 mr-1.5" /> Ver Detalhes
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(atendimento)} className="border-gray-200 text-gray-500 hover:text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </>
       )}
-
-      <AtendimentoForm
-        open={formOpen}
-        onClose={() => { setFormOpen(false); setEditingAtendimento(null); setSelectedCliente(null); }}
-        onSave={handleSave}
-        atendimento={editingAtendimento}
-        cliente={selectedCliente}
-        isLoading={createMutation.isPending || updateMutation.isPending}
-      />
 
       <DeleteConfirmDialog
         open={deleteDialogOpen}
@@ -473,12 +355,6 @@ export default function Atendimentos() {
         onConfirm={() => deleteMutation.mutate(deletingAtendimento?.id)}
         clienteName={`atendimento de ${deletingAtendimento?.cliente_nome}`}
         isLoading={deleteMutation.isPending}
-      />
-
-      <HistoricoStatusModal
-        open={historicoOpen}
-        onClose={() => { setHistoricoOpen(false); setSelectedServicoId(null); }}
-        servicoId={selectedServicoId}
       />
 
       <DetalhesModal
