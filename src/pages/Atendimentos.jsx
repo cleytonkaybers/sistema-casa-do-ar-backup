@@ -131,13 +131,17 @@ export default function Atendimentos() {
   };
 
   const handleCompartilhar = (atendimento) => {
-    // Tenta buscar telefone do campo detalhes (JSON) se não estiver direto no atendimento
+    // Tenta buscar telefone: 1) direto, 2) do campo detalhes JSON, 3) do serviço original
     let telefone = atendimento.telefone;
     if (!telefone && atendimento.detalhes) {
       try {
         const det = typeof atendimento.detalhes === 'string' ? JSON.parse(atendimento.detalhes) : atendimento.detalhes;
         telefone = det?.dados_ordem_servico?.telefone || '';
       } catch {}
+    }
+    if (!telefone && atendimento.servico_id) {
+      const servicoOrigem = servicos.find(s => s.id === atendimento.servico_id);
+      telefone = servicoOrigem?.telefone || '';
     }
 
     setAtendimentoCompartilhar({
