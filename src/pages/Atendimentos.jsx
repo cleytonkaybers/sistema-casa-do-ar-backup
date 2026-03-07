@@ -317,9 +317,11 @@ export default function Atendimentos() {
                     </TableCell>
                     <TableCell>
                       <div className="text-xs text-gray-600">
-                        {atendimento.equipe_nome && (
-                          <p className="font-medium text-blue-700">👷 {atendimento.equipe_nome}</p>
-                        )}
+                        {(() => {
+                          const equipe = atendimento.equipe_nome || 
+                            servicos.find(s => s.id === atendimento.servico_id)?.equipe_nome || '';
+                          return equipe ? <p className="font-medium text-blue-700">👷 {equipe}</p> : null;
+                        })()}
                         <p className="text-gray-400">{atendimento.usuario_conclusao || '-'}</p>
                       </div>
                     </TableCell>
