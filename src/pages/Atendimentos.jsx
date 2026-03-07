@@ -59,15 +59,9 @@ export default function Atendimentos() {
   const queryClient = useQueryClient();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [filterTipo, setFilterTipo] = useState('all');
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingAtendimento, setEditingAtendimento] = useState(null);
-  const [selectedCliente, setSelectedCliente] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAtendimento, setDeletingAtendimento] = useState(null);
-  const [historicoOpen, setHistoricoOpen] = useState(false);
-  const [selectedServicoId, setSelectedServicoId] = useState(null);
   const [detalhesOpen, setDetalhesOpen] = useState(false);
   const [selectedAtendimento, setSelectedAtendimento] = useState(null);
   const [compartilharOpen, setCompartilharOpen] = useState(false);
