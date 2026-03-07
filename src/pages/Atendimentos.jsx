@@ -156,24 +156,30 @@ export default function Atendimentos() {
       telefone = clienteMatch?.telefone || '';
     }
 
-    // Buscar equipe_nome: direto ou via serviço original
-    let equipe_nome = atendimento.equipe_nome || '';
-    if (!equipe_nome && atendimento.servico_id) {
-      const servicoOrigem = servicos.find(s => s.id === atendimento.servico_id);
-      equipe_nome = servicoOrigem?.equipe_nome || '';
+    // Buscar dados extras de fallback (detalhes JSON ou serviço original)
+    let det = null;
+    if (atendimento.detalhes) {
+      try { det = typeof atendimento.detalhes === 'string' ? JSON.parse(atendimento.detalhes) : atendimento.detalhes; } catch {}
     }
+    const servicoOrigem = atendimento.servico_id ? servicos.find(s => s.id === atendimento.servico_id) : null;
+
+    const get = (field) =>
+      atendimento[field] ||
+      det?.dados_ordem_servico?.[field] ||
+      servicoOrigem?.[field] ||
+      '';
 
     setAtendimentoCompartilhar({
       cliente_nome: atendimento.cliente_nome,
       telefone: telefone || '',
       tipo_servico: atendimento.tipo_servico,
-      data_programada: atendimento.data_atendimento,
-      horario: atendimento.horario,
-      endereco: atendimento.endereco,
-      valor: atendimento.valor,
-      descricao: atendimento.descricao,
-      observacoes_conclusao: atendimento.observacoes_conclusao,
-      equipe_nome: equipe_nome,
+      data_programada: atendimento.data_atendimento || get('data_programada'),
+      horario: get('horario'),
+      endereco: get('endereco'),
+      valor: atendimento.valor || get('valor'),
+      descricao: get('descricao'),
+      observacoes_conclusao: get('observacoes_conclusao'),
+      equipe_nome: get('equipe_nome'),
       status: 'concluido',
     });
     setCompartilharOpen(true);
