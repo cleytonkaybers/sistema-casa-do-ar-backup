@@ -199,7 +199,7 @@ function LayoutContent({ children }) {
                   onClick={() => setSidebarOpen(true)}
                   className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
 
-                  <Menu className="w-6 h-6 text-gray-700" />
+                  <Menu className="w-6 h-6 text-white" />
                 </button>
 
                 {/* Logo visível no mobile topbar */}
