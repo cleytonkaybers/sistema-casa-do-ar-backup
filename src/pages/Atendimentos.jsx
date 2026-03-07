@@ -156,6 +156,13 @@ export default function Atendimentos() {
       telefone = clienteMatch?.telefone || '';
     }
 
+    // Buscar equipe_nome: direto ou via serviço original
+    let equipe_nome = atendimento.equipe_nome || '';
+    if (!equipe_nome && atendimento.servico_id) {
+      const servicoOrigem = servicos.find(s => s.id === atendimento.servico_id);
+      equipe_nome = servicoOrigem?.equipe_nome || '';
+    }
+
     setAtendimentoCompartilhar({
       cliente_nome: atendimento.cliente_nome,
       telefone: telefone || '',
@@ -166,7 +173,7 @@ export default function Atendimentos() {
       valor: atendimento.valor,
       descricao: atendimento.descricao,
       observacoes_conclusao: atendimento.observacoes_conclusao,
-      equipe_nome: atendimento.equipe_nome,
+      equipe_nome: equipe_nome,
       status: 'concluido',
     });
     setCompartilharOpen(true);
