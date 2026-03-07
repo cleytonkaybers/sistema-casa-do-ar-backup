@@ -15,14 +15,10 @@ export default function ReagendarModal({ open, onClose, onSave, servico, isLoadi
     e.preventDefault();
     if (!novaData || !horario) return;
     
-    // Validar que a data não seja anterior à data atual
-    const dataAtual = new Date();
-    dataAtual.setHours(0, 0, 0, 0);
-    const novaDataObj = new Date(novaData);
-    novaDataObj.setHours(0, 0, 0, 0);
-    
-    if (novaDataObj < dataAtual) {
-      return; // O input já previne datas anteriores, mas adiciona validação extra
+    // Validar que a data não seja anterior à data atual (usando strings para evitar problema de fuso horário)
+    const hoje = new Date().toISOString().split('T')[0];
+    if (novaData < hoje) {
+      return;
     }
     
     onSave(novaData, horario);
