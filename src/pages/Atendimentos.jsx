@@ -126,7 +126,6 @@ export default function Atendimentos() {
   };
 
   const handleCompartilhar = (atendimento) => {
-    // Monta objeto compatível com CompartilharModal
     setAtendimentoCompartilhar({
       cliente_nome: atendimento.cliente_nome,
       telefone: atendimento.telefone,
@@ -136,8 +135,8 @@ export default function Atendimentos() {
       endereco: atendimento.endereco,
       valor: atendimento.valor,
       descricao: atendimento.descricao,
-      observacoes_conclusao: atendimento.observacoes,
-      status: atendimento.status?.toLowerCase().replace(' ', '_').replace('ú', 'u').replace('í', 'i') || 'aberto',
+      observacoes_conclusao: atendimento.observacoes_conclusao,
+      status: 'concluido',
     });
     setCompartilharOpen(true);
   };
