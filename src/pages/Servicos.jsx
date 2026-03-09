@@ -358,10 +358,14 @@ export default function ServicosPage() {
   const filteredServicos = servicos.filter(s => {
     if (loadingUser) return false;
     if (!isAdmin) {
-      if (equipeIdUsuario) {
+      // Se a lista de usuários ainda carrega, não filtra por equipe ainda
+      if (!isLoadingUsuarios && equipeIdUsuario) {
         if (s.equipe_id !== equipeIdUsuario) return false;
-      } else {
+      } else if (!isLoadingUsuarios && !equipeIdUsuario) {
+        // Usuário sem equipe: só vê serviços sem equipe
         if (s.equipe_id) return false;
+      } else {
+        // Ainda carregando lista — deixa passar (evita tela vazia)
       }
     }
 
