@@ -188,7 +188,8 @@ export default function ServicosPage() {
 
       // 1. Atualizar serviço como concluído PRIMEIRO
       await updateMutation.mutateAsync({ 
-        id: servicoSnapshot.id, 
+        id: servicoSnapshot.id,
+        silencioso: true,
         data: {
           ...servicoSnapshot,
           status: 'concluido',
