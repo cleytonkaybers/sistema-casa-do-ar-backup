@@ -350,19 +350,19 @@ export default function ServicosPage() {
 
   const today = startOfDay(new Date());
 
-  // Determina a equipe do usuário logado
+  // Determina a equipe do usuário logado a partir da entidade User (onde equipe_id é salvo)
   const usuarioLogado = usuarios.find(u => u.email === currentUser?.email);
   const equipeIdUsuario = usuarioLogado?.equipe_id || null;
 
+  // Só filtra quando os dados de usuário e lista estiverem carregados
+  const dadosCarregados = !loadingUser && usuarios.length > 0;
+
   const filteredServicos = servicos.filter(s => {
-    // Aguarda o usuário e a lista de usuários carregar antes de filtrar
-    if (loadingUser || (usuarios.length === 0 && !isAdmin)) return false;
+    if (!dadosCarregados && !isAdmin) return false;
     if (!isAdmin) {
       if (equipeIdUsuario) {
-        // Usuário tem equipe: só vê serviços da sua equipe
         if (s.equipe_id !== equipeIdUsuario) return false;
       } else {
-        // Usuário sem equipe atribuída: não vê serviços de nenhuma equipe
         if (s.equipe_id) return false;
       }
     }
