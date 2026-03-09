@@ -75,8 +75,12 @@ export default function AlertaAtraso({ onConcluirServico }) {
     if (s.status === 'concluido' || !s.data_programada) return false;
     
     // Filtro por equipe: admin vê tudo, não-admin só vê da sua equipe
-    if (!isAdmin && equipeIdUsuario) {
-      if (s.equipe_id && s.equipe_id !== equipeIdUsuario) return false;
+    if (!isAdmin) {
+      if (equipeIdUsuario) {
+        if (s.equipe_id !== equipeIdUsuario) return false;
+      } else {
+        if (s.equipe_id) return false;
+      }
     }
 
     const dataPrograma = new Date(s.data_programada);
