@@ -98,22 +98,19 @@ export default function Atendimentos() {
     return Array.from(tiposSet).sort();
   }, [atendimentos]);
 
-  const usuarioLogado = usuarios.find(u => u.email === currentUser?.email);
-  const equipeIdUsuario = usuarioLogado?.equipe_id || null;
+  // equipe_id vem direto do auth.me() — sem depender da lista de usuários
+  const equipeIdUsuario = currentUser?.equipe_id || null;
 
   const filteredAtendimentos = useMemo(() => {
-    // Aguarda apenas o auth carregar
     if (loadingUser) return [];
 
     const filtered = atendimentos.filter(atendimento => {
-      // Filtro por equipe: admin vê tudo, não-admin só vê da sua equipe
       if (!isAdmin) {
-        if (!isLoadingUsuarios && equipeIdUsuario) {
+        if (equipeIdUsuario) {
           if (atendimento.equipe_id !== equipeIdUsuario) return false;
-        } else if (!isLoadingUsuarios && !equipeIdUsuario) {
+        } else {
           if (atendimento.equipe_id) return false;
         }
-        // Se isLoadingUsuarios: deixa passar (evita tela vazia)
       }
 
       const matchesSearch = 
