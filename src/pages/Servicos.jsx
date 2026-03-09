@@ -354,11 +354,9 @@ export default function ServicosPage() {
   const usuarioLogado = usuarios.find(u => u.email === currentUser?.email);
   const equipeIdUsuario = usuarioLogado?.equipe_id || null;
 
-  // Só filtra quando os dados de usuário e lista estiverem carregados
-  const dadosCarregados = !loadingUser && usuarios.length > 0;
-
+  // Aguarda apenas o carregamento do auth — não bloqueia nos usuários
   const filteredServicos = servicos.filter(s => {
-    if (!dadosCarregados && !isAdmin) return false;
+    if (loadingUser) return false;
     if (!isAdmin) {
       if (equipeIdUsuario) {
         if (s.equipe_id !== equipeIdUsuario) return false;
