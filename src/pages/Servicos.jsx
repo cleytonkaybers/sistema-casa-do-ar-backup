@@ -43,7 +43,7 @@ export default function ServicosPage() {
     queryFn: () => base44.entities.Equipe.list(),
   });
 
-  const { data: usuarios = [] } = useQuery({
+  const { data: usuarios = [], isLoading: isLoadingUsuarios } = useQuery({
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
   });
