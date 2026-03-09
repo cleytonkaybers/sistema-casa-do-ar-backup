@@ -131,7 +131,7 @@ export default function Atendimentos() {
       const dataB = new Date(b.data_conclusao || b.data_atendimento);
       return dataB - dataA;
     });
-  }, [atendimentos, searchTerm, filterTipo, isAdmin, equipeIdUsuario, dadosCarregados]);
+  }, [atendimentos, searchTerm, filterTipo, isAdmin, isLoadingUsuarios, equipeIdUsuario, loadingUser]);
 
   const handleDelete = (atendimento) => {
     setDeletingAtendimento(atendimento);
