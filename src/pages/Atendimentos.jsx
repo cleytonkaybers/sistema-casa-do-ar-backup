@@ -98,12 +98,13 @@ export default function Atendimentos() {
     return Array.from(tiposSet).sort();
   }, [atendimentos]);
 
-  const isAdmin = currentUser?.role === 'admin';
   const usuarioLogado = usuarios.find(u => u.email === currentUser?.email);
   const equipeIdUsuario = usuarioLogado?.equipe_id || null;
+  // Só aplica filtro quando ambos (user + lista usuários) estiverem carregados
+  const dadosCarregados = !loadingUser && usuarios.length > 0;
 
   const filteredAtendimentos = useMemo(() => {
-    if (loadingUser) return [];
+    if (!dadosCarregados && !isAdmin) return [];
 
     const filtered = atendimentos.filter(atendimento => {
       // Filtro por equipe: admin vê tudo, não-admin só vê da sua equipe
