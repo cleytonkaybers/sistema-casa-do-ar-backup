@@ -100,20 +100,20 @@ export default function Atendimentos() {
 
   const usuarioLogado = usuarios.find(u => u.email === currentUser?.email);
   const equipeIdUsuario = usuarioLogado?.equipe_id || null;
-  // Só aplica filtro quando ambos (user + lista usuários) estiverem carregados
-  const dadosCarregados = !loadingUser && usuarios.length > 0;
 
   const filteredAtendimentos = useMemo(() => {
-    if (!dadosCarregados && !isAdmin) return [];
+    // Aguarda apenas o auth carregar
+    if (loadingUser) return [];
 
     const filtered = atendimentos.filter(atendimento => {
       // Filtro por equipe: admin vê tudo, não-admin só vê da sua equipe
       if (!isAdmin) {
-        if (equipeIdUsuario) {
+        if (!isLoadingUsuarios && equipeIdUsuario) {
           if (atendimento.equipe_id !== equipeIdUsuario) return false;
-        } else {
+        } else if (!isLoadingUsuarios && !equipeIdUsuario) {
           if (atendimento.equipe_id) return false;
         }
+        // Se isLoadingUsuarios: deixa passar (evita tela vazia)
       }
 
       const matchesSearch = 
