@@ -346,8 +346,16 @@ export default function ServicosPage() {
 
   const filteredServicos = servicos.filter(s => {
     // Filtro por equipe: admin vê tudo, não-admin só vê da sua equipe
-    if (!isAdmin && equipeIdUsuario) {
-      if (s.equipe_id && s.equipe_id !== equipeIdUsuario) return false;
+    // Aguarda o usuário carregar antes de filtrar
+    if (loadingUser) return false;
+    if (!isAdmin) {
+      if (equipeIdUsuario) {
+        // Usuário tem equipe: só vê serviços da sua equipe
+        if (s.equipe_id !== equipeIdUsuario) return false;
+      } else {
+        // Usuário sem equipe: só vê serviços sem equipe atribuída
+        if (s.equipe_id) return false;
+      }
     }
 
     // Serviços concluídos nunca aparecem na agenda
