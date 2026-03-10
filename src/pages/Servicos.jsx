@@ -23,6 +23,7 @@ export default function ServicosPage() {
   const [editingServico, setEditingServico] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('todos');
+  const [equipeFilter, setEquipeFilter] = useState('todas');
   const [isDeleting, setIsDeleting] = useState(false);
   const [showReagendarModal, setShowReagendarModal] = useState(false);
   const [servicoParaReagendar, setServicoParaReagendar] = useState(null);
@@ -346,6 +347,11 @@ export default function ServicosPage() {
       }
     }
 
+    // Filtro de equipe para admin
+    if (isAdmin && equipeFilter !== 'todas') {
+      if (s.equipe_id !== equipeFilter) return false;
+    }
+
     // Serviços concluídos nunca aparecem na agenda
     if (s.status === 'concluido') return false;
 
@@ -457,6 +463,21 @@ export default function ServicosPage() {
             className="pl-10 h-11"
           />
         </div>
+        {isAdmin && (
+          <Select value={equipeFilter} onValueChange={setEquipeFilter}>
+            <SelectTrigger className="w-full sm:w-48 h-11">
+              <SelectValue placeholder="Todas as Equipes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as Equipes</SelectItem>
+              {equipes.map(equipe => (
+                <SelectItem key={equipe.id} value={equipe.id}>
+                  {equipe.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={tipoFilter} onValueChange={setTipoFilter}>
           <SelectTrigger className="w-full sm:w-48 h-11">
             <SelectValue />
