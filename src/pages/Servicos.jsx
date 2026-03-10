@@ -552,7 +552,7 @@ export default function ServicosPage() {
                           <div className="p-3">
                             <ServicoCard
                               servico={servico}
-                              onEdit={(isAdmin || hasPermission('servicos_editar')) ? handleEdit : undefined}
+                              onEdit={handleEdit}
                               onDelete={(isAdmin || hasPermission('servicos_deletar')) ? handleDelete : undefined}
                               onStatusChange={handleStatusChange}
                               onShare={(servico) => {
