@@ -176,11 +176,11 @@ export default function ServicosPage() {
     const servicoSnapshot = { ...servicoParaConcluir };
     
     try {
-      const currentUser = await base44.auth.me();
+      const user = await base44.auth.me();
       const statusAnterior = servicoSnapshot.status || 'aberto';
       const agora = new Date().toISOString();
 
-      // 1. Atualizar serviço como concluído PRIMEIRO
+      // 1. Atualizar serviço como concluído
       await updateMutation.mutateAsync({ 
         id: servicoSnapshot.id,
         silencioso: true,
@@ -188,121 +188,104 @@ export default function ServicosPage() {
           ...servicoSnapshot,
           status: 'concluido',
           observacoes_conclusao: observacoes,
-          usuario_atualizacao_status: currentUser?.email,
+          usuario_atualizacao_status: user?.email,
           data_atualizacao_status: agora,
         }
       });
 
-      // 2. Registrar alteração de status
-      try {
-        await base44.entities.AlteracaoStatus.create({
+      // 2. Fechar modal e abrir compartilhamento IMEDIATAMENTE após atualizar o serviço
+      setShowConclusaoModal(false);
+      setServicoParaConcluir(null);
+      setServicoConcluido({ ...servicoSnapshot, observacoes_conclusao: observacoes, isConclusao: true });
+      setShowCompartilharModal(true);
+      queryClient.invalidateQueries({ queryKey: ['servicos'] });
+      toast.success(servicoSnapshot.sem_registro_cliente ? 'Serviço avulso concluído! 🎉' : 'Serviço concluído! 🎉');
+
+      // 3. Operações secundárias em background (não bloqueiam a UI)
+      Promise.all([
+        base44.entities.AlteracaoStatus.create({
           servico_id: servicoSnapshot.id,
           status_anterior: statusAnterior,
           status_novo: 'concluido',
-          usuario: currentUser?.email,
+          usuario: user?.email,
           data_alteracao: agora,
           tipo_registro: 'servico'
-        });
-      } catch (e) { /* não bloqueia a conclusão */ }
+        }).catch(() => {}),
 
-      // 3. Buscar histórico para o detalhes
-      let historicoStatus = [];
-      try {
-        historicoStatus = await base44.entities.AlteracaoStatus.filter(
-          { servico_id: servicoSnapshot.id },
-          'data_alteracao'
-        );
-      } catch (e) { /* continua sem histórico */ }
-
-      const detalhesCompletos = {
-        dados_ordem_servico: {
-          id: servicoSnapshot.id,
-          cliente_nome: servicoSnapshot.cliente_nome,
-          cpf: servicoSnapshot.cpf || null,
-          telefone: servicoSnapshot.telefone || null,
-          endereco: servicoSnapshot.endereco || null,
-          latitude: servicoSnapshot.latitude || null,
-          longitude: servicoSnapshot.longitude || null,
-          tipo_servico: servicoSnapshot.tipo_servico,
-          descricao: servicoSnapshot.descricao || null,
-          valor: servicoSnapshot.valor || 0,
-          data_programada: servicoSnapshot.data_programada || null,
-          horario: servicoSnapshot.horario || null,
-          dia_semana: servicoSnapshot.dia_semana || null,
-          equipe_id: servicoSnapshot.equipe_id || null,
-          equipe_nome: servicoSnapshot.equipe_nome || null,
-          data_criacao: servicoSnapshot.created_date || null,
-        },
-        observacoes_conclusao: observacoes || null,
-        usuario_conclusao: currentUser?.email,
-        data_conclusao: agora,
-        historico_status: historicoStatus.map(h => ({
-          status_anterior: h.status_anterior,
-          status_novo: h.status_novo,
-          usuario: h.usuario,
-          data_alteracao: h.data_alteracao,
-        })),
-      };
-
-      // 4. Criar registro de atendimento
-      await base44.entities.Atendimento.create({
-        servico_id: servicoSnapshot.id,
-        cliente_nome: servicoSnapshot.cliente_nome,
-        cpf: servicoSnapshot.cpf || '',
-        telefone: servicoSnapshot.telefone || '',
-        endereco: servicoSnapshot.endereco || '',
-        latitude: servicoSnapshot.latitude || null,
-        longitude: servicoSnapshot.longitude || null,
-        data_atendimento: servicoSnapshot.data_programada,
-        horario: servicoSnapshot.horario || '',
-        dia_semana: servicoSnapshot.dia_semana || '',
-        tipo_servico: servicoSnapshot.tipo_servico,
-        descricao: servicoSnapshot.descricao || '',
-        valor: servicoSnapshot.valor || 0,
-        observacoes_conclusao: observacoes || '',
-        equipe_id: servicoSnapshot.equipe_id || '',
-        equipe_nome: servicoSnapshot.equipe_nome || '',
-        usuario_conclusao: currentUser?.email,
-        data_conclusao: agora,
-        detalhes: JSON.stringify(detalhesCompletos),
-      });
-
-      // 5. Atualizar cliente com preventiva (opcional, não bloqueia)
-      try {
-        if (!servicoSnapshot.sem_registro_cliente) {
-          const dataConc = servicoSnapshot.data_programada || new Date().toISOString().split('T')[0];
-          const proxima = new Date(dataConc);
-          proxima.setMonth(proxima.getMonth() + 6);
-          const proximaStr = proxima.toISOString().split('T')[0];
-
-          const clientesMatch = await base44.entities.Cliente.filter({ telefone: servicoSnapshot.telefone });
-          if (clientesMatch.length > 0) {
-            await base44.entities.Cliente.update(clientesMatch[0].id, {
-              ultima_manutencao: dataConc,
-              proxima_manutencao: proximaStr
+        base44.entities.AlteracaoStatus.filter({ servico_id: servicoSnapshot.id }, 'data_alteracao')
+          .then(historicoStatus => {
+            const detalhesCompletos = {
+              dados_ordem_servico: {
+                id: servicoSnapshot.id,
+                cliente_nome: servicoSnapshot.cliente_nome,
+                cpf: servicoSnapshot.cpf || null,
+                telefone: servicoSnapshot.telefone || null,
+                endereco: servicoSnapshot.endereco || null,
+                latitude: servicoSnapshot.latitude || null,
+                longitude: servicoSnapshot.longitude || null,
+                tipo_servico: servicoSnapshot.tipo_servico,
+                descricao: servicoSnapshot.descricao || null,
+                valor: servicoSnapshot.valor || 0,
+                data_programada: servicoSnapshot.data_programada || null,
+                horario: servicoSnapshot.horario || null,
+                dia_semana: servicoSnapshot.dia_semana || null,
+                equipe_id: servicoSnapshot.equipe_id || null,
+                equipe_nome: servicoSnapshot.equipe_nome || null,
+                data_criacao: servicoSnapshot.created_date || null,
+              },
+              observacoes_conclusao: observacoes || null,
+              usuario_conclusao: user?.email,
+              data_conclusao: agora,
+              historico_status: (historicoStatus || []).map(h => ({
+                status_anterior: h.status_anterior,
+                status_novo: h.status_novo,
+                usuario: h.usuario,
+                data_alteracao: h.data_alteracao,
+              })),
+            };
+            return base44.entities.Atendimento.create({
+              servico_id: servicoSnapshot.id,
+              cliente_nome: servicoSnapshot.cliente_nome,
+              cpf: servicoSnapshot.cpf || '',
+              telefone: servicoSnapshot.telefone || '',
+              endereco: servicoSnapshot.endereco || '',
+              latitude: servicoSnapshot.latitude || null,
+              longitude: servicoSnapshot.longitude || null,
+              data_atendimento: servicoSnapshot.data_programada,
+              horario: servicoSnapshot.horario || '',
+              dia_semana: servicoSnapshot.dia_semana || '',
+              tipo_servico: servicoSnapshot.tipo_servico,
+              descricao: servicoSnapshot.descricao || '',
+              valor: servicoSnapshot.valor || 0,
+              observacoes_conclusao: observacoes || '',
+              equipe_id: servicoSnapshot.equipe_id || '',
+              equipe_nome: servicoSnapshot.equipe_nome || '',
+              usuario_conclusao: user?.email,
+              data_conclusao: agora,
+              detalhes: JSON.stringify(detalhesCompletos),
             });
-            queryClient.invalidateQueries({ queryKey: ['clientes'] });
-          }
-        }
-      } catch (e) { /* não bloqueia a conclusão */ }
+          }).catch(() => {}),
+      ]).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
+        queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
+      }).catch(() => {});
 
-      // 6. Remover notificações relacionadas (opcional, não bloqueia)
-      try {
-        const notifRelacionadas = await base44.entities.Notificacao.filter({ atendimento_id: servicoSnapshot.id });
-        for (const notif of notifRelacionadas) {
-          await base44.entities.Notificacao.delete(notif.id);
-        }
-      } catch (e) { /* não bloqueia */ }
-
-      queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
-      queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
-      queryClient.invalidateQueries({ queryKey: ['servicos'] });
-      
-      setShowConclusaoModal(false);
-      setServicoConcluido({ ...servicoSnapshot, observacoes_conclusao: observacoes, isConclusao: true });
-      setShowCompartilharModal(true);
-      setServicoParaConcluir(null);
-      toast.success(servicoSnapshot.sem_registro_cliente ? 'Serviço avulso concluído! 🎉' : 'Serviço concluído! Preventiva gerada para 6 meses. 🎉');
+      // Atualizar preventiva do cliente em background
+      if (!servicoSnapshot.sem_registro_cliente) {
+        base44.entities.Cliente.filter({ telefone: servicoSnapshot.telefone })
+          .then(clientesMatch => {
+            if (clientesMatch.length > 0) {
+              const dataConc = servicoSnapshot.data_programada || new Date().toISOString().split('T')[0];
+              const proxima = new Date(dataConc);
+              proxima.setMonth(proxima.getMonth() + 6);
+              return base44.entities.Cliente.update(clientesMatch[0].id, {
+                ultima_manutencao: dataConc,
+                proxima_manutencao: proxima.toISOString().split('T')[0]
+              });
+            }
+          }).then(() => queryClient.invalidateQueries({ queryKey: ['clientes'] }))
+          .catch(() => {});
+      }
 
     } catch (error) {
       console.error('Erro ao concluir serviço:', error);
