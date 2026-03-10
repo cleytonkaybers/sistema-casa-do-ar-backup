@@ -22,7 +22,6 @@ export default function ServicosPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingServico, setEditingServico] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tipoFilter, setTipoFilter] = useState('todos');
   const [equipeFilter, setEquipeFilter] = useState('todas');
   const [isDeleting, setIsDeleting] = useState(false);
   const [showReagendarModal, setShowReagendarModal] = useState(false);
@@ -359,8 +358,7 @@ export default function ServicosPage() {
     if (s.status === 'aberto' || s.status === 'andamento') {
       const matchSearch = s.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          s.telefone?.includes(searchTerm);
-      const matchTipo = tipoFilter === 'todos' || s.tipo_servico === tipoFilter;
-      return matchSearch && matchTipo;
+      return matchSearch;
     }
 
     // Serviços agendados/reagendados: mostrar apenas os de hoje em diante
@@ -371,9 +369,8 @@ export default function ServicosPage() {
 
     const matchSearch = s.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        s.telefone?.includes(searchTerm);
-    const matchTipo = tipoFilter === 'todos' || s.tipo_servico === tipoFilter;
     
-    return matchSearch && matchTipo;
+    return matchSearch;
   });
 
   const servicosComData = filteredServicos.filter(s => s.data_programada);
@@ -478,41 +475,6 @@ export default function ServicosPage() {
             </SelectContent>
           </Select>
         )}
-        <Select value={tipoFilter} onValueChange={setTipoFilter}>
-          <SelectTrigger className="w-full sm:w-48 h-11">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os Tipos</SelectItem>
-            <SelectItem value="Limpeza de 9k">Limpeza de 9k</SelectItem>
-            <SelectItem value="Limpeza de 12k">Limpeza de 12k</SelectItem>
-            <SelectItem value="Limpeza de 18k">Limpeza de 18k</SelectItem>
-            <SelectItem value="Limpeza de 22 a 24k">Limpeza de 22 a 24k</SelectItem>
-            <SelectItem value="Limpeza de 24k">Limpeza de 24k</SelectItem>
-            <SelectItem value="Limpeza de 30 a 32k">Limpeza de 30 a 32k</SelectItem>
-            <SelectItem value="Limpeza piso e teto">Limpeza piso e teto</SelectItem>
-            <SelectItem value="Instalação de 9k">Instalação de 9k</SelectItem>
-            <SelectItem value="Instalação de 12k">Instalação de 12k</SelectItem>
-            <SelectItem value="Instalação de 18k">Instalação de 18k</SelectItem>
-            <SelectItem value="Instalação de 22 a 24k">Instalação de 22 a 24k</SelectItem>
-            <SelectItem value="Instalação de 24k">Instalação de 24k</SelectItem>
-            <SelectItem value="Instalação de 30 a 32k">Instalação de 30 a 32k</SelectItem>
-            <SelectItem value="Instalação piso e teto">Instalação piso e teto</SelectItem>
-            <SelectItem value="Troca de capacitor">Troca de capacitor</SelectItem>
-            <SelectItem value="Recarga de gás">Recarga de gás</SelectItem>
-            <SelectItem value="Carga de gás completa">Carga de gás completa</SelectItem>
-            <SelectItem value="Serviço de solda">Serviço de solda</SelectItem>
-            <SelectItem value="Troca de relé da placa">Troca de relé da placa</SelectItem>
-            <SelectItem value="Troca de sensor">Troca de sensor</SelectItem>
-            <SelectItem value="Troca de chave contadora">Troca de chave contadora</SelectItem>
-            <SelectItem value="Conserto de placa eletrônica">Conserto de placa eletrônica</SelectItem>
-            <SelectItem value="Retirada de ar condicionado">Retirada de ar condicionado</SelectItem>
-            <SelectItem value="Serviço de passar tubulação de infra">Serviço de passar tubulação de infra</SelectItem>
-            <SelectItem value="Ver defeito">Ver defeito</SelectItem>
-            <SelectItem value="Troca de local">Troca de local</SelectItem>
-            <SelectItem value="Outro tipo de serviço">Outro tipo de serviço</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {isLoading || (loadingUser && !isAdmin) ? (
@@ -522,7 +484,7 @@ export default function ServicosPage() {
       ) : filteredServicos.length === 0 ? (
         <div className="text-center py-12 rounded-xl border-2 border-dashed border-gray-200 bg-white">
           <p className="text-gray-400">
-            {searchTerm || tipoFilter !== 'todos' 
+            {searchTerm || (isAdmin && equipeFilter !== 'todas')
               ? 'Nenhum serviço encontrado com esses filtros'
               : 'Nenhum serviço cadastrado ainda'
             }
