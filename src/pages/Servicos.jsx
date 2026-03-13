@@ -336,8 +336,8 @@ export default function ServicosPage() {
               });
 
               if (equipeTecnicos.length > 0 && valorServico > 0) {
-                const valorComissaoTotal = (valorServico * comissaoPerc) / 100;
-                const valorPorTecnico = valorComissaoTotal / equipeTecnicos.length;
+                // Cada técnico recebe 30% inteiro, não dividido
+                const valorPorTecnico = (valorServico * comissaoPerc) / 100;
                 
                 const dataConc = new Date();
                 const getWeekNumber = (d) => {
