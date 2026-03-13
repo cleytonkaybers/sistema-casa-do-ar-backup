@@ -287,6 +287,38 @@ export default function ServicosPage() {
           .catch(() => {});
       }
 
+      // Registrar ganho do técnico em background
+      Promise.all([
+        base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
+        base44.auth.me()
+      ]).then(([precificacoes, currentUser]) => {
+        if (precificacoes.length > 0 && currentUser) {
+          const prec = precificacoes[0];
+          const valorServico = servicoSnapshot.valor || prec.preco_padrao || 0;
+          const comissaoPerc = prec.comissao_tecnico_percentual || 50;
+          const valorComissao = (valorServico * comissaoPerc) / 100;
+          
+          const dataConc = new Date();
+          const semana = `${dataConc.getFullYear()}-W${String(Math.ceil((dataConc.getDate() + new Date(dataConc.getFullYear(), 0, 1).getDay()) / 7)).padStart(2, '0')}`;
+          const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
+          
+          return base44.entities.GanhoTecnico.create({
+            tecnico_email: currentUser.email,
+            tecnico_nome: currentUser.full_name || currentUser.email,
+            atendimento_id: atendimentoCriado.id,
+            cliente_nome: servicoSnapshot.cliente_nome,
+            tipo_servico: servicoSnapshot.tipo_servico,
+            valor_servico: valorServico,
+            comissao_percentual: comissaoPerc,
+            valor_comissao: valorComissao,
+            data_conclusao: agora,
+            semana: semana,
+            mes: mes,
+            pago: false
+          });
+        }
+      }).then(() => queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] })).catch(() => {});
+
     } catch (error) {
       console.error('Erro ao concluir serviço:', error);
       toast.error('Erro ao concluir serviço: ' + (error.message || 'Tente novamente'));
