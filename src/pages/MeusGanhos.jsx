@@ -112,6 +112,15 @@ export default function MeusGanhos() {
     }));
   };
 
+  const handleConfirmarPagamento = (equipeId) => {
+    const valor = parseFloat(valoresPagos[equipeId] || 0);
+    if (valor <= 0) {
+      toast.error('Digite um valor válido');
+      return;
+    }
+    toast.success(`Pagamento de R$ ${valor.toFixed(2)} confirmado`);
+  };
+
   // Filtrar ganhos baseado em permissão
   const ganhosPermitidos = useMemo(() => {
     if (!user) return [];
@@ -391,16 +400,25 @@ export default function MeusGanhos() {
                       <p className="font-bold">R$ {grupo.totalPendente.toFixed(2)}</p>
                     </div>
                     {isAdmin && (
-                      <div className="ml-4">
-                        <Label className="text-blue-100 text-xs block mb-1">Valor Pago</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={valoresPagos[grupo.equipeId] || ''}
-                          onChange={(e) => handleValorPagoChange(grupo.equipeId, e.target.value)}
-                          className="w-28 h-8 text-sm bg-white text-gray-900"
-                        />
+                      <div className="ml-4 flex items-end gap-2">
+                        <div>
+                          <Label className="text-blue-100 text-xs block mb-1">Valor Pago</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={valoresPagos[grupo.equipeId] || ''}
+                            onChange={(e) => handleValorPagoChange(grupo.equipeId, e.target.value)}
+                            className="w-28 h-8 text-sm bg-white text-gray-900"
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleConfirmarPagamento(grupo.equipeId)}
+                          className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          Confirmar
+                        </Button>
                       </div>
                     )}
                   </div>
