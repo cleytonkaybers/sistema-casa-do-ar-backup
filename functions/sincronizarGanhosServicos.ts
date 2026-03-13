@@ -90,8 +90,8 @@ Deno.serve(async (req) => {
         const ganhoData = {
           tecnico_email: tecnicoEmail,
           tecnico_nome: tecnicoNome,
-          equipe_id: servico.equipe_id,
-          equipe_nome: servico.equipe_nome,
+          equipe_id: equipeId,
+          equipe_nome: equipeNome,
           atendimento_id: atendimento.id,
           cliente_nome: servico.cliente_nome,
           tipo_servico: servico.tipo_servico,
@@ -105,10 +105,11 @@ Deno.serve(async (req) => {
         };
 
         await base44.entities.GanhoTecnico.create(ganhoData);
+        servicosComGanho.add(atendimento.id);
         sincronizados++;
-      } catch (error) {
+        } catch (error) {
         erros.push(`Erro ao sincronizar serviço ${servico.id}: ${error.message}`);
-      }
+        }
     }
 
     return Response.json({
