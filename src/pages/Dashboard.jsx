@@ -300,12 +300,12 @@ export default function Dashboard() {
 
       {/* Ganhos por Equipe para Admin */}
       {currentUser?.role === 'admin' && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-green-600" />
             Ganhos por Equipe - Semana Atual
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {equipes.map(equipe => {
               const ganhosEquipe = ganhos.filter(g => {
                 const pertenceEquipe = g.equipe_id === equipe.id;
@@ -320,36 +320,38 @@ export default function Dashboard() {
 
               return (
                 <Link key={equipe.id} to={createPageUrl('MeusGanhos')}>
-                  <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group" style={{ backgroundColor: `${equipe.cor || '#3b82f6'}20`, borderLeft: `4px solid ${equipe.cor || '#3b82f6'}` }}>
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow" style={{ backgroundColor: equipe.cor || '#3b82f6' }}>
-                            {equipe.nome.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-800">{equipe.nome}</p>
-                            <p className="text-xs text-gray-500">{ganhosEquipe.length} serviços</p>
-                          </div>
+                  <Card className="overflow-hidden border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group h-full">
+                    <div className="h-2 w-full" style={{ backgroundColor: equipe.cor || '#3b82f6' }} />
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:scale-110 transition-transform" style={{ backgroundColor: equipe.cor || '#3b82f6' }}>
+                          {equipe.nome.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{equipe.nome}</p>
+                          <p className="text-sm text-gray-500 mt-1">{ganhosEquipe.length} {ganhosEquipe.length === 1 ? 'serviço' : 'serviços'}</p>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-baseline gap-2">
-                          <DollarSign className="w-5 h-5 text-green-600" />
-                          <p className="text-3xl font-bold text-gray-800">
-                            {totalEquipe.toFixed(2).replace('.', ',')}
-                          </p>
+                      <div className="space-y-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-gray-600 font-medium">Total</span>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-sm font-medium text-gray-500">R$</span>
+                            <p className="text-4xl font-bold text-green-600">
+                              {totalEquipe.toFixed(2).replace('.', ',')}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
-                          <div className="bg-white rounded-lg p-3">
-                            <p className="text-xs text-gray-500 mb-1">Recebido</p>
-                            <p className="font-bold text-green-600">R$ {pagosEquipe.toFixed(2)}</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                            <p className="text-xs font-medium text-green-700 mb-2">Recebido</p>
+                            <p className="text-2xl font-bold text-green-600">R$ {pagosEquipe.toFixed(2)}</p>
                           </div>
-                          <div className="bg-yellow-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 mb-1">A Receber</p>
-                            <p className="font-bold text-amber-600">R$ {pendentesEquipe.toFixed(2)}</p>
+                          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-100">
+                            <p className="text-xs font-medium text-amber-700 mb-2">A Receber</p>
+                            <p className="text-2xl font-bold text-amber-600">R$ {pendentesEquipe.toFixed(2)}</p>
                           </div>
                         </div>
                       </div>
