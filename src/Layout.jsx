@@ -77,9 +77,10 @@ function LayoutContent({ children }) {
   { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
   { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle }];
 
+  const tecnicoNavigation = [
+  { name: 'Meus Ganhos', href: createPageUrl('MeusGanhos'), icon: DollarSign }];
 
   const allUsersNavigation = [
-  { name: 'Meus Ganhos', href: createPageUrl('MeusGanhos'), icon: DollarSign },
   { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
   { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() }];
 
@@ -87,7 +88,7 @@ function LayoutContent({ children }) {
   const navigation = isSuperAdmin() ?
   [...superAdminNavigation, ...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation] :
   currentUser?.tipo_usuario === 'tecnico' ?
-  [...baseNavigation, ...preventivasNavigation] :
+  [...baseNavigation, ...preventivasNavigation, ...tecnicoNavigation, ...allUsersNavigation] :
   [...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation];
 
   const isActive = (href) => {
