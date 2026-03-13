@@ -114,13 +114,9 @@ export default function MeusGanhos() {
     // Admin vê tudo
     if (isAdmin) return ganhos;
     
-    // Técnico vê os ganhos da sua equipe
-    if (minhaEquipeId) {
-      return ganhos.filter(g => g.equipe_id === minhaEquipeId);
-    }
-    
-    return [];
-  }, [ganhos, user, isAdmin, minhaEquipeId]);
+    // Técnico vê apenas seus próprios ganhos
+    return ganhos.filter(g => g.tecnico_email === meuEmail);
+  }, [ganhos, user, isAdmin, meuEmail]);
 
   // Calcular períodos (semana começa na segunda-feira)
   const hoje = new Date();
