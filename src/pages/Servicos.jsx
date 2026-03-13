@@ -319,37 +319,47 @@ export default function ServicosPage() {
                .catch(() => {});
            }
 
-           // Registrar ganhos com o atendimento_id correto
-           return base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico })
-             .then((precList) => {
-               console.log('🔍 DEBUG GANHOS:', {
-                 tipo_servico: servicoSnapshot.tipo_servico,
-                 equipe_id: servicoSnapshot.equipe_id,
-                 valor: servicoSnapshot.valor,
-                 atendimento_id: atendimentoCriado.id,
-                 precList: precList
+           // Registrar ganhos para todos os membros da equipe
+           return Promise.all([
+             base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
+             base44.entities.Servico.filter({ equipe_id: servicoSnapshot.equipe_id }),
+             base44.entities.User.list()
+           ]).then(([precList, servicosEquipe, todosUsuarios]) => {
+             if (servicoSnapshot.equipe_id && servicoSnapshot.valor > 0) {
+               // Encontrar todos os membros não-admin que trabalham nessa equipe
+               const usuariosAtivos = todosUsuarios.filter(u => u.role !== 'admin');
+               const emailsMembros = new Set();
+
+               servicosEquipe.forEach(s => {
+                 if (s.usuario_atualizacao_status) {
+                   const usuario = usuariosAtivos.find(u => u.email === s.usuario_atualizacao_status);
+                   if (usuario) {
+                     emailsMembros.add(s.usuario_atualizacao_status);
+                   }
+                 }
                });
 
-               if (servicoSnapshot.equipe_id && servicoSnapshot.valor > 0) {
-                 const prec = precList.length > 0 ? precList[0] : null;
-                 const comissaoPerc = prec?.comissao_tecnico_percentual || 30;
-                 const valorComissao = (servicoSnapshot.valor * comissaoPerc) / 100;
+               if (emailsMembros.size === 0) return;
 
-                 const dataConc = new Date();
-                 const getWeekNumber = (d) => {
-                   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-                   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-                   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-                   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-                 };
-                 const semana = `${dataConc.getFullYear()}-W${String(getWeekNumber(dataConc)).padStart(2, '0')}`;
-                 const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
+               const prec = precList.length > 0 ? precList[0] : null;
+               const comissaoPerc = prec?.comissao_tecnico_percentual || 15;
+               const valorComissao = (servicoSnapshot.valor * comissaoPerc) / 100;
 
-                 const ganhoData = {
-                   tecnico_email: user?.email || 'sistema@app.com',
-                   tecnico_nome: user?.full_name || 'Sistema',
-                   equipe_id: servicoSnapshot.equipe_id || '',
-                   equipe_nome: servicoSnapshot.equipe_nome || '',
+               const dataConc = new Date();
+               const getWeekNumber = (d) => {
+                 d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                 d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+                 const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                 return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+               };
+               const semana = `${dataConc.getFullYear()}-W${String(getWeekNumber(dataConc)).padStart(2, '0')}`;
+               const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
+
+               const ganhosParaCriar = Array.from(emailsMembros).map(email => {
+                 const usuarioMembro = usuariosAtivos.find(u => u.email === email);
+                 return {
+                   tecnico_email: email,
+                   tecnico_nome: usuarioMembro?.full_name || 'Sistema',
                    atendimento_id: atendimentoCriado.id,
                    cliente_nome: servicoSnapshot.cliente_nome,
                    tipo_servico: servicoSnapshot.tipo_servico,
@@ -361,16 +371,13 @@ export default function ServicosPage() {
                    mes: mes,
                    pago: false
                  };
+               });
 
-                 console.log('✅ CRIANDO GANHO:', ganhoData);
-                 return base44.entities.GanhoTecnico.create(ganhoData);
-               } else {
-                 console.warn('⚠️ Ganho não criado - equipe ou valor não configurado:', {
-                   hasEquipe: !!servicoSnapshot.equipe_id,
-                   hasValor: servicoSnapshot.valor > 0
-                 });
+               if (ganhosParaCriar.length > 0) {
+                 return base44.entities.GanhoTecnico.bulkCreate(ganhosParaCriar);
                }
-             });
+             }
+           });
          })
         .then(() => queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] }))
         .catch(() => {});
