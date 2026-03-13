@@ -9,43 +9,34 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Apenas administradores podem sincronizar ganhos' }, { status: 403 });
     }
 
-    // Buscar todos os serviços concluídos
-    const servicosConcluidos = await base44.entities.Servico.filter({ status: 'concluido' });
-    
-    // Buscar todos os ganhos já registrados
-    const ganhosExistentes = await base44.entities.GanhoTecnico.list();
-    const atendimentosComGanho = new Set(ganhosExistentes.map(g => g.atendimento_id));
+    // Buscar todos os atendimentos concluídos
+     const atendimentos = await base44.entities.Atendimento.list();
 
-    // Buscar precificações para referência
-    const precificacoes = await base44.entities.PrecificacaoServico.list();
-    const precMap = {};
-    precificacoes.forEach(p => {
-      precMap[p.tipo_servico] = p;
-    });
+     // Buscar todos os ganhos já registrados
+     const ganhosExistentes = await base44.entities.GanhoTecnico.list();
+     const atendimentosComGanho = new Set(ganhosExistentes.map(g => g.atendimento_id));
 
-    let sincronizados = 0;
-    let erros = [];
+     // Buscar precificações para referência
+     const precificacoes = await base44.entities.PrecificacaoServico.list();
+     const precMap = {};
+     precificacoes.forEach(p => {
+       precMap[p.tipo_servico] = p;
+     });
 
-    // Para cada serviço concluído, verificar se precisa criar ganho
-    for (const servico of servicosConcluidos) {
-      if (!servico.equipe_id || servico.valor <= 0) {
-        continue;
-      }
+     let sincronizados = 0;
+     let erros = [];
 
-      // Buscar o atendimento correspondente
-      const atendimentos = await base44.entities.Atendimento.filter({ servico_id: servico.id });
-      
-      if (atendimentos.length === 0) {
-        erros.push(`Serviço ${servico.id} não tem atendimento`);
-        continue;
-      }
+     // Para cada atendimento, criar ganho se não existir
+     for (const atendimento of atendimentos) {
+       // Verificar se já existe ganho para este atendimento
+       if (atendimentosComGanho.has(atendimento.id)) {
+         continue;
+       }
 
-      const atendimento = atendimentos[0];
-
-      // Verificar se já existe ganho para este atendimento
-      if (atendimentosComGanho.has(atendimento.id)) {
-        continue;
-      }
+       // Validar dados mínimos
+       if (!atendimento.equipe_id || atendimento.valor <= 0) {
+         continue;
+       }
 
       try {
         // Buscar nome do usuário que concluiu
