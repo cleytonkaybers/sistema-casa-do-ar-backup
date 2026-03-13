@@ -20,7 +20,7 @@ const tiposServico = [
   "Instalação de 9k",
   "Instalação de 12k",
   "Instalação de 18k",
-  "Instalação de 22 a 24k",
+  "Instalação de 22k",
   "Instalação de 24k",
   "Instalação de 30 a 32k",
   "Instalação piso e teto",
