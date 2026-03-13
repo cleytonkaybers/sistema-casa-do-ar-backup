@@ -131,9 +131,8 @@ export default function Dashboard() {
 
   const atendimentosConcluidos = atendimentos.filter(a => a.status === 'Concluído').length;
 
-  // Buscar equipe do usuário atual
-  const usuarioAtual = usuarios.find(u => u.email === currentUser?.email);
-  const equipeDoUsuario = usuarioAtual?.equipe_id;
+  // Buscar equipe do usuário atual (prioriza equipe_id direto do auth.me)
+  const equipeDoUsuario = currentUser?.equipe_id || usuarios.find(u => u.email === currentUser?.email)?.equipe_id;
 
   // Calcular ganhos da equipe do técnico (semana atual)
   const hoje = new Date();
