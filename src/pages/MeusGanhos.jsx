@@ -11,12 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, isToday as isTodayFn } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function MeusGanhos() {
   const [user, setUser] = useState(null);
-  const [filtroPeriodo, setFiltroPeriodo] = useState('semana-atual');
+  const [filtroPeriodo, setFiltroPeriodo] = useState('hoje');
   const [equipeFilter, setEquipeFilter] = useState('todas');
   const [editandoGanho, setEditandoGanho] = useState(null);
   const [valorEditado, setValorEditado] = useState('');
@@ -152,7 +152,12 @@ export default function MeusGanhos() {
     let resultado = ganhosPermitidos;
     
     // Filtro de período
-    if (filtroPeriodo === 'semana-atual') {
+    if (filtroPeriodo === 'hoje') {
+      resultado = resultado.filter(g => {
+        const dataGanho = parseISO(g.data_conclusao);
+        return isTodayFn(dataGanho);
+      });
+    } else if (filtroPeriodo === 'semana-atual') {
       resultado = resultado.filter(g => {
         const dataGanho = parseISO(g.data_conclusao);
         return isWithinInterval(dataGanho, { start: inicioSemanaAtual, end: fimSemanaAtual });
@@ -260,15 +265,16 @@ export default function MeusGanhos() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="semana-atual">Semana Atual (Seg-Dom)</SelectItem>
-              {isAdmin && (
-                <>
-                  <SelectItem value="mes-atual">Mês Atual</SelectItem>
-                  <SelectItem value="ano-atual">Ano Atual</SelectItem>
-                  <SelectItem value="todos">Histórico Completo</SelectItem>
-                </>
-              )}
-            </SelectContent>
+               <SelectItem value="hoje">Hoje</SelectItem>
+               <SelectItem value="semana-atual">Semana Atual (Seg-Dom)</SelectItem>
+               {isAdmin && (
+                 <>
+                   <SelectItem value="mes-atual">Mês Atual</SelectItem>
+                   <SelectItem value="ano-atual">Ano Atual</SelectItem>
+                   <SelectItem value="todos">Histórico Completo</SelectItem>
+                 </>
+               )}
+             </SelectContent>
           </Select>
           {isAdmin && equipes.length > 0 && (
             <Select value={equipeFilter} onValueChange={setEquipeFilter}>
