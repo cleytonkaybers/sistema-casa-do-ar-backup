@@ -313,61 +313,55 @@ export default function ServicosPage() {
            }
 
            // Registrar ganhos com o atendimento_id correto
-           return Promise.all([
-             base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
-             base44.entities.User.list()
-           ]).then(([precList, allUsers]) => {
-             console.log('🔍 DEBUG GANHOS:', {
-               tipo_servico: servicoSnapshot.tipo_servico,
-               equipe_id: servicoSnapshot.equipe_id,
-               valor: servicoSnapshot.valor,
-               atendimento_id: atendimentoCriado.id,
-               precList: precList,
-               totalUsers: allUsers.length
-             });
-
-             if (precList.length > 0 && servicoSnapshot.equipe_id && servicoSnapshot.valor > 0) {
-               const prec = precList[0];
-               const valorServico = servicoSnapshot.valor || prec.preco_padrao || 0;
-               const comissaoPerc = prec.comissao_tecnico_percentual || 30;
-
-               const valorComissao = (valorServico * comissaoPerc) / 100;
-
-               const dataConc = new Date();
-               const getWeekNumber = (d) => {
-                 d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-                 d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-                 const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-                 return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-               };
-               const semana = `${dataConc.getFullYear()}-W${String(getWeekNumber(dataConc)).padStart(2, '0')}`;
-               const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
-
-               const ganhoData = {
-                 equipe_id: servicoSnapshot.equipe_id,
-                 equipe_nome: servicoSnapshot.equipe_nome,
-                 atendimento_id: atendimentoCriado.id,
-                 cliente_nome: servicoSnapshot.cliente_nome,
+           return base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico })
+             .then((precList) => {
+               console.log('🔍 DEBUG GANHOS:', {
                  tipo_servico: servicoSnapshot.tipo_servico,
-                 valor_servico: valorServico,
-                 comissao_percentual: comissaoPerc,
-                 valor_comissao: valorComissao,
-                 data_conclusao: agora,
-                 semana: semana,
-                 mes: mes,
-                 pago: false
-               };
-
-               console.log('✅ CRIANDO GANHO:', ganhoData);
-               return base44.entities.GanhoTecnico.create(ganhoData);
-             } else {
-               console.warn('⚠️ Ganho não criado - condições não atendidas:', {
-                 hasPrecList: precList.length > 0,
-                 hasEquipe: !!servicoSnapshot.equipe_id,
-                 hasValor: servicoSnapshot.valor > 0
+                 equipe_id: servicoSnapshot.equipe_id,
+                 valor: servicoSnapshot.valor,
+                 atendimento_id: atendimentoCriado.id,
+                 precList: precList
                });
-             }
-           });
+
+               if (servicoSnapshot.equipe_id && servicoSnapshot.valor > 0) {
+                 const prec = precList.length > 0 ? precList[0] : null;
+                 const comissaoPerc = prec?.comissao_tecnico_percentual || 30;
+                 const valorComissao = (servicoSnapshot.valor * comissaoPerc) / 100;
+
+                 const dataConc = new Date();
+                 const getWeekNumber = (d) => {
+                   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+                   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                 };
+                 const semana = `${dataConc.getFullYear()}-W${String(getWeekNumber(dataConc)).padStart(2, '0')}`;
+                 const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
+
+                 const ganhoData = {
+                   equipe_id: servicoSnapshot.equipe_id,
+                   equipe_nome: servicoSnapshot.equipe_nome,
+                   atendimento_id: atendimentoCriado.id,
+                   cliente_nome: servicoSnapshot.cliente_nome,
+                   tipo_servico: servicoSnapshot.tipo_servico,
+                   valor_servico: servicoSnapshot.valor,
+                   comissao_percentual: comissaoPerc,
+                   valor_comissao: valorComissao,
+                   data_conclusao: agora,
+                   semana: semana,
+                   mes: mes,
+                   pago: false
+                 };
+
+                 console.log('✅ CRIANDO GANHO:', ganhoData);
+                 return base44.entities.GanhoTecnico.create(ganhoData);
+               } else {
+                 console.warn('⚠️ Ganho não criado - equipe ou valor não configurado:', {
+                   hasEquipe: !!servicoSnapshot.equipe_id,
+                   hasValor: servicoSnapshot.valor > 0
+                 });
+               }
+             });
          })
         .then(() => queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] }))
         .catch(() => {});
