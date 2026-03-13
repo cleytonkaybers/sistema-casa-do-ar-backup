@@ -309,7 +309,7 @@ export default function ServicosPage() {
           .catch(() => {});
       }
 
-      // Registrar ganhos dos técnicos da equipe em background
+      // Registrar ganhos dos técnicos da equipe designada em background
       Promise.all([
         base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
         base44.auth.me(),
@@ -320,10 +320,10 @@ export default function ServicosPage() {
           const valorServico = servicoSnapshot.valor || prec.preco_padrao || 0;
           const comissaoPerc = prec.comissao_tecnico_percentual || 30;
           
-          // Encontrar técnicos da equipe
+          // Encontrar SOMENTE técnicos da equipe designada para este serviço
           const equipeTecnicos = allUsers.filter(u => {
-            const equipeIds = u.equipe_ids ? JSON.parse(u.equipe_ids) : [];
-            return equipeIds.includes(servicoSnapshot.equipe_id);
+            // Verificar se o usuário tem equipe_id (campo direto) igual à equipe do serviço
+            return u.equipe_id === servicoSnapshot.equipe_id;
           });
 
           if (equipeTecnicos.length > 0 && valorServico > 0) {
