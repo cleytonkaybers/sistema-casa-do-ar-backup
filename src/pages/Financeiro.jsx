@@ -8,41 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DollarSign, Edit, Save, X, TrendingUp, Percent } from 'lucide-react';
 import { toast } from 'sonner';
-
-const tiposServico = [
-  "Limpeza de 9k",
-  "Limpeza de 12k",
-  "Limpeza de 18k",
-  "Limpeza de 22 a 24k",
-  "Limpeza de 24k",
-  "Limpeza de 30 a 32k",
-  "Limpeza piso e teto",
-  "Instalação de 9k",
-  "Instalação de 12k",
-  "Instalação de 18k",
-  "Instalação de 22k",
-  "Instalação de 24k",
-  "Instalação de 30 a 32k",
-  "Instalação piso e teto",
-  "Instalação de cortina de ar",
-  "Mudança + limpeza ar 9/12/18",
-  "Mudança + limpeza 22/24/30",
-  "Retirada cortina de ar",
-  "Troca de compressor",
-  "Troca de capacitor",
-  "Recarga de gás",
-  "Carga de gás completa",
-  "Serviço de solda",
-  "Troca de relé da placa",
-  "Troca de sensor",
-  "Troca de chave contadora",
-  "Conserto de placa eletrônica",
-  "Retirada de ar condicionado",
-  "Serviço de passar tubulação de infra",
-  "Ver defeito",
-  "Troca de local",
-  "Outro tipo de serviço"
-];
+import { TIPOS_SERVICOS } from '@/components/utils/tiposServicos';
 
 export default function Financeiro() {
   const [editingId, setEditingId] = useState(null);
@@ -91,7 +57,7 @@ export default function Financeiro() {
 
   const handleCreateMissing = async () => {
     const existingTipos = precificacoes.map(p => p.tipo_servico);
-    const missing = tiposServico.filter(t => !existingTipos.includes(t));
+    const missing = TIPOS_SERVICOS.filter(t => !existingTipos.includes(t));
     
     for (const tipo of missing) {
       await createMutation.mutateAsync({
