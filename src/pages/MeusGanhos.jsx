@@ -155,13 +155,8 @@ export default function MeusGanhos() {
     }
     // 'todos' não filtra
     
-    // Filtro de equipe (apenas para admin)
-    if (isAdmin && equipeFilter !== 'todas') {
-      resultado = resultado.filter(g => g.equipe_id === equipeFilter);
-    }
-    
     return resultado;
-  }, [ganhosPermitidos, filtroPeriodo, isAdmin, equipeFilter, usuarios, inicioSemanaAtual, fimSemanaAtual, inicioMesAtual, fimMesAtual, inicioAnoAtual, fimAnoAtual]);
+  }, [ganhosPermitidos, filtroPeriodo, inicioSemanaAtual, fimSemanaAtual, inicioMesAtual, fimMesAtual, inicioAnoAtual, fimAnoAtual]);
 
 
 
