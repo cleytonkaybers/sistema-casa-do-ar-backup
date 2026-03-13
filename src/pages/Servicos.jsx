@@ -312,12 +312,27 @@ export default function ServicosPage() {
             base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
             base44.entities.User.list()
           ]).then(([precList, allUsers]) => {
+            console.log('🔍 DEBUG GANHOS:', {
+              tipo_servico: servicoSnapshot.tipo_servico,
+              equipe_id: servicoSnapshot.equipe_id,
+              valor: servicoSnapshot.valor,
+              precList: precList,
+              totalUsers: allUsers.length
+            });
+
             if (precList.length > 0 && servicoSnapshot.equipe_id) {
               const prec = precList[0];
               const valorServico = servicoSnapshot.valor || prec.preco_padrao || 0;
               const comissaoPerc = prec.comissao_tecnico_percentual || 30;
               
               const equipeTecnicos = allUsers.filter(u => u.equipe_id === servicoSnapshot.equipe_id);
+
+              console.log('💰 CALCULANDO GANHOS:', {
+                valorServico,
+                comissaoPerc,
+                equipeTecnicos: equipeTecnicos.map(t => ({ email: t.email, equipe_id: t.equipe_id })),
+                totalTecnicos: equipeTecnicos.length
+              });
 
               if (equipeTecnicos.length > 0 && valorServico > 0) {
                 const valorComissaoTotal = (valorServico * comissaoPerc) / 100;
