@@ -131,6 +131,10 @@ export default function Dashboard() {
 
   const atendimentosConcluidos = atendimentos.filter(a => a.status === 'Concluído').length;
 
+  // Buscar equipe do usuário atual
+  const usuarioAtual = usuarios.find(u => u.email === currentUser?.email);
+  const equipeDoUsuario = usuarioAtual?.equipe_id;
+
   // Calcular ganhos da equipe do técnico (semana atual)
   const hoje = new Date();
   const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 });
@@ -154,10 +158,6 @@ export default function Dashboard() {
     if (s.status === 'concluido') return false;
     return isToday(new Date(s.data_programada));
   });
-
-  // Buscar equipe do usuário atual
-  const usuarioAtual = usuarios.find(u => u.email === currentUser?.email);
-  const equipeDoUsuario = usuarioAtual?.equipe_id;
 
   // Filtrar apenas serviços da equipe do usuário (se não for admin)
   const servicosFiltradosPorEquipe = currentUser?.role === 'admin' 
