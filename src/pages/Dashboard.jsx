@@ -319,45 +319,72 @@ export default function Dashboard() {
               const pendentesEquipe = totalEquipe - pagosEquipe;
 
               return (
-                <Link key={equipe.id} to={createPageUrl('MeusGanhos')}>
-                  <Card className="overflow-hidden border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group h-full">
-                    <div className="h-2 w-full" style={{ backgroundColor: equipe.cor || '#3b82f6' }} />
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:scale-110 transition-transform" style={{ backgroundColor: equipe.cor || '#3b82f6' }}>
-                          {equipe.nome.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold text-gray-900">{equipe.nome}</p>
-                          <p className="text-sm text-gray-500 mt-1">{ganhosEquipe.length} {ganhosEquipe.length === 1 ? 'serviço' : 'serviços'}</p>
+                <Card key={equipe.id} className="overflow-hidden border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 h-full flex flex-col">
+                  <div className="h-2 w-full" style={{ backgroundColor: equipe.cor || '#3b82f6' }} />
+                  <CardContent className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg" style={{ backgroundColor: equipe.cor || '#3b82f6' }}>
+                        {equipe.nome.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900">{equipe.nome}</p>
+                        <p className="text-sm text-gray-500 mt-1">{ganhosEquipe.length} {ganhosEquipe.length === 1 ? 'serviço' : 'serviços'}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-gray-100 mb-6">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-gray-600 font-medium">Total</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm font-medium text-gray-500">R$</span>
+                          <p className="text-4xl font-bold text-green-600">
+                            {totalEquipe.toFixed(2).replace('.', ',')}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="space-y-4 pt-4 border-t border-gray-100">
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-gray-600 font-medium">Total</span>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-sm font-medium text-gray-500">R$</span>
-                            <p className="text-4xl font-bold text-green-600">
-                              {totalEquipe.toFixed(2).replace('.', ',')}
-                            </p>
-                          </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                          <p className="text-xs font-medium text-green-700 mb-2">Recebido</p>
+                          <p className="text-2xl font-bold text-green-600">R$ {pagosEquipe.toFixed(2)}</p>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-                            <p className="text-xs font-medium text-green-700 mb-2">Recebido</p>
-                            <p className="text-2xl font-bold text-green-600">R$ {pagosEquipe.toFixed(2)}</p>
-                          </div>
-                          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-100">
-                            <p className="text-xs font-medium text-amber-700 mb-2">A Receber</p>
-                            <p className="text-2xl font-bold text-amber-600">R$ {pendentesEquipe.toFixed(2)}</p>
-                          </div>
+                        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-100">
+                          <p className="text-xs font-medium text-amber-700 mb-2">A Receber</p>
+                          <p className="text-2xl font-bold text-amber-600">R$ {pendentesEquipe.toFixed(2)}</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </div>
+
+                    {/* Lista de serviços da equipe */}
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-700 mb-3">Serviços Concluídos</p>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {ganhosEquipe.length === 0 ? (
+                          <p className="text-xs text-gray-400 text-center py-4">Nenhum serviço nesta semana</p>
+                        ) : (
+                          ganhosEquipe.map(ganho => (
+                            <div key={ganho.id} className="bg-gray-50 rounded-lg p-2.5 border border-gray-200 text-xs">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 truncate">{ganho.cliente_nome}</p>
+                                  <p className="text-gray-500 text-xs mt-0.5">{ganho.tipo_servico}</p>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="font-bold text-green-600">R$ {(ganho.valor_comissao || 0).toFixed(2)}</p>
+                                  <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium ${
+                                    ganho.pago ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                  }`}>
+                                    {ganho.pago ? 'Pago' : 'Pendente'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
