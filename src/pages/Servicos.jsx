@@ -339,6 +339,8 @@ export default function ServicosPage() {
                  const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
 
                  const ganhoData = {
+                   tecnico_email: user?.email || 'sistema@app.com',
+                   tecnico_nome: user?.full_name || 'Sistema',
                    equipe_id: servicoSnapshot.equipe_id,
                    equipe_nome: servicoSnapshot.equipe_nome,
                    atendimento_id: atendimentoCriado.id,

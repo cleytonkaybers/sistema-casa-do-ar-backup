@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
         const mes = `${dataServico.getFullYear()}-${String(dataServico.getMonth() + 1).padStart(2, '0')}`;
 
         const ganhoData = {
+          tecnico_email: atendimento.usuario_conclusao || 'sistema@app.com',
+          tecnico_nome: atendimento.usuario_conclusao || 'Sistema',
           equipe_id: servico.equipe_id,
           equipe_nome: servico.equipe_nome,
           atendimento_id: atendimento.id,
