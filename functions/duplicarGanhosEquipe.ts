@@ -31,15 +31,24 @@ Deno.serve(async (req) => {
     // Buscar todos os usuários
     const usuarios = await base44.asServiceRole.entities.User.list();
     
-    // Encontrar membros da equipe pelo email
-    const emailsMembros = usuarios
-      .filter(u => u.email && u.email !== servico.usuario_atualizacao_status)
-      .map(u => u.email);
+    // Filtrar usuários não-admin
+    const usuariosAtivos = usuarios.filter(u => u.role !== 'admin');
+    
+    // Buscar todos os serviços da mesma equipe para encontrar todos os membros
+    const servicosEquipe = await base44.asServiceRole.entities.Servico.filter({ equipe_id: servico.equipe_id });
+    
+    // Extrair emails únicos dos usuários que trabalham nessa equipe
+    const emailsEquipe = new Set();
+    servicosEquipe.forEach(s => {
+      if (s.usuario_atualizacao_status) {
+        emailsEquipe.add(s.usuario_atualizacao_status);
+      }
+    });
 
-    // Incluir o usuário que concluiu
-    if (servico.usuario_atualizacao_status) {
-      emailsMembros.unshift(servico.usuario_atualizacao_status);
-    }
+    // Filtrar apenas usuários ativos (não-admin) que pertencem à equipe
+    const emailsMembros = Array.from(emailsEquipe).filter(email => 
+      usuariosAtivos.some(u => u.email === email)
+    );
 
     // Buscar precificação
     const precificacoes = await base44.asServiceRole.entities.PrecificacaoServico.filter({
