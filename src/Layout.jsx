@@ -85,11 +85,13 @@ function LayoutContent({ children }) {
   { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() }];
 
 
+  const isAdmin = isSuperAdmin() || isAdminEmpresa() || user?.role === 'admin';
+
   const navigation = isSuperAdmin() ?
   [...superAdminNavigation, ...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation] :
-  currentUser?.tipo_usuario === 'tecnico' ?
-  [...baseNavigation, ...preventivasNavigation, ...tecnicoNavigation, ...allUsersNavigation] :
-  [...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation];
+  isAdmin ?
+  [...baseNavigation, ...preventivasNavigation, ...adminNavigation, ...allUsersNavigation] :
+  [...baseNavigation, ...preventivasNavigation, ...tecnicoNavigation, ...allUsersNavigation];
 
   const isActive = (href) => {
     return location.pathname === new URL(href, window.location.origin).pathname;
