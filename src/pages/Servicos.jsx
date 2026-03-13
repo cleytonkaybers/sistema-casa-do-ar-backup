@@ -199,6 +199,13 @@ export default function ServicosPage() {
     
     try {
       const user = await base44.auth.me();
+      
+      // Bloquear ADM de concluir serviços
+      if (user?.role === 'admin') {
+        toast.error('Apenas técnicos podem concluir serviços');
+        return;
+      }
+      
       const statusAnterior = servicoSnapshot.status || 'aberto';
       const agora = new Date().toISOString();
 
