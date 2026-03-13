@@ -5,7 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Calendar, CheckCircle, Clock, Award } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, CheckCircle, Clock, Award, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -13,6 +18,9 @@ export default function MeusGanhos() {
   const [user, setUser] = useState(null);
   const [filtroPeriodo, setFiltroPeriodo] = useState('semana-atual');
   const [equipeFilter, setEquipeFilter] = useState('todas');
+  const [editandoGanho, setEditandoGanho] = useState(null);
+  const [valorEditado, setValorEditado] = useState('');
+  const queryClient = useQueryClient();
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -39,6 +47,62 @@ export default function MeusGanhos() {
   const meuEmail = user?.email;
   const isAdmin = user?.role === 'admin';
   const minhaEquipeId = user?.equipe_id;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.GanhoTecnico.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] });
+      toast.success('Ganho excluído com sucesso');
+    },
+    onError: () => {
+      toast.error('Erro ao excluir ganho');
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.GanhoTecnico.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] });
+      setEditandoGanho(null);
+      setValorEditado('');
+      toast.success('Ganho atualizado com sucesso');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar ganho');
+    }
+  });
+
+  const handleEditarGanho = (ganho) => {
+    setEditandoGanho(ganho);
+    setValorEditado(ganho.valor_servico?.toString() || '');
+  };
+
+  const handleSalvarEdicao = () => {
+    if (!editandoGanho || !valorEditado) return;
+    
+    const novoValor = parseFloat(valorEditado);
+    if (isNaN(novoValor) || novoValor < 0) {
+      toast.error('Digite um valor válido');
+      return;
+    }
+
+    const novaComissao = (novoValor * (editandoGanho.comissao_percentual || 30)) / 100;
+    
+    updateMutation.mutate({
+      id: editandoGanho.id,
+      data: {
+        ...editandoGanho,
+        valor_servico: novoValor,
+        valor_comissao: novaComissao
+      }
+    });
+  };
+
+  const handleExcluirGanho = (ganhoId) => {
+    if (confirm('Tem certeza que deseja excluir este ganho?')) {
+      deleteMutation.mutate(ganhoId);
+    }
+  };
 
   // Filtrar ganhos baseado em permissão
   const ganhosPermitidos = useMemo(() => {
@@ -325,6 +389,7 @@ export default function MeusGanhos() {
                         <TableHead className="text-right font-semibold">Comissão</TableHead>
                         <TableHead className="text-right font-semibold">Ganho</TableHead>
                         <TableHead className="text-center font-semibold">Status</TableHead>
+                        {isAdmin && <TableHead className="text-center font-semibold">Ações</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -367,6 +432,28 @@ export default function MeusGanhos() {
                                 </span>
                               )}
                             </TableCell>
+                            {isAdmin && (
+                              <TableCell className="text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    onClick={() => handleEditarGanho(ganho)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleExcluirGanho(ganho.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}
@@ -378,6 +465,48 @@ export default function MeusGanhos() {
           ))}
         </div>
       )}
+
+      {/* Modal de edição */}
+      <Dialog open={!!editandoGanho} onOpenChange={() => setEditandoGanho(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Valor do Serviço</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Input value={editandoGanho?.cliente_nome || ''} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Serviço</Label>
+              <Input value={editandoGanho?.tipo_servico || ''} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor do Serviço (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={valorEditado}
+                onChange={(e) => setValorEditado(e.target.value)}
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500">
+                Comissão ({editandoGanho?.comissao_percentual || 30}%): R$ {
+                  valorEditado ? ((parseFloat(valorEditado) * (editandoGanho?.comissao_percentual || 30)) / 100).toFixed(2) : '0.00'
+                }
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditandoGanho(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSalvarEdicao} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
