@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
     const precificacoes = await base44.asServiceRole.entities.PrecificacaoServico.list();
 
     let ganhosCriados = 0;
+    const ganhosParaCriar = [];
 
     // Agrupar serviços por equipe
     const servicosPorEquipe = {};
@@ -63,7 +64,7 @@ Deno.serve(async (req) => {
         for (const emailMembro of emailsMembros) {
           const usuarioMembro = usuariosAtivos.find(u => u.email === emailMembro);
           
-          const novoGanho = {
+          ganhosParaCriar.push({
             tecnico_email: emailMembro,
             tecnico_nome: usuarioMembro?.full_name || 'Sistema',
             atendimento_id: servico.id,
@@ -76,12 +77,15 @@ Deno.serve(async (req) => {
             semana: getWeekOfYear(new Date(servico.data_atualizacao_status || new Date())),
             mes: getMesAno(new Date(servico.data_atualizacao_status || new Date())),
             pago: false
-          };
-
-          await base44.asServiceRole.entities.GanhoTecnico.create(novoGanho);
-          ganhosCriados++;
+          });
         }
       }
+    }
+
+    // Criar todos em lote
+    if (ganhosParaCriar.length > 0) {
+      await base44.asServiceRole.entities.GanhoTecnico.bulkCreate(ganhosParaCriar);
+      ganhosCriados = ganhosParaCriar.length;
     }
 
     return Response.json({
