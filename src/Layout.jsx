@@ -21,7 +21,8 @@ import {
   Cloud,
   Droplets,
   RotateCw,
-  ChevronRight } from
+  ChevronRight,
+  DollarSign } from
 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ function LayoutContent({ children }) {
 
 
   const adminNavigation = [
+  { name: 'Financeiro', href: createPageUrl('Financeiro'), icon: DollarSign },
   { name: 'Relatórios', href: createPageUrl('Relatorios'), icon: BarChart3 },
   { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
   { name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users },
@@ -77,6 +79,7 @@ function LayoutContent({ children }) {
 
 
   const allUsersNavigation = [
+  { name: 'Meus Ganhos', href: createPageUrl('MeusGanhos'), icon: DollarSign },
   { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
   { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() }];
 
