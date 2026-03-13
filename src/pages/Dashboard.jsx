@@ -140,8 +140,7 @@ export default function Dashboard() {
   const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
   
   const ganhosEquipeSemana = ganhos.filter(g => {
-    const usuario = usuarios.find(u => u.email === g.tecnico_email);
-    const pertenceMinhaEquipe = usuario?.equipe_id === equipeDoUsuario;
+    const pertenceMinhaEquipe = g.equipe_id === equipeDoUsuario;
     const dataGanho = new Date(g.data_conclusao);
     const naSemanaAtual = isWithinInterval(dataGanho, { start: inicioSemana, end: fimSemana });
     return pertenceMinhaEquipe && naSemanaAtual;
