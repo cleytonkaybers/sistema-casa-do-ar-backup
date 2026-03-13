@@ -65,12 +65,11 @@ Deno.serve(async (req) => {
           }
         }
 
-        const prec = precMap[atendimento.tipo_servico];
-        const comissaoPerc = prec?.comissao_tecnico_percentual || 30;
-        const valorComissao = (atendimento.valor * comissaoPerc) / 100;
+        const comissaoPerc = prec.comissao_tecnico_percentual || 30;
+        const valorComissao = (servico.valor * comissaoPerc) / 100;
 
         // Calcular semana e mês
-        const dataConc = new Date(atendimento.data_conclusao || atendimento.created_date);
+        const dataConc = new Date(atendimento.data_conclusao || servico.data_atualizacao_status || new Date().toISOString());
         const getWeekNumber = (d) => {
           d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
           d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -83,15 +82,15 @@ Deno.serve(async (req) => {
         const ganhoData = {
           tecnico_email: tecnicoEmail,
           tecnico_nome: tecnicoNome,
-          equipe_id: atendimento.equipe_id,
-          equipe_nome: atendimento.equipe_nome,
+          equipe_id: servico.equipe_id,
+          equipe_nome: servico.equipe_nome,
           atendimento_id: atendimento.id,
-          cliente_nome: atendimento.cliente_nome,
-          tipo_servico: atendimento.tipo_servico,
-          valor_servico: atendimento.valor,
+          cliente_nome: servico.cliente_nome,
+          tipo_servico: servico.tipo_servico,
+          valor_servico: servico.valor,
           comissao_percentual: comissaoPerc,
           valor_comissao: valorComissao,
-          data_conclusao: atendimento.data_conclusao || dataConc.toISOString(),
+          data_conclusao: dataConc.toISOString(),
           semana: semana,
           mes: mes,
           pago: false
@@ -100,7 +99,7 @@ Deno.serve(async (req) => {
         await base44.entities.GanhoTecnico.create(ganhoData);
         sincronizados++;
       } catch (error) {
-        erros.push(`Erro ao sincronizar atendimento ${atendimento.id}: ${error.message}`);
+        erros.push(`Erro ao sincronizar serviço ${servico.id}: ${error.message}`);
       }
     }
 
