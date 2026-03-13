@@ -74,8 +74,6 @@ Deno.serve(async (req) => {
         const ganhoData = {
           tecnico_email: tecnicoEmail,
           tecnico_nome: tecnicoNome,
-          equipe_id: equipeId,
-          equipe_nome: equipeNome,
           atendimento_id: atendimento.id,
           cliente_nome: servico.cliente_nome,
           tipo_servico: servico.tipo_servico,
