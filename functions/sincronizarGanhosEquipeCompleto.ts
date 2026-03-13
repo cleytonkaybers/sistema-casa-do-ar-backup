@@ -12,8 +12,14 @@ Deno.serve(async (req) => {
     // Deletar ganhos existentes para refazer
     const ganhosExistentes = await base44.asServiceRole.entities.GanhoTecnico.list();
     
-    for (const ganho of ganhosExistentes) {
-      await base44.asServiceRole.entities.GanhoTecnico.delete(ganho.id);
+    if (ganhosExistentes.length > 0) {
+      // Deletar em lotes para evitar rate limit
+      for (let i = 0; i < ganhosExistentes.length; i += 100) {
+        const lote = ganhosExistentes.slice(i, i + 100);
+        for (const ganho of lote) {
+          await base44.asServiceRole.entities.GanhoTecnico.delete(ganho.id);
+        }
+      }
     }
 
     // Buscar serviços concluídos
