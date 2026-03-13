@@ -25,6 +25,11 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     queryFn: () => base44.entities.Cliente.list(),
   });
 
+  const { data: precificacoes = [] } = useQuery({
+    queryKey: ['precificacoes'],
+    queryFn: () => base44.entities.PrecificacaoServico.list(),
+  });
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (clienteSearchRef.current && !clienteSearchRef.current.contains(e.target)) {
@@ -496,6 +501,14 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                       const newTipos = [...formData.tipos_servico];
                       newTipos[index] = value;
                       setFormData({ ...formData, tipos_servico: newTipos });
+
+                      // Auto-carregar preço da precificação
+                      if (!servico && index === 0) {
+                        const prec = precificacoes.find(p => p.tipo_servico === value);
+                        if (prec && prec.preco_padrao) {
+                          setFormData(prev => ({ ...prev, valor: prec.preco_padrao }));
+                        }
+                      }
                     }}
                   >
                     <SelectTrigger>
