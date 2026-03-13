@@ -250,14 +250,14 @@ export default function MeusGanhos() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isAdmin ? 'Ganhos das Equipes' : 'Meus Ganhos'}
-          </h1>
-          <p className="text-gray-600 mt-1">
-            {isAdmin ? 'Acompanhe as comissões de todas as equipes' : 'Acompanhe suas comissões semanais'}
-          </p>
-        </div>
+         <div>
+           <h1 className="text-3xl font-bold text-gray-900">
+             {isAdmin ? 'Ganhos das Equipes' : 'Meus Ganhos'}
+           </h1>
+           <p className="text-gray-600 mt-1">
+             {isAdmin ? 'Acompanhe as comissões de todas as equipes' : `Acompanhe as comissões da equipe ${equipes.find(e => e.id === minhaEquipeId)?.nome || ''}`}
+           </p>
+         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Calendar className="w-5 h-5 text-blue-600" />
           <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
@@ -357,15 +357,19 @@ export default function MeusGanhos() {
           <CardContent className="py-12">
             <div className="text-center">
               <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Nenhum ganho registrado neste período</p>
+              <p className="text-gray-500">
+                {isAdmin ? 'Nenhum ganho registrado neste período' : 'Sua equipe ainda não tem ganhos registrados neste período'}
+              </p>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {ganhosPorEquipe.map((grupo) => (
+          {ganhosPorEquipe.map((grupo) => {
+            const equipeObj = equipes.find(e => e.id === grupo.equipeId);
+            return (
             <Card key={grupo.equipeId} className="overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+              <CardHeader className="text-white" style={{ background: `linear-gradient(135deg, ${equipeObj?.cor || '#3b82f6'}, ${equipeObj?.cor || '#3b82f6'}cc)` }}>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5" />
@@ -492,10 +496,11 @@ export default function MeusGanhos() {
                   </Table>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </Card>
+              );
+              })}
+              </div>
+              )}
 
       {/* Modal de edição */}
       <Dialog open={!!editandoGanho} onOpenChange={() => setEditandoGanho(null)}>
