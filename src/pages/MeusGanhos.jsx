@@ -299,7 +299,7 @@ export default function MeusGanhos() {
                     <TableHeader>
                       <TableRow className="bg-gray-50">
                         <TableHead className="font-semibold">Cliente</TableHead>
-                        <TableHead className="font-semibold">Técnico</TableHead>
+                        <TableHead className="font-semibold">Equipe</TableHead>
                         <TableHead className="font-semibold">Serviço</TableHead>
                         <TableHead className="font-semibold">Data</TableHead>
                         <TableHead className="text-right font-semibold">Valor</TableHead>
@@ -311,14 +311,18 @@ export default function MeusGanhos() {
                     <TableBody>
                       {grupo.ganhos
                         .sort((a, b) => new Date(b.data_conclusao) - new Date(a.data_conclusao))
-                        .map((ganho) => (
-                          <TableRow 
-                            key={ganho.id}
-                            className={ganho.pago ? 'bg-green-50' : 'hover:bg-gray-50'}
-                          >
-                            <TableCell className="font-medium">{ganho.cliente_nome}</TableCell>
-                            <TableCell className="text-sm text-blue-600">{ganho.tecnico_nome}</TableCell>
-                            <TableCell className="text-sm">{ganho.tipo_servico}</TableCell>
+                        .map((ganho) => {
+                          const usuario = usuarios.find(u => u.email === ganho.tecnico_email);
+                          const equipeNome = equipes.find(e => e.id === usuario?.equipe_id)?.nome || 'Sem Equipe';
+                          
+                          return (
+                            <TableRow 
+                              key={ganho.id}
+                              className={ganho.pago ? 'bg-green-50' : 'hover:bg-gray-50'}
+                            >
+                              <TableCell className="font-medium">{ganho.cliente_nome}</TableCell>
+                              <TableCell className="text-sm text-blue-600">{equipeNome}</TableCell>
+                              <TableCell className="text-sm">{ganho.tipo_servico}</TableCell>
                             <TableCell className="text-sm text-gray-600">
                               {format(parseISO(ganho.data_conclusao), "dd/MM/yy HH:mm", { locale: ptBR })}
                             </TableCell>
@@ -345,7 +349,8 @@ export default function MeusGanhos() {
                               )}
                             </TableCell>
                           </TableRow>
-                        ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
