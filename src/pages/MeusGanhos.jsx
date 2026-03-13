@@ -4,13 +4,14 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, TrendingUp, Calendar, CheckCircle, Clock, Award } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear } from 'date-fns';
+import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function MeusGanhos() {
   const [user, setUser] = useState(null);
-  const [filtroSemana, setFiltroSemana] = useState('atual');
+  const [filtroPeriodo, setFiltroPeriodo] = useState('semana-atual');
   const [equipeFilter, setEquipeFilter] = useState('todas');
 
   React.useEffect(() => {
@@ -56,20 +57,37 @@ export default function MeusGanhos() {
     return ganhos.filter(g => g.tecnico_email === meuEmail);
   }, [ganhos, user, isAdmin, minhaEquipeId, usuarios, meuEmail]);
 
-  // Calcular semana atual
+  // Calcular períodos (semana começa na segunda-feira)
   const hoje = new Date();
-  const semanaAtual = `${getYear(hoje)}-W${String(getWeek(hoje, { locale: ptBR })).padStart(2, '0')}`;
+  const inicioSemanaAtual = startOfWeek(hoje, { weekStartsOn: 1 }); // 1 = Segunda
+  const fimSemanaAtual = endOfWeek(hoje, { weekStartsOn: 1 });
+  const inicioMesAtual = startOfMonth(hoje);
+  const fimMesAtual = endOfMonth(hoje);
+  const inicioAnoAtual = startOfYear(hoje);
+  const fimAnoAtual = endOfYear(hoje);
 
-  // Filtrar por semana e equipe
+  // Filtrar por período e equipe
   const ganhosFiltrados = useMemo(() => {
     let resultado = ganhosPermitidos;
     
-    // Filtro de semana
-    if (filtroSemana === 'atual') {
-      resultado = resultado.filter(g => g.semana === semanaAtual);
-    } else if (filtroSemana !== 'todos') {
-      resultado = resultado.filter(g => g.semana === filtroSemana);
+    // Filtro de período
+    if (filtroPeriodo === 'semana-atual') {
+      resultado = resultado.filter(g => {
+        const dataGanho = parseISO(g.data_conclusao);
+        return isWithinInterval(dataGanho, { start: inicioSemanaAtual, end: fimSemanaAtual });
+      });
+    } else if (filtroPeriodo === 'mes-atual') {
+      resultado = resultado.filter(g => {
+        const dataGanho = parseISO(g.data_conclusao);
+        return isWithinInterval(dataGanho, { start: inicioMesAtual, end: fimMesAtual });
+      });
+    } else if (filtroPeriodo === 'ano-atual') {
+      resultado = resultado.filter(g => {
+        const dataGanho = parseISO(g.data_conclusao);
+        return isWithinInterval(dataGanho, { start: inicioAnoAtual, end: fimAnoAtual });
+      });
     }
+    // 'todos' não filtra
     
     // Filtro de equipe (apenas para admin)
     if (isAdmin && equipeFilter !== 'todas') {
@@ -78,13 +96,9 @@ export default function MeusGanhos() {
     }
     
     return resultado;
-  }, [ganhosPermitidos, filtroSemana, semanaAtual, isAdmin, equipeFilter, usuarios]);
+  }, [ganhosPermitidos, filtroPeriodo, isAdmin, equipeFilter, usuarios, inicioSemanaAtual, fimSemanaAtual, inicioMesAtual, fimMesAtual, inicioAnoAtual, fimAnoAtual]);
 
-  // Obter semanas únicas
-  const semanasUnicas = useMemo(() => {
-    const semanas = [...new Set(ganhosPermitidos.map(g => g.semana))].filter(Boolean);
-    return semanas.sort().reverse();
-  }, [ganhosPermitidos]);
+
 
   // Agrupar ganhos por equipe
   const ganhosPorEquipe = useMemo(() => {
@@ -120,8 +134,22 @@ export default function MeusGanhos() {
 
   // Calcular totais
   const totalGanhos = ganhosFiltrados.reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
-  const totalPago = ganhosFiltrados.filter(g => g.pago).reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
-  const totalPendente = ganhosFiltrados.filter(g => !g.pago).reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
+  
+  // "Já Recebido" mostra apenas ganhos mensais pagos
+  const ganhosMensaisPagos = ganhosPermitidos.filter(g => {
+    if (!g.pago) return false;
+    const dataGanho = parseISO(g.data_conclusao);
+    return isWithinInterval(dataGanho, { start: inicioMesAtual, end: fimMesAtual });
+  });
+  const totalPagoMensal = ganhosMensaisPagos.reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
+  
+  // "A Receber" mostra apenas da semana atual (segunda a domingo)
+  const ganhosSemanaAtual = ganhosFiltrados.filter(g => {
+    if (g.pago) return false;
+    const dataGanho = parseISO(g.data_conclusao);
+    return isWithinInterval(dataGanho, { start: inicioSemanaAtual, end: fimSemanaAtual });
+  });
+  const totalPendenteSemanal = ganhosSemanaAtual.reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
 
   if (isLoading || !user) {
     return (
@@ -144,18 +172,19 @@ export default function MeusGanhos() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Calendar className="w-5 h-5 text-blue-600" />
-          <Select value={filtroSemana} onValueChange={setFiltroSemana}>
+          <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="atual">Semana Atual</SelectItem>
-              <SelectItem value="todos">Todas as Semanas</SelectItem>
-              {semanasUnicas.map(sem => (
-                <SelectItem key={sem} value={sem}>
-                  Semana {sem}
-                </SelectItem>
-              ))}
+              <SelectItem value="semana-atual">Semana Atual (Seg-Dom)</SelectItem>
+              {isAdmin && (
+                <>
+                  <SelectItem value="mes-atual">Mês Atual</SelectItem>
+                  <SelectItem value="ano-atual">Ano Atual</SelectItem>
+                  <SelectItem value="todos">Histórico Completo</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
           {isAdmin && equipes.length > 0 && (
@@ -197,15 +226,15 @@ export default function MeusGanhos() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              Já Recebido
+              Já Recebido (Mês)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-blue-700">
-              R$ {totalPago.toFixed(2)}
+              R$ {totalPagoMensal.toFixed(2)}
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              {ganhosFiltrados.filter(g => g.pago).length} pagamentos
+              {ganhosMensaisPagos.length} pagamentos
             </p>
           </CardContent>
         </Card>
@@ -214,15 +243,15 @@ export default function MeusGanhos() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-orange-700 flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              A Receber
+              A Receber (Semana)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-orange-700">
-              R$ {totalPendente.toFixed(2)}
+              R$ {totalPendenteSemanal.toFixed(2)}
             </p>
             <p className="text-xs text-orange-600 mt-1">
-              {ganhosFiltrados.filter(g => !g.pago).length} pendentes
+              Seg-Dom • {ganhosSemanaAtual.length} pendentes
             </p>
           </CardContent>
         </Card>
@@ -264,60 +293,61 @@ export default function MeusGanhos() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {grupo.ganhos
-                    .sort((a, b) => new Date(b.data_conclusao) - new Date(a.data_conclusao))
-                    .map((ganho) => (
-                      <div
-                        key={ganho.id}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          ganho.pago
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-white border-gray-200 hover:border-blue-300'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-semibold text-gray-900">{ganho.cliente_nome}</p>
-                              <span className="text-xs text-gray-500">•</span>
-                              <p className="text-xs font-medium text-blue-600">{ganho.tecnico_nome}</p>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">{ganho.tipo_servico}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {format(parseISO(ganho.data_conclusao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">Valor do Serviço</p>
-                            <p className="text-sm font-medium text-gray-700">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="font-semibold">Cliente</TableHead>
+                        <TableHead className="font-semibold">Técnico</TableHead>
+                        <TableHead className="font-semibold">Serviço</TableHead>
+                        <TableHead className="font-semibold">Data</TableHead>
+                        <TableHead className="text-right font-semibold">Valor</TableHead>
+                        <TableHead className="text-right font-semibold">Comissão</TableHead>
+                        <TableHead className="text-right font-semibold">Ganho</TableHead>
+                        <TableHead className="text-center font-semibold">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {grupo.ganhos
+                        .sort((a, b) => new Date(b.data_conclusao) - new Date(a.data_conclusao))
+                        .map((ganho) => (
+                          <TableRow 
+                            key={ganho.id}
+                            className={ganho.pago ? 'bg-green-50' : 'hover:bg-gray-50'}
+                          >
+                            <TableCell className="font-medium">{ganho.cliente_nome}</TableCell>
+                            <TableCell className="text-sm text-blue-600">{ganho.tecnico_nome}</TableCell>
+                            <TableCell className="text-sm">{ganho.tipo_servico}</TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {format(parseISO(ganho.data_conclusao), "dd/MM/yy HH:mm", { locale: ptBR })}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
                               R$ {(ganho.valor_servico || 0).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Comissão: {ganho.comissao_percentual || 0}%
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">Ganho</p>
-                            <p className="text-2xl font-bold text-green-600">
+                            </TableCell>
+                            <TableCell className="text-right text-sm text-gray-600">
+                              {ganho.comissao_percentual || 0}%
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-green-600">
                               R$ {(ganho.valor_comissao || 0).toFixed(2)}
-                            </p>
-                            {ganho.pago ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full mt-1">
-                                <CheckCircle className="w-3 h-3" />
-                                Pago
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-100 px-2 py-1 rounded-full mt-1">
-                                <Clock className="w-3 h-3" />
-                                Pendente
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {ganho.pago ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Pago
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-100 px-2 py-1 rounded-full">
+                                  <Clock className="w-3 h-3" />
+                                  Pendente
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
