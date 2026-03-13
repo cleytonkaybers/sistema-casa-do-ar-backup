@@ -112,11 +112,14 @@ export default function MeusGanhos() {
       const chaveUnica = `${ganho.cliente_nome}-${ganho.tipo_servico}-${dataServico}`;
       
       if (!ganhosUnicos[chaveUnica]) {
-        ganhosUnicos[chaveUnica] = ganho;
-      } else {
-        // Se já existe, somar os valores de comissão
-        ganhosUnicos[chaveUnica].valor_comissao += ganho.valor_comissao || 0;
+        // Calcular o valor correto da comissão: valor_servico * comissao_percentual / 100
+        const valorComissaoCorreto = (ganho.valor_servico || 0) * (ganho.comissao_percentual || 30) / 100;
+        ganhosUnicos[chaveUnica] = {
+          ...ganho,
+          valor_comissao: valorComissaoCorreto
+        };
       }
+      // Se já existe, não somar (apenas ignorar duplicata)
     });
     
     // Criar grupos por equipe usando os ganhos únicos
