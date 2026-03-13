@@ -48,10 +48,23 @@ export default function ServicosPage() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: precificacoes = [] } = useQuery({
+    queryKey: ['precificacoes'],
+    queryFn: () => base44.entities.PrecificacaoServico.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const { sem_registro_cliente, ...servicoData } = data;
-      const servico = await base44.entities.Servico.create(servicoData);
+      
+      // Buscar preço padrão se não foi definido
+      const precificacao = precificacoes.find(p => p.tipo_servico === data.tipo_servico);
+      const valorPadrao = precificacao?.preco_padrao || 0;
+      
+      const servico = await base44.entities.Servico.create({
+        ...servicoData,
+        valor: servicoData.valor || valorPadrao
+      });
       
       if (!sem_registro_cliente) {
         // Verificar duplicata por telefone OU por nome (normalizado)
@@ -91,7 +104,16 @@ export default function ServicosPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Servico.update(id, data),
+    mutationFn: ({ id, data }) => {
+      // Buscar preço padrão se não foi definido
+      const precificacao = precificacoes.find(p => p.tipo_servico === data.tipo_servico);
+      const valorPadrao = precificacao?.preco_padrao || 0;
+      
+      return base44.entities.Servico.update(id, {
+        ...data,
+        valor: data.valor || valorPadrao
+      });
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['servicos'] });
       if (!variables.silencioso) {
@@ -287,35 +309,54 @@ export default function ServicosPage() {
           .catch(() => {});
       }
 
-      // Registrar ganho do técnico em background
+      // Registrar ganhos dos técnicos da equipe em background
       Promise.all([
         base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
-        base44.auth.me()
-      ]).then(([precificacoes, currentUser]) => {
-        if (precificacoes.length > 0 && currentUser) {
-          const prec = precificacoes[0];
+        base44.auth.me(),
+        base44.entities.User.list()
+      ]).then(([precList, currentUser, allUsers]) => {
+        if (precList.length > 0 && servicoSnapshot.equipe_id) {
+          const prec = precList[0];
           const valorServico = servicoSnapshot.valor || prec.preco_padrao || 0;
-          const comissaoPerc = prec.comissao_tecnico_percentual || 50;
-          const valorComissao = (valorServico * comissaoPerc) / 100;
+          const comissaoPerc = prec.comissao_tecnico_percentual || 30;
           
-          const dataConc = new Date();
-          const semana = `${dataConc.getFullYear()}-W${String(Math.ceil((dataConc.getDate() + new Date(dataConc.getFullYear(), 0, 1).getDay()) / 7)).padStart(2, '0')}`;
-          const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
-          
-          return base44.entities.GanhoTecnico.create({
-            tecnico_email: currentUser.email,
-            tecnico_nome: currentUser.full_name || currentUser.email,
-            atendimento_id: atendimentoCriado.id,
-            cliente_nome: servicoSnapshot.cliente_nome,
-            tipo_servico: servicoSnapshot.tipo_servico,
-            valor_servico: valorServico,
-            comissao_percentual: comissaoPerc,
-            valor_comissao: valorComissao,
-            data_conclusao: agora,
-            semana: semana,
-            mes: mes,
-            pago: false
+          // Encontrar técnicos da equipe
+          const equipeTecnicos = allUsers.filter(u => {
+            const equipeIds = u.equipe_ids ? JSON.parse(u.equipe_ids) : [];
+            return equipeIds.includes(servicoSnapshot.equipe_id);
           });
+
+          if (equipeTecnicos.length > 0 && valorServico > 0) {
+            const valorComissaoTotal = (valorServico * comissaoPerc) / 100;
+            const valorPorTecnico = valorComissaoTotal / equipeTecnicos.length;
+            
+            const dataConc = new Date();
+            const getWeekNumber = (d) => {
+              d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+              d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+              const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+              return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            };
+            const semana = `${dataConc.getFullYear()}-W${String(getWeekNumber(dataConc)).padStart(2, '0')}`;
+            const mes = `${dataConc.getFullYear()}-${String(dataConc.getMonth() + 1).padStart(2, '0')}`;
+            
+            const ganhosData = equipeTecnicos.map(tecnico => ({
+              tecnico_email: tecnico.email,
+              tecnico_nome: tecnico.full_name || tecnico.email,
+              atendimento_id: null,
+              cliente_nome: servicoSnapshot.cliente_nome,
+              tipo_servico: servicoSnapshot.tipo_servico,
+              valor_servico: valorServico,
+              comissao_percentual: comissaoPerc,
+              valor_comissao: valorPorTecnico,
+              data_conclusao: agora,
+              semana: semana,
+              mes: mes,
+              pago: false
+            }));
+
+            return base44.entities.GanhoTecnico.bulkCreate(ganhosData);
+          }
         }
       }).then(() => queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] })).catch(() => {});
 
