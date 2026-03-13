@@ -20,6 +20,7 @@ export default function MeusGanhos() {
   const [equipeFilter, setEquipeFilter] = useState('todas');
   const [editandoGanho, setEditandoGanho] = useState(null);
   const [valorEditado, setValorEditado] = useState('');
+  const [valoresPagos, setValoresPagos] = useState({});
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -102,6 +103,13 @@ export default function MeusGanhos() {
     if (confirm('Tem certeza que deseja excluir este ganho?')) {
       deleteMutation.mutate(ganhoId);
     }
+  };
+
+  const handleValorPagoChange = (equipeId, valor) => {
+    setValoresPagos(prev => ({
+      ...prev,
+      [equipeId]: valor
+    }));
   };
 
   // Filtrar ganhos baseado em permissão
@@ -233,6 +241,10 @@ export default function MeusGanhos() {
     return isWithinInterval(dataGanho, { start: inicioSemanaAtual, end: fimSemanaAtual });
   });
   const totalPendenteSemanal = ganhosSemanaAtual.reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
+  
+  // Subtrair valores já pagos do total a receber
+  const totalValoresPagos = Object.values(valoresPagos).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+  const totalPendenteFinal = totalPendenteSemanal - totalValoresPagos;
 
   if (isLoading || !user) {
     return (
@@ -331,11 +343,16 @@ export default function MeusGanhos() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-orange-700">
-              R$ {totalPendenteSemanal.toFixed(2)}
+              R$ {totalPendenteFinal.toFixed(2)}
             </p>
             <p className="text-xs text-orange-600 mt-1">
               Seg-Dom • {ganhosSemanaAtual.length} pendentes
             </p>
+            {totalValoresPagos > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                (R$ {totalPendenteSemanal.toFixed(2)} - R$ {totalValoresPagos.toFixed(2)} pago)
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -360,7 +377,7 @@ export default function MeusGanhos() {
                     <TrendingUp className="w-5 h-5" />
                     {grupo.equipeNome}
                   </CardTitle>
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex gap-4 text-sm items-center">
                     <div className="text-right">
                       <p className="text-blue-100 text-xs">Total</p>
                       <p className="font-bold">R$ {grupo.total.toFixed(2)}</p>
@@ -373,6 +390,19 @@ export default function MeusGanhos() {
                       <p className="text-blue-100 text-xs">Pendente</p>
                       <p className="font-bold">R$ {grupo.totalPendente.toFixed(2)}</p>
                     </div>
+                    {isAdmin && (
+                      <div className="ml-4">
+                        <Label className="text-blue-100 text-xs block mb-1">Valor Pago</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={valoresPagos[grupo.equipeId] || ''}
+                          onChange={(e) => handleValorPagoChange(grupo.equipeId, e.target.value)}
+                          className="w-28 h-8 text-sm bg-white text-gray-900"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
