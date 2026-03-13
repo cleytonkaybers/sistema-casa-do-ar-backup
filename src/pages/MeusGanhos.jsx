@@ -229,49 +229,34 @@ export default function MeusGanhos() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-         <div>
-           <h1 className="text-3xl font-bold text-gray-900">
-             {isAdmin ? 'Ganhos das Equipes' : 'Meus Ganhos'}
-           </h1>
-           <p className="text-gray-600 mt-1">
-             {isAdmin ? 'Acompanhe as comissões de todas as equipes' : `Acompanhe as comissões da equipe ${equipes.find(e => e.id === minhaEquipeId)?.nome || ''}`}
-           </p>
-         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Calendar className="w-5 h-5 text-blue-600" />
-          <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-               <SelectItem value="hoje">Hoje</SelectItem>
-               <SelectItem value="semana-atual">Semana Atual (Seg-Dom)</SelectItem>
-               {isAdmin && (
-                 <>
-                   <SelectItem value="mes-atual">Mês Atual</SelectItem>
-                   <SelectItem value="ano-atual">Ano Atual</SelectItem>
-                   <SelectItem value="todos">Histórico Completo</SelectItem>
-                 </>
-               )}
-             </SelectContent>
-          </Select>
-          {isAdmin && equipes.length > 0 && (
-            <Select value={equipeFilter} onValueChange={setEquipeFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Todas as Equipes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as Equipes</SelectItem>
-                {equipes.map(eq => (
-                  <SelectItem key={eq.id} value={eq.id}>
-                    {eq.nome}
-                  </SelectItem>
-                ))}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {isAdmin ? 'Ganhos dos Técnicos' : 'Meus Ganhos'}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {isAdmin ? 'Acompanhe as comissões de todos os técnicos (15% por serviço)' : 'Acompanhe suas comissões (15% por serviço)'}
+            </p>
+          </div>
+         <div className="flex items-center gap-2 flex-wrap">
+           <Calendar className="w-5 h-5 text-blue-600" />
+           <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
+             <SelectTrigger className="w-48">
+               <SelectValue />
+             </SelectTrigger>
+             <SelectContent>
+                <SelectItem value="hoje">Hoje</SelectItem>
+                <SelectItem value="semana-atual">Semana Atual (Seg-Dom)</SelectItem>
+                {isAdmin && (
+                  <>
+                    <SelectItem value="mes-atual">Mês Atual</SelectItem>
+                    <SelectItem value="ano-atual">Ano Atual</SelectItem>
+                    <SelectItem value="todos">Histórico Completo</SelectItem>
+                  </>
+                )}
               </SelectContent>
-            </Select>
-          )}
-        </div>
-      </div>
+           </Select>
+         </div>
+       </div>
 
       {/* Cards de resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
