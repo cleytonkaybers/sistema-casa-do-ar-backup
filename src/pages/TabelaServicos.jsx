@@ -28,6 +28,7 @@ export default function TabelaServicos() {
   const [showModal, setShowModal] = useState(false);
   const [novoTipo, setNovoTipo] = useState('');
   const [novoValor, setNovoValor] = useState('');
+  const [isCustomType, setIsCustomType] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: valores = [] } = useQuery({
