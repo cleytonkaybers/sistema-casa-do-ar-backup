@@ -242,6 +242,7 @@ export default function MeuFinanceiro() {
                    <TableHead>Sua Comissão</TableHead>
                    <TableHead>% Ganha</TableHead>
                    <TableHead>Status</TableHead>
+                   <TableHead>Ações</TableHead>
                  </TableRow>
                </TableHeader>
                <TableBody>
