@@ -99,19 +99,21 @@ export default function MeuFinanceiro() {
     return <div className="text-center py-8">Carregando...</div>;
   }
 
-  // Filtrar comissões por período
+  // Filtrar comissões por período (apenas lançamentos do técnico logado, status pendente/pago)
   const comissoesFiltradas = minhasComissoes.filter(c => {
     if (!dataInicio || !dataFim) return true;
     const dataGeracao = format(parseISO(c.data_geracao), 'yyyy-MM-dd');
-    return dataGeracao >= dataInicio && dataGeracao <= dataFim;
+    const statusValido = c.status === 'pendente' || c.status === 'pago' || c.status === 'creditado';
+    return dataGeracao >= dataInicio && dataGeracao <= dataFim && statusValido;
   });
 
   const comissoesPendentes = comissoesFiltradas.filter(c => c.status === 'pendente');
-  const comissoesPagas = comissoesFiltradas.filter(c => c.status === 'pago');
+  const comissoesPagas = comissoesFiltradas.filter(c => c.status === 'pago' || c.status === 'creditado');
 
   // Totais semanais
   const totalPendente = comissoesPendentes.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
   const totalPago = comissoesPagas.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
+  const totalSemana = totalPendente + totalPago;
 
   // Agrupar por dia
   const comissoesPorDia = comissoesFiltradas.reduce((acc, comissao) => {
@@ -165,12 +167,15 @@ export default function MeuFinanceiro() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> Total Ganho
+              <TrendingUp className="w-4 h-4" /> Total Ganho (Semana)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ {(meuFinanceiro?.total_ganho || 0).toFixed(2)}</div>
-            <p className="text-xs text-gray-500 mt-1">Histórico completo</p>
+            <div className="text-2xl font-bold text-blue-600">R$ {totalSemana.toFixed(2)}</div>
+            <div className="text-xs text-gray-500 mt-2 space-y-1">
+              <p>Ganho: R$ {totalPago.toFixed(2)}</p>
+              <p>Pendente: R$ {totalPendente.toFixed(2)}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
