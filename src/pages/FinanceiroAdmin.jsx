@@ -491,13 +491,66 @@ export default function FinanceiroAdmin() {
                        <TableCell className="text-sm">{lanc.tecnico_nome}</TableCell>
                        <TableCell className="text-sm">{lanc.cliente_nome}</TableCell>
                        <TableCell className="text-sm">{lanc.tipo_servico}</TableCell>
-                       <TableCell className="font-semibold">R$ {lanc.valor_total_servico.toFixed(2)}</TableCell>
+                       <TableCell className="font-semibold">
+                         {editandoLancamento === lanc.id ? (
+                           <Input
+                             type="number"
+                             step="0.01"
+                             value={editValor}
+                             onChange={(e) => setEditValor(e.target.value)}
+                             className="w-24"
+                             autoFocus
+                           />
+                         ) : (
+                           `R$ ${lanc.valor_total_servico.toFixed(2)}`
+                         )}
+                       </TableCell>
                        <TableCell className="font-bold text-green-600">R$ {lanc.valor_comissao_tecnico.toFixed(2)}</TableCell>
                        <TableCell className="font-semibold text-blue-600">{percentualGanho}%</TableCell>
                        <TableCell>
                          <Badge variant={lanc.status === 'pendente' ? 'destructive' : lanc.status === 'pago' ? 'default' : 'secondary'}>
                            {lanc.status === 'pendente' ? 'Pendente' : lanc.status === 'pago' ? 'Pago' : 'Creditado'}
                          </Badge>
+                       </TableCell>
+                       <TableCell className="space-x-1">
+                         {editandoLancamento === lanc.id ? (
+                           <>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => updateLancamento(lanc.id, editValor)}
+                             >
+                               <Save className="w-4 h-4 text-green-600" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => setEditandoLancamento(null)}
+                             >
+                               <X className="w-4 h-4 text-red-600" />
+                             </Button>
+                           </>
+                         ) : (
+                           <>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => {
+                                 setEditandoLancamento(lanc.id);
+                                 setEditValor(lanc.valor_total_servico.toString());
+                               }}
+                             >
+                               <Edit2 className="w-4 h-4 text-blue-600" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => deleteLancamento(lanc.id)}
+                             >
+                               <Trash2 className="w-4 h-4 text-red-600" />
+                             </Button>
+                           </>
+                         )}
                        </TableCell>
                      </TableRow>
                    );
