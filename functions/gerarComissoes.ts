@@ -5,26 +5,37 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    // Pode ser chamado por admin manualmente ou por automação
+    const body = await req.json();
+    const { servico_id, event } = body;
+
+    // Se for automação, pega o ID do evento
+    let servicoId = servico_id;
+    if (event && event.entity_id) {
+      servicoId = event.entity_id;
     }
 
-    const { servico_id } = await req.json();
-
-    if (!servico_id) {
+    if (!servicoId) {
       return Response.json({ error: 'servico_id é obrigatório' }, { status: 400 });
     }
 
+    // Verificar se é automação (event será definido) ou chamada manual
+    const isAutomation = !!event;
+    if (!isAutomation && (!user || user.role !== 'admin')) {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
     // Buscar serviço
-    const servicos = await base44.asServiceRole.entities.Servico.filter({ id: servico_id });
+    const servicos = await base44.asServiceRole.entities.Servico.filter({ id: servicoId });
     const servico = servicos[0];
 
     if (!servico) {
       return Response.json({ error: 'Serviço não encontrado' }, { status: 404 });
     }
 
+    // Se não for conclusão, não gera comissão
     if (servico.status !== 'concluido') {
-      return Response.json({ error: 'Serviço precisa estar concluído para gerar comissões' }, { status: 400 });
+      return Response.json({ message: 'Serviço não está concluído, comissões não foram geradas', status_atual: servico.status }, { status: 200 });
     }
 
     if (!servico.gerar_comissao) {
@@ -129,14 +140,19 @@ Deno.serve(async (req) => {
       data_conclusao: new Date().toISOString()
     });
 
-    return Response.json({
+    const retorno = {
       success: true,
       message: 'Comissões geradas com sucesso',
+      servico_id: servico.id,
       lancamentos: lancamentos,
       valor_total_comissoes: valor_comissao_equipe,
       numero_tecnicos: tecnicos.length,
       valor_por_tecnico: valor_por_tecnico
-    });
+    };
+
+    console.log(`Comissões geradas - Serviço: ${servico.id}, Valor: R$ ${valor_comissao_equipe}, Técnicos: ${tecnicos.length}`);
+
+    return Response.json(retorno);
 
   } catch (error) {
     console.error('Erro ao gerar comissões:', error);
