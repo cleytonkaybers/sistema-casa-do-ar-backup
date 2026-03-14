@@ -589,7 +589,18 @@ export default function MeusGanhos() {
             </div>
             <div className="space-y-2">
               <Label>Tipo de Serviço</Label>
-              <Input value={editandoGanho?.tipo_servico || ''} disabled />
+              <Select value={tipoServicoEditado} onValueChange={setTipoServicoEditado}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-48">
+                  {TIPOS_SERVICOS.map(tipo => (
+                    <SelectItem key={tipo} value={tipo}>
+                      {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Valor do Serviço (R$)</Label>
@@ -600,9 +611,30 @@ export default function MeusGanhos() {
                 onChange={(e) => setValorEditado(e.target.value)}
                 placeholder="0.00"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Multiplicador</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={multiplicadorEditado}
+                onChange={(e) => setMultiplicadorEditado(e.target.value)}
+                placeholder="1.0"
+              />
               <p className="text-xs text-gray-500">
+                Multiplica o valor do serviço (ex: 1.5 = 50% a mais)
+              </p>
+            </div>
+            <div className="space-y-2 bg-blue-50 p-3 rounded">
+              <p className="text-sm font-medium text-blue-900">Resumo</p>
+              <p className="text-xs text-blue-700">
+                Valor com multiplicador: R$ {
+                  (valorEditado && multiplicadorEditado) ? (parseFloat(valorEditado) * parseFloat(multiplicadorEditado)).toFixed(2) : '0.00'
+                }
+              </p>
+              <p className="text-xs text-blue-700">
                 Comissão ({editandoGanho?.comissao_percentual || 15}%): R$ {
-                  valorEditado ? ((parseFloat(valorEditado) * (editandoGanho?.comissao_percentual || 15)) / 100).toFixed(2) : '0.00'
+                  (valorEditado && multiplicadorEditado) ? ((parseFloat(valorEditado) * parseFloat(multiplicadorEditado) * (editandoGanho?.comissao_percentual || 15)) / 100).toFixed(2) : '0.00'
                 }
               </p>
             </div>
