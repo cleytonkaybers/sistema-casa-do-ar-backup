@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, isToday as isTodayFn } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TIPOS_SERVICOS } from '@/components/utils/tiposServicos';
 
 export default function MeusGanhos() {
    const [user, setUser] = useState(null);
