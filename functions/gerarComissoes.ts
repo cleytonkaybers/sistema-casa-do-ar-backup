@@ -69,11 +69,10 @@ Deno.serve(async (req) => {
     }
 
     // Buscar técnicos da equipe
-    const usuarios = await base44.asServiceRole.entities.User.filter({ 
-      equipe_id: servico.equipe_id 
-    });
-
-    const tecnicos = usuarios.filter(u => u.tipo_usuario === 'tecnico');
+    const usuarios = await base44.asServiceRole.entities.User.list();
+    const tecnicos = usuarios.filter(u => 
+      u.equipe_id === servico.equipe_id && u.tipo_usuario === 'tecnico'
+    );
 
     if (tecnicos.length === 0) {
       return Response.json({ error: 'Nenhum técnico encontrado para a equipe' }, { status: 400 });
