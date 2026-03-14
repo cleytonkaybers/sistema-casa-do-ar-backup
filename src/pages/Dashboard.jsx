@@ -797,11 +797,6 @@ export default function Dashboard() {
               <p className="text-xl font-bold text-gray-700">{servicosAbertos}</p>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center">
-              Total de <span className="text-gray-700 font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
-            </p>
-          </div>
         </CardContent>
       </Card>
 
@@ -859,7 +854,12 @@ export default function Dashboard() {
         </Card>
       )}
 
-
+      {/* Rodapé */}
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <p className="text-xs text-gray-400 text-center">
+          Total de <span className="text-gray-700 font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
+        </p>
+      </div>
     </div>
   );
 }
