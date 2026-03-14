@@ -268,17 +268,27 @@ export default function MeuFinanceiro() {
                         <TableRow>
                           <TableHead>Cliente</TableHead>
                           <TableHead>Serviço</TableHead>
-                          <TableHead>Valor</TableHead>
+                          <TableHead>Equipe</TableHead>
+                          <TableHead>Valor Serviço</TableHead>
+                          <TableHead>Sua Comissão</TableHead>
+                          <TableHead>% Ganha</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {comissoes.map(comissao => (
+                        {comissoes.map(comissao => {
+                          const percentualGanho = comissao.valor_total_servico > 0 
+                            ? ((comissao.valor_comissao_tecnico / comissao.valor_total_servico) * 100).toFixed(1)
+                            : 0;
+                          return (
                           <TableRow key={comissao.id}>
                             <TableCell className="font-medium">{comissao.cliente_nome}</TableCell>
                             <TableCell className="text-sm">{comissao.tipo_servico}</TableCell>
-                            <TableCell className="font-bold">R$ {comissao.valor_comissao_tecnico.toFixed(2)}</TableCell>
+                            <TableCell className="text-sm">{comissao.equipe_nome}</TableCell>
+                            <TableCell className="font-semibold">R$ {comissao.valor_total_servico.toFixed(2)}</TableCell>
+                            <TableCell className="font-bold text-green-600">R$ {comissao.valor_comissao_tecnico.toFixed(2)}</TableCell>
+                            <TableCell className="font-semibold text-blue-600">{percentualGanho}%</TableCell>
                             <TableCell>
                               <Badge variant={comissao.status === 'pendente' ? 'destructive' : 'default'}>
                                 {comissao.status === 'pendente' ? 'Pendente' : 'Pago'}
