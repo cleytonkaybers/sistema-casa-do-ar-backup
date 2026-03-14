@@ -383,6 +383,7 @@ export default function FinanceiroAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+      </div>
+      </>
+      );
+      }
