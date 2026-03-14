@@ -35,37 +35,74 @@ Deno.serve(async (req) => {
     let ganhosCriados = 0;
     const ganhosParaCriar = [];
 
+    // Mapeamento de membros por equipe
+    const membrosPorEquipe = {
+      '699e53267d5629312b8742dd': ['vinihenrique781@gmail.com', 'vgabrielkaybersdossantos@gmail.com'], // Equipe 1
+      '699e54e99bb56cb59de69c61': ['witalok73@gmail.com', 'waglessonribero@gmail.com'] // Equipe 2
+    };
+
     // Para cada serviço concluído
     for (const servico of servicos) {
-      // Pular se não tem técnico que completou
-      if (!servico.usuario_atualizacao_status) {
+      // Pular se não tem técnico que completou ou equipe
+      if (!servico.usuario_atualizacao_status || !servico.equipe_id) {
         continue;
       }
 
       const precificacao = precificacoes.find(p => p.tipo_servico === servico.tipo_servico);
       const comissaoPercentual = precificacao?.comissao_tecnico_percentual || 15;
-      const valorComissao = (servico.valor || 0) * (comissaoPercentual / 100);
 
-      // Encontrar o usuário que completou
-      const usuarioMembro = usuariosAtivos.find(u => u.email === servico.usuario_atualizacao_status);
+      // Buscar membros da equipe
+      const membrosEquipe = membrosPorEquipe[servico.equipe_id] || [];
 
-      // Criar ganho APENAS para o técnico que completou o serviço
-      ganhosParaCriar.push({
-        tecnico_email: servico.usuario_atualizacao_status,
-        tecnico_nome: usuarioMembro?.full_name || 'Sistema',
-        atendimento_id: servico.id,
-        cliente_nome: servico.cliente_nome,
-        tipo_servico: servico.tipo_servico,
-        valor_servico: servico.valor || 0,
-        comissao_percentual: comissaoPercentual,
-        valor_comissao: valorComissao,
-        data_conclusao: servico.data_atualizacao_status || new Date().toISOString(),
-        semana: getWeekOfYear(new Date(servico.data_atualizacao_status || new Date())),
-        mes: getMesAno(new Date(servico.data_atualizacao_status || new Date())),
-        equipe_id: servico.equipe_id,
-        equipe_nome: servico.equipe_nome,
-        pago: false
-      });
+      // Se não tem membros definidos, criar ganho só para quem completou
+      if (membrosEquipe.length === 0) {
+        const usuarioMembro = usuariosAtivos.find(u => u.email === servico.usuario_atualizacao_status);
+        const valorComissao = (servico.valor || 0) * (comissaoPercentual / 100);
+
+        ganhosParaCriar.push({
+          tecnico_email: servico.usuario_atualizacao_status,
+          tecnico_nome: usuarioMembro?.full_name || 'Sistema',
+          atendimento_id: servico.id,
+          cliente_nome: servico.cliente_nome,
+          tipo_servico: servico.tipo_servico,
+          valor_servico: servico.valor || 0,
+          comissao_percentual: comissaoPercentual,
+          valor_comissao: valorComissao,
+          data_conclusao: servico.data_atualizacao_status || new Date().toISOString(),
+          semana: getWeekOfYear(new Date(servico.data_atualizacao_status || new Date())),
+          mes: getMesAno(new Date(servico.data_atualizacao_status || new Date())),
+          equipe_id: servico.equipe_id,
+          equipe_nome: servico.equipe_nome,
+          pago: false
+        });
+        continue;
+      }
+
+      // Dividir o ganho entre os membros da equipe
+      const valorComissaoTotal = (servico.valor || 0) * (comissaoPercentual / 100);
+      const valorComissaoPorMembro = valorComissaoTotal / membrosEquipe.length;
+
+      // Criar ganho para cada membro da equipe com a mesma % mas valor dividido
+      for (const emailMembro of membrosEquipe) {
+        const usuarioMembro = usuariosAtivos.find(u => u.email === emailMembro);
+
+        ganhosParaCriar.push({
+          tecnico_email: emailMembro,
+          tecnico_nome: usuarioMembro?.full_name || 'Sistema',
+          atendimento_id: servico.id,
+          cliente_nome: servico.cliente_nome,
+          tipo_servico: servico.tipo_servico,
+          valor_servico: servico.valor || 0,
+          comissao_percentual: comissaoPercentual,
+          valor_comissao: valorComissaoPorMembro,
+          data_conclusao: servico.data_atualizacao_status || new Date().toISOString(),
+          semana: getWeekOfYear(new Date(servico.data_atualizacao_status || new Date())),
+          mes: getMesAno(new Date(servico.data_atualizacao_status || new Date())),
+          equipe_id: servico.equipe_id,
+          equipe_nome: servico.equipe_nome,
+          pago: false
+        });
+      }
     }
 
     // Criar todos em lote
