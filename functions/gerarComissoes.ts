@@ -68,14 +68,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Serviço não possui equipe atribuída' }, { status: 400 });
     }
 
-    // Buscar técnicos da equipe
+    // Buscar técnicos da equipe - buscar por role em vez de tipo_usuario
     const usuarios = await base44.asServiceRole.entities.User.list();
-    const tecnicos = usuarios.filter(u => 
-      u.equipe_id === servico.equipe_id && u.tipo_usuario === 'tecnico'
-    );
+    console.log(`Total de usuários: ${usuarios.length}`);
+    
+    const tecnicos = usuarios.filter(u => {
+      console.log(`Verificando usuário: ${u.full_name}, equipe_id: ${u.equipe_id}, role: ${u.role}`);
+      return u.equipe_id === servico.equipe_id && (u.role === 'user' || u.role === 'admin');
+    });
+
+    console.log(`Técnicos encontrados para equipe ${servico.equipe_id}: ${tecnicos.length}`);
 
     if (tecnicos.length === 0) {
-      return Response.json({ error: 'Nenhum técnico encontrado para a equipe' }, { status: 400 });
+      return Response.json({ 
+        error: 'Nenhum técnico encontrado para a equipe',
+        debug: { 
+          equipe_id: servico.equipe_id,
+          total_usuarios: usuarios.length,
+          usuarios_da_equipe: usuarios.filter(u => u.equipe_id === servico.equipe_id).map(u => ({ name: u.full_name, role: u.role }))
+        }
+      }, { status: 400 });
     }
 
     // Calcular comissão (30% da equipe, dividido igualmente entre técnicos)
