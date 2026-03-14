@@ -209,7 +209,6 @@ export default function Dashboard() {
           <div className="flex-1">
             <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">{title}</p>
             <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2 text-gray-800">{value}</p>
-            {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
           </div>
           <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-lg ${color}`}>
             <Icon className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
@@ -328,7 +327,6 @@ export default function Dashboard() {
           value={totalClientes}
           icon={Users}
           color="bg-blue-500"
-          subtitle={`${clientesAtivos} ativos`}
           href={createPageUrl('Clientes')}
         />
         <StatCard
@@ -336,7 +334,6 @@ export default function Dashboard() {
           value={atendimentosDoMes.length}
           icon={ClipboardList}
           color="bg-amber-400"
-          subtitle="Este mês"
           href={createPageUrl('Atendimentos')}
         />
         <StatCard
@@ -344,7 +341,6 @@ export default function Dashboard() {
           value={manutencoesPendentes.length}
           icon={AlertTriangle}
           color="bg-emerald-500"
-          subtitle="Próx. 30 dias"
           href={createPageUrl('PreventivasFuturas')}
         />
         <StatCard
@@ -352,7 +348,6 @@ export default function Dashboard() {
           value={atendimentosConcluidos}
           icon={CheckCircle2}
           color="bg-emerald-500"
-          subtitle="Total histórico"
           href={createPageUrl('Atendimentos')}
         />
       </div>
