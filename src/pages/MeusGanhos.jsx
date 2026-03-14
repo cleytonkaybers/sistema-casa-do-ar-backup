@@ -21,6 +21,8 @@ export default function MeusGanhos() {
    const [filtroEquipe, setFiltroEquipe] = useState('todas');
    const [editandoGanho, setEditandoGanho] = useState(null);
    const [valorEditado, setValorEditado] = useState('');
+   const [tipoServicoEditado, setTipoServicoEditado] = useState('');
+   const [multiplicadorEditado, setMultiplicadorEditado] = useState('1');
    const [duplicatasDetectadas, setDuplicatasDetectadas] = useState([]);
    const [limpandoDuplicatas, setLimpandoDuplicatas] = useState(false);
    const queryClient = useQueryClient();
