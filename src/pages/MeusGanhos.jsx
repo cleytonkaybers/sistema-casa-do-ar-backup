@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Calendar, CheckCircle, Clock, Award, Edit, Trash2 } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, CheckCircle, Clock, Award, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,12 +15,14 @@ import { format, startOfWeek, endOfWeek, parseISO, getWeek, getYear, startOfMont
 import { ptBR } from 'date-fns/locale';
 
 export default function MeusGanhos() {
-  const [user, setUser] = useState(null);
-  const [filtroPeriodo, setFiltroPeriodo] = useState('semana-atual');
-  const [filtroEquipe, setFiltroEquipe] = useState('todas');
-  const [editandoGanho, setEditandoGanho] = useState(null);
-  const [valorEditado, setValorEditado] = useState('');
-  const queryClient = useQueryClient();
+   const [user, setUser] = useState(null);
+   const [filtroPeriodo, setFiltroPeriodo] = useState('semana-atual');
+   const [filtroEquipe, setFiltroEquipe] = useState('todas');
+   const [editandoGanho, setEditandoGanho] = useState(null);
+   const [valorEditado, setValorEditado] = useState('');
+   const [duplicatasDetectadas, setDuplicatasDetectadas] = useState([]);
+   const [limpandoDuplicatas, setLimpandoDuplicatas] = useState(false);
+   const queryClient = useQueryClient();
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -93,6 +95,56 @@ export default function MeusGanhos() {
   const handleExcluirGanho = (ganhoId) => {
     if (confirm('Tem certeza que deseja excluir este ganho?')) {
       deleteMutation.mutate(ganhoId);
+    }
+  };
+
+  const detectarDuplicatas = () => {
+    const mapa = {};
+    const duplicatas = [];
+
+    ganhos.forEach(ganho => {
+      const chave = `${ganho.tecnico_email}|${ganho.cliente_nome}|${ganho.tipo_servico}|${ganho.valor_servico}`;
+
+      if (!mapa[chave]) {
+        mapa[chave] = [];
+      }
+      mapa[chave].push(ganho);
+    });
+
+    Object.values(mapa).forEach(grupo => {
+      if (grupo.length > 1) {
+        // Manter o primeiro, marcar os outros como duplicatas
+        duplicatas.push(...grupo.slice(1));
+      }
+    });
+
+    setDuplicatasDetectadas(duplicatas);
+    if (duplicatas.length === 0) {
+      toast.success('Nenhuma duplicata encontrada! ✓');
+    } else {
+      toast.info(`${duplicatas.length} duplicata(s) encontrada(s)`);
+    }
+  };
+
+  const removerDuplicatas = async () => {
+    if (duplicatasDetectadas.length === 0) return;
+
+    if (!confirm(`Deseja remover ${duplicatasDetectadas.length} duplicata(s)?`)) {
+      return;
+    }
+
+    setLimpandoDuplicatas(true);
+    try {
+      for (const ganho of duplicatasDetectadas) {
+        await base44.entities.GanhoTecnico.delete(ganho.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ['ganhos-tecnicos'] });
+      setDuplicatasDetectadas([]);
+      toast.success(`${duplicatasDetectadas.length} duplicata(s) removida(s)`);
+    } catch (error) {
+      toast.error('Erro ao remover duplicatas');
+    } finally {
+      setLimpandoDuplicatas(false);
     }
   };
 
@@ -261,6 +313,27 @@ export default function MeusGanhos() {
               {isAdmin ? 'Acompanhe as comissões de todos os técnicos (15% por serviço)' : 'Acompanhe suas comissões (15% por serviço)'}
             </p>
           </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={detectarDuplicatas}
+                className="flex items-center gap-2"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Detectar Duplicatas
+              </Button>
+              {duplicatasDetectadas.length > 0 && (
+                <Button 
+                  onClick={removerDuplicatas}
+                  disabled={limpandoDuplicatas}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {limpandoDuplicatas ? 'Removendo...' : `Remover ${duplicatasDetectadas.length}`}
+                </Button>
+              )}
+            </div>
+          )}
          <div className="flex items-center gap-2 flex-wrap">
            <Calendar className="w-5 h-5 text-blue-600" />
            <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
