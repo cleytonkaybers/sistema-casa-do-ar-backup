@@ -72,6 +72,10 @@ export default function Dashboard() {
     enabled: !!currentUser,
   });
 
+  // Filtrar ganhos apenas do usuário atual
+  const meuEmail = currentUser?.email;
+  const meusGanhos = ganhos.filter(g => g.tecnico_email === meuEmail);
+
   // Estatísticas
   const totalClientes = clientes.length;
   const clientesAtivos = clientes.filter(c => c.status === 'Ativo').length;
@@ -139,11 +143,10 @@ export default function Dashboard() {
   const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 });
   const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
   
-  const ganhosEquipeSemana = ganhos.filter(g => {
-    const pertenceMinhaEquipe = g.equipe_id === equipeDoUsuario;
+  const ganhosEquipeSemana = meusGanhos.filter(g => {
     const dataGanho = new Date(g.data_conclusao);
     const naSemanaAtual = isWithinInterval(dataGanho, { start: inicioSemana, end: fimSemana });
-    return pertenceMinhaEquipe && naSemanaAtual;
+    return naSemanaAtual;
   });
 
   const totalGanhosEquipe = ganhosEquipeSemana.reduce((sum, g) => sum + (g.valor_comissao || 0), 0);
@@ -298,6 +301,68 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Card Ganhos Pessoais - Destacado para Técnicos */}
+      {currentUser?.role !== 'admin' && (
+        <Link to={createPageUrl('MeusGanhos')}>
+          <Card className="overflow-hidden border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group"
+            style={{background: 'linear-gradient(135deg, #10b981, #059669, #047857)'}}>
+            <CardContent className="p-6 relative">
+              {/* Efeito de brilho */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Sparkles className="w-7 h-7 text-yellow-300" />
+                    </div>
+                    <div>
+                      <p className="text-white/90 text-sm font-medium flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Meus Ganhos
+                      </p>
+                      <p className="text-white/70 text-xs mt-0.5">Semana Atual (Seg-Dom)</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform" />
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <DollarSign className="w-8 h-8 text-yellow-300" />
+                    <p className="text-5xl font-black text-white tracking-tight">
+                      {totalGanhosEquipe.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="bg-white/10 rounded-xl p-3 border border-white/20">
+                      <p className="text-white/70 text-xs mb-1 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Recebido
+                      </p>
+                      <p className="text-white font-bold text-lg">R$ {ganhosEquipePagos.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-yellow-400/20 rounded-xl p-3 border border-yellow-300/30">
+                      <p className="text-yellow-100 text-xs mb-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        A Receber
+                      </p>
+                      <p className="text-yellow-50 font-bold text-lg">R$ {ganhosEquipePendentes.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-white/80 text-xs text-center mt-4 font-medium">
+                  🎉 Continue assim! Cada serviço conta!
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {/* Ganhos por Equipe para Admin */}
       {currentUser?.role === 'admin' && (
         <div className="space-y-4">
@@ -394,67 +459,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Card Ganhos da Equipe - Destacado para Técnicos */}
-      {currentUser?.role !== 'admin' && equipeDoUsuario && (
-        <Link to={createPageUrl('MeusGanhos')}>
-          <Card className="overflow-hidden border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group"
-            style={{background: 'linear-gradient(135deg, #10b981, #059669, #047857)'}}>
-            <CardContent className="p-6 relative">
-              {/* Efeito de brilho */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
 
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Sparkles className="w-7 h-7 text-yellow-300" />
-                    </div>
-                    <div>
-                      <p className="text-white/90 text-sm font-medium flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Ganhos da Sua Equipe
-                      </p>
-                      <p className="text-white/70 text-xs mt-0.5">Semana Atual (Seg-Dom)</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform" />
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <DollarSign className="w-8 h-8 text-yellow-300" />
-                    <p className="text-5xl font-black text-white tracking-tight">
-                      {totalGanhosEquipe.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <div className="bg-white/10 rounded-xl p-3 border border-white/20">
-                      <p className="text-white/70 text-xs mb-1 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Recebido
-                      </p>
-                      <p className="text-white font-bold text-lg">R$ {ganhosEquipePagos.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-yellow-400/20 rounded-xl p-3 border border-yellow-300/30">
-                      <p className="text-yellow-100 text-xs mb-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        A Receber
-                      </p>
-                      <p className="text-yellow-50 font-bold text-lg">R$ {ganhosEquipePendentes.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-white/80 text-xs text-center mt-4 font-medium">
-                  🎉 Continue assim! Cada serviço conta!
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

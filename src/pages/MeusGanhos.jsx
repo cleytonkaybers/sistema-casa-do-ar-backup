@@ -107,22 +107,13 @@ export default function MeusGanhos() {
     toast.success(`Pagamento de R$ ${valor.toFixed(2)} confirmado`);
   };
 
-  // Filtrar ganhos baseado em permissão
+  // Filtrar ganhos baseado em permissão - cada técnico vê apenas seus próprios ganhos
   const ganhosPermitidos = useMemo(() => {
     if (!user) return [];
     
-    // Admin vê tudo
-    if (isAdmin) return ganhos;
-    
-    // Técnico vê apenas seus próprios ganhos
-    // Filtrar também usuários administrativos (tipo_usuario === 'administrativo')
-    return ganhos.filter(g => {
-      if (g.tecnico_email !== meuEmail) return false;
-      // Excluir se for administrativo
-      const isAdminUser = user.data?.tipo_usuario === 'administrativo' || user.data?.perfil === 'admin';
-      return !isAdminUser;
-    });
-  }, [ganhos, user, isAdmin, meuEmail]);
+    // Cada usuário vê apenas seus próprios ganhos (incluindo admin)
+    return ganhos.filter(g => g.tecnico_email === meuEmail);
+  }, [ganhos, user, meuEmail]);
 
   // Calcular períodos (semana começa na segunda-feira)
   const hoje = new Date();
