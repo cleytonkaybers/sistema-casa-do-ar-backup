@@ -350,38 +350,6 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard
-          title="Clientes"
-          value={totalClientes}
-          icon={Users}
-          color="bg-blue-500"
-          href={createPageUrl('Clientes')}
-        />
-        <StatCard
-          title="Atendimentos"
-          value={atendimentosDoMes.length}
-          icon={ClipboardList}
-          color="bg-amber-400"
-          href={createPageUrl('Atendimentos')}
-        />
-        <StatCard
-          title="Pendentes"
-          value={manutencoesPendentes.length}
-          icon={AlertTriangle}
-          color="bg-emerald-500"
-          href={createPageUrl('PreventivasFuturas')}
-        />
-        <StatCard
-          title="Concluídos"
-          value={atendimentosConcluidos}
-          icon={CheckCircle2}
-          color="bg-emerald-500"
-          href={createPageUrl('Atendimentos')}
-        />
-      </div>
-
       {/* Ganhos por Equipe para Admin - Versão Compacta */}
       {currentUser?.role === 'admin' && (
         <div className="space-y-4">
@@ -854,8 +822,38 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Rodapé */}
+      {/* Rodapé - Stats Grid */}
       <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+          <StatCard
+            title="Clientes"
+            value={totalClientes}
+            icon={Users}
+            color="bg-blue-500"
+            href={createPageUrl('Clientes')}
+          />
+          <StatCard
+            title="Atendimentos"
+            value={atendimentosDoMes.length}
+            icon={ClipboardList}
+            color="bg-amber-400"
+            href={createPageUrl('Atendimentos')}
+          />
+          <StatCard
+            title="Pendentes"
+            value={manutencoesPendentes.length}
+            icon={AlertTriangle}
+            color="bg-emerald-500"
+            href={createPageUrl('PreventivasFuturas')}
+          />
+          <StatCard
+            title="Concluídos"
+            value={atendimentosConcluidos}
+            icon={CheckCircle2}
+            color="bg-emerald-500"
+            href={createPageUrl('Atendimentos')}
+          />
+        </div>
         <p className="text-xs text-gray-400 text-center">
           Total de <span className="text-gray-700 font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
         </p>
