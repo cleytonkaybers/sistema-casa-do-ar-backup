@@ -263,17 +263,35 @@ export default function MeuFinanceiro() {
                            {comissao.status === 'pendente' ? 'Pendente' : comissao.status === 'pago' ? 'Pago' : 'Creditado'}
                          </Badge>
                        </TableCell>
-                     </TableRow>
-                   );
-                 })}
-               </TableBody>
-             </Table>
-           </div>
-           {comissoesFiltradas.length === 0 && (
-             <p className="text-center text-gray-500 text-sm py-4">Nenhuma comissão neste período</p>
-           )}
-         </CardContent>
-       </Card>
+                       <TableCell className="space-x-2">
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleEditarServico(comissao.servico_id)}
+                           className="text-blue-600 hover:bg-blue-50"
+                         >
+                           <Edit2 className="w-4 h-4" />
+                         </Button>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleExcluirComissao(comissao.id, comissao.servico_id)}
+                           className="text-red-600 hover:bg-red-50"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                       </TableCell>
+                       </TableRow>
+                       );
+                       })}
+                       </TableBody>
+                       </Table>
+                       </div>
+                       {comissoesFiltradas.length === 0 && (
+                       <p className="text-center text-gray-500 text-sm py-4">Nenhuma comissão neste período</p>
+                       )}
+                       </CardContent>
+                       </Card>
 
       {/* Histórico de Pagamentos */}
       {meusPagamentosRegistrados.length > 0 && (
