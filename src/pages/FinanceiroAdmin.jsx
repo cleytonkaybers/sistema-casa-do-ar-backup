@@ -57,6 +57,30 @@ export default function FinanceiroAdmin() {
     queryFn: () => base44.entities.PagamentoTecnico.list()
   });
 
+  const updateLancamento = async (id, novoValor) => {
+    try {
+      await base44.entities.LancamentoFinanceiro.update(id, {
+        valor_total_servico: parseFloat(novoValor),
+        valor_comissao_equipe: parseFloat(novoValor) * 0.30,
+        valor_comissao_tecnico: parseFloat(novoValor) * 0.15
+      });
+      toast.success('Lançamento atualizado');
+      setEditandoLancamento(null);
+    } catch (error) {
+      toast.error('Erro ao atualizar lançamento');
+    }
+  };
+
+  const deleteLancamento = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este lançamento?')) return;
+    try {
+      await base44.entities.LancamentoFinanceiro.delete(id);
+      toast.success('Lançamento excluído');
+    } catch (error) {
+      toast.error('Erro ao excluir lançamento');
+    }
+  };
+
   useEffect(() => {
     const checkAdmin = async () => {
       try {
