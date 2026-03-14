@@ -9,20 +9,35 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Mapeamento de membros por equipe
-    const membrosPorEquipe = {
-      '699e53267d5629312b8742dd': ['vinihenrique781@gmail.com', 'vgabrielkaybersdossantos@gmail.com'],
-      '699e54e99bb56cb59de69c61': ['witalok73@gmail.com', 'waglessonribero@gmail.com']
-    };
-
-    // Buscar todos os ganhos
+    // Buscar todos os ganhos e usuários
     const ganhos = await base44.asServiceRole.entities.GanhoTecnico.list();
+    const usuarios = await base44.asServiceRole.entities.User.list();
     console.log(`Total de ganhos: ${ganhos.length}`);
 
-    // Agrupar ganhos por atendimento_id e equipe
+    // Descobrir automaticamente os membros por equipe analisando os ganhos
+    const membrosPorEquipe = {};
+    ganhos.forEach(g => {
+      if (g.equipe_id) {
+        if (!membrosPorEquipe[g.equipe_id]) {
+          membrosPorEquipe[g.equipe_id] = new Set();
+        }
+        if (g.tecnico_email) {
+          membrosPorEquipe[g.equipe_id].add(g.tecnico_email);
+        }
+      }
+    });
+
+    // Converter Set para Array
+    for (const equipeId in membrosPorEquipe) {
+      membrosPorEquipe[equipeId] = Array.from(membrosPorEquipe[equipeId]);
+    }
+
+    console.log('Equipes descobertas:', membrosPorEquipe);
+
+    // Agrupar ganhos por atendimento_id
     const ganhosAgrupados = {};
     ganhos.forEach(g => {
-      const chave = `${g.atendimento_id}`;
+      const chave = g.atendimento_id;
       if (!ganhosAgrupados[chave]) {
         ganhosAgrupados[chave] = [];
       }
@@ -35,83 +50,80 @@ Deno.serve(async (req) => {
 
     // Processar cada grupo de ganhos do mesmo atendimento
     for (const [atendimentoId, ganhosAtendimento] of Object.entries(ganhosAgrupados)) {
-      if (ganhosAtendimento.length < 2) {
-        continue; // Pular se tem menos de 2 ganhos
+      const equipeId = ganhosAtendimento[0]?.equipe_id;
+      if (!equipeId || !membrosPorEquipe[equipeId]) {
+        continue;
       }
 
-      // Obter a equipe do primeiro ganho
-      const equipeId = ganhosAtendimento[0].equipe_id;
-      const membrosDaEquipe = membrosPorEquipe[equipeId] || [];
-
-      if (membrosDaEquipe.length === 0) {
-        continue; // Pular se equipe não é mapeada
-      }
-
-      // Separar ganhos por técnico
-      const ganhosValidos = ganhosAtendimento.filter(g => 
-        membrosDaEquipe.includes(g.tecnico_email)
-      );
-
-      console.log(`Atendimento ${atendimentoId}: ${ganhosAtendimento.length} ganhos, ${ganhosValidos.length} válidos`);
+      const membrosDaEquipe = membrosPorEquipe[equipeId];
+      const ganhosValidos = ganhosAtendimento.filter(g => membrosDaEquipe.includes(g.tecnico_email));
 
       if (ganhosValidos.length === 0) {
-        continue; // Nenhum ganho válido
+        continue;
       }
 
-      // Se tem ganhos válidos, manter só um por técnico
+      // Calcular o valor médio de comissão
+      const ganhoRef = ganhosValidos[0];
+      const valorComissaoMedia = ganhoRef.valor_comissao / ganhosValidos.length;
+
+      // Encontrar ganhos por técnico
       const ganhosPorTecnico = {};
       ganhosValidos.forEach(g => {
-        if (!ganhosPorTecnico[g.tecnico_email]) {
-          ganhosPorTecnico[g.tecnico_email] = [];
-        }
-        ganhosPorTecnico[g.tecnico_email].push(g);
+        ganhosPorTecnico[g.tecnico_email] = g;
       });
 
-      // Remover duplicatas mantendo apenas um por técnico
-      Object.values(ganhosPorTecnico).forEach(ganhosDoTecnico => {
-        if (ganhosDoTecnico.length > 1) {
-          // Manter o primeiro, remover os demais
-          for (let i = 1; i < ganhosDoTecnico.length; i++) {
-            idsParaRemover.push(ganhosDoTecnico[i].id);
-            ganhosRemovidos++;
-            console.log(`Removendo ganho duplicado: ${ganhosDoTecnico[i].id} (técnico: ${ganhosDoTecnico[i].tecnico_email})`);
-          }
+      // Remover ganhos duplicados do mesmo técnico (manter apenas o primeiro)
+      for (let i = 0; i < ganhosAtendimento.length; i++) {
+        const ganho = ganhosAtendimento[i];
+        if (!membrosDaEquipe.includes(ganho.tecnico_email)) {
+          continue;
         }
-      });
 
-      // Se faltam ganhos para algum técnico da equipe, adicionar
+        const ganhoDoTecnico = ganhosPorTecnico[ganho.tecnico_email];
+        if (ganho.id !== ganhoDoTecnico.id) {
+          idsParaRemover.push(ganho.id);
+          ganhosRemovidos++;
+          console.log(`Removendo duplicado: ${ganho.id} de ${ganho.tecnico_email}`);
+        }
+      }
+
+      // Atualizar todos os ganhos válidos para terem o mesmo valor
+      for (const ganho of ganhosValidos) {
+        if (Math.abs(ganho.valor_comissao - valorComissaoMedia) > 0.01) {
+          await base44.asServiceRole.entities.GanhoTecnico.update(ganho.id, {
+            valor_comissao: valorComissaoMedia
+          });
+          console.log(`Ajustando ganho ${ganho.id} para R$ ${valorComissaoMedia.toFixed(2)}`);
+          ganhosCorrigidos++;
+        }
+      }
+
+      // Se faltam ganhos para algum técnico da equipe, criar
       const tecnicosComGanho = Object.keys(ganhosPorTecnico);
       const tecnicosFaltando = membrosDaEquipe.filter(t => !tecnicosComGanho.includes(t));
 
-      if (tecnicosFaltando.length > 0) {
-        // Usar o primeiro ganho como referência
-        const ganhoRef = ganhosValidos[0];
-        const valorComissaoReparte = ganhoRef.valor_comissao;
+      for (const tecnicoFaltando of tecnicosFaltando) {
+        const usuario = usuarios.find(u => u.email === tecnicoFaltando);
 
-        for (const tecnicoFaltando of tecnicosFaltando) {
-          const usuarios = await base44.asServiceRole.entities.User.list();
-          const usuario = usuarios.find(u => u.email === tecnicoFaltando);
+        console.log(`Criando ganho faltante para: ${tecnicoFaltando}`);
 
-          console.log(`Criando ganho faltante para: ${tecnicoFaltando}`);
-
-          await base44.asServiceRole.entities.GanhoTecnico.create({
-            tecnico_email: tecnicoFaltando,
-            tecnico_nome: usuario?.full_name || 'Sistema',
-            atendimento_id: ganhoRef.atendimento_id,
-            cliente_nome: ganhoRef.cliente_nome,
-            tipo_servico: ganhoRef.tipo_servico,
-            valor_servico: ganhoRef.valor_servico,
-            comissao_percentual: ganhoRef.comissao_percentual,
-            valor_comissao: valorComissaoReparte,
-            data_conclusao: ganhoRef.data_conclusao,
-            semana: ganhoRef.semana,
-            mes: ganhoRef.mes,
-            equipe_id: ganhoRef.equipe_id,
-            equipe_nome: ganhoRef.equipe_nome,
-            pago: false
-          });
-          ganhosCorrigidos++;
-        }
+        await base44.asServiceRole.entities.GanhoTecnico.create({
+          tecnico_email: tecnicoFaltando,
+          tecnico_nome: usuario?.full_name || 'Sistema',
+          atendimento_id: ganhoRef.atendimento_id,
+          cliente_nome: ganhoRef.cliente_nome,
+          tipo_servico: ganhoRef.tipo_servico,
+          valor_servico: ganhoRef.valor_servico,
+          comissao_percentual: ganhoRef.comissao_percentual,
+          valor_comissao: valorComissaoMedia,
+          data_conclusao: ganhoRef.data_conclusao,
+          semana: ganhoRef.semana,
+          mes: ganhoRef.mes,
+          equipe_id: ganhoRef.equipe_id,
+          equipe_nome: ganhoRef.equipe_nome,
+          pago: false
+        });
+        ganhosCorrigidos++;
       }
     }
 
