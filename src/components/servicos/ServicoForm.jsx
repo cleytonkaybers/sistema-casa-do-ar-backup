@@ -70,7 +70,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     endereco: '',
     latitude: null,
     longitude: null,
-    tipos_servico: ['Limpeza de 9k'],
+    tipos_servico: [{ tipo: 'Limpeza de 9k', multiplicador: 1 }],
     dia_semana: '',
     data_programada: '',
     horario: '',
@@ -94,7 +94,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: servico.endereco || '',
         latitude: servico.latitude || null,
         longitude: servico.longitude || null,
-        tipos_servico: servico.tipo_servico ? [servico.tipo_servico] : ['Limpeza de 9k'],
+        tipos_servico: servico.tipo_servico ? [{ tipo: servico.tipo_servico, multiplicador: 1 }] : [{ tipo: 'Limpeza de 9k', multiplicador: 1 }],
         dia_semana: servico.dia_semana || '',
         data_programada: servico.data_programada || '',
         horario: servico.horario || '',
@@ -112,7 +112,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: prefilledData.endereco || '',
         latitude: prefilledData.latitude || null,
         longitude: prefilledData.longitude || null,
-        tipos_servico: ['Limpeza de 9k'],
+        tipos_servico: [{ tipo: 'Limpeza de 9k', multiplicador: 1 }],
         dia_semana: '',
         data_programada: '',
         horario: '',
@@ -130,7 +130,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: '',
         latitude: null,
         longitude: null,
-        tipos_servico: ['Limpeza de 9k'],
+        tipos_servico: [{ tipo: 'Limpeza de 9k', multiplicador: 1 }],
         dia_semana: '',
         data_programada: '',
         horario: '',
@@ -350,7 +350,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
 
     const dataToSave = {
       ...formData,
-      tipo_servico: formData.tipos_servico.join(' + '),
+      tipo_servico: formData.tipos_servico.map(t => t.multiplicador > 1 ? `${t.tipo} (x${t.multiplicador})` : t.tipo).join(' + '),
       dia_semana: diaSemana,
       valor: formData.valor ? parseFloat(formData.valor) : 0,
       equipe_id: formData.equipe_id || null,
@@ -493,20 +493,20 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
           <div className="space-y-2">
             <Label>Tipos de Serviço *</Label>
             <div className="space-y-2">
-              {formData.tipos_servico.map((tipo, index) => (
+              {formData.tipos_servico.map((item, index) => (
                 <div key={index} className="flex gap-2">
                   <Select 
-                   value={tipo} 
+                   value={item.tipo} 
                    onValueChange={(value) => {
                      const newTipos = [...formData.tipos_servico];
-                     newTipos[index] = value;
+                     newTipos[index].tipo = value;
 
                      // Calcular soma dos valores de todos os serviços
                      let valorTotal = 0;
-                     newTipos.forEach(tipoServico => {
-                       const prec = precificacoes.find(p => p.tipo_servico === tipoServico);
+                     newTipos.forEach(tipoItem => {
+                       const prec = precificacoes.find(p => p.tipo_servico === tipoItem.tipo);
                        if (prec && prec.preco_padrao) {
-                         valorTotal += Number(prec.preco_padrao);
+                         valorTotal += Number(prec.preco_padrao) * tipoItem.multiplicador;
                        }
                      });
 
@@ -526,6 +526,34 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                       ))}
                     </SelectContent>
                   </Select>
+                  <div className="w-20">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={item.multiplicador}
+                      onChange={(e) => {
+                        const newTipos = [...formData.tipos_servico];
+                        newTipos[index].multiplicador = Math.max(1, parseInt(e.target.value) || 1);
+
+                        // Recalcular valor total
+                        let valorTotal = 0;
+                        newTipos.forEach(tipoItem => {
+                          const prec = precificacoes.find(p => p.tipo_servico === tipoItem.tipo);
+                          if (prec && prec.preco_padrao) {
+                            valorTotal += Number(prec.preco_padrao) * tipoItem.multiplicador;
+                          }
+                        });
+
+                        setFormData({ 
+                          ...formData, 
+                          tipos_servico: newTipos,
+                          valor: valorTotal > 0 ? valorTotal : formData.valor
+                        });
+                      }}
+                      placeholder="x1"
+                      className="text-center"
+                    />
+                  </div>
                   {formData.tipos_servico.length > 1 && (
                     <Button
                       type="button"
@@ -533,16 +561,16 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                       size="icon"
                       onClick={() => {
                         const newTipos = formData.tipos_servico.filter((_, i) => i !== index);
-                        
+
                         // Recalcular valor total após remover
                         let valorTotal = 0;
-                        newTipos.forEach(tipoServico => {
-                          const prec = precificacoes.find(p => p.tipo_servico === tipoServico);
+                        newTipos.forEach(tipoItem => {
+                          const prec = precificacoes.find(p => p.tipo_servico === tipoItem.tipo);
                           if (prec && prec.preco_padrao) {
-                            valorTotal += Number(prec.preco_padrao);
+                            valorTotal += Number(prec.preco_padrao) * tipoItem.multiplicador;
                           }
                         });
-                        
+
                         setFormData({ 
                           ...formData, 
                           tipos_servico: newTipos,
@@ -560,18 +588,18 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  const novoTipo = 'Limpeza de 9k';
+                  const novoTipo = { tipo: 'Limpeza de 9k', multiplicador: 1 };
                   const novosTipos = [...formData.tipos_servico, novoTipo];
-                  
+
                   // Recalcular valor total
                   let valorTotal = 0;
-                  novosTipos.forEach(tipoServico => {
-                    const prec = precificacoes.find(p => p.tipo_servico === tipoServico);
+                  novosTipos.forEach(tipoItem => {
+                    const prec = precificacoes.find(p => p.tipo_servico === tipoItem.tipo);
                     if (prec && prec.preco_padrao) {
-                      valorTotal += Number(prec.preco_padrao);
+                      valorTotal += Number(prec.preco_padrao) * tipoItem.multiplicador;
                     }
                   });
-                  
+
                   setFormData({ 
                     ...formData, 
                     tipos_servico: novosTipos,
