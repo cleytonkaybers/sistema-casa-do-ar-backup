@@ -38,16 +38,23 @@ export default function FinanceiroAdmin() {
   const { data: tecnicos = [] } = useQuery({
     queryKey: ['tecnicos'],
     queryFn: () => base44.entities.TecnicoFinanceiro.list()
-  });
+  }, {});
 
   const { data: equipes = [] } = useQuery({
     queryKey: ['equipes'],
     queryFn: () => base44.entities.Equipe.list()
   });
 
-  const { data: pagamentos = [] } = useQuery({
+  const { data: pagamentos = [], refetch: refetchPagamentos } = useQuery({
     queryKey: ['pagamentos'],
-    queryFn: () => base44.entities.PagamentoTecnico.list()
+    queryFn: () => base44.entities.PagamentoTecnico.filter({
+      status: 'Confirmado'
+    })
+  });
+
+  const { refetch: refetchTecnicos } = useQuery({
+    queryKey: ['tecnicos'],
+    queryFn: () => base44.entities.TecnicoFinanceiro.list()
   });
 
   const filteredTecnicos = tecnicos.filter(t => {
