@@ -264,86 +264,7 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Serviços Atrasados e do Dia */}
-      {(servicosAtrasadosFiltrados.length > 0 || servicosFiltradosPorEquipe.length > 0) && (
-        <div className="space-y-4">
-          {/* Serviços Atrasados */}
-          {servicosAtrasadosFiltrados.length > 0 && (
-            <div>
-              <h2 className="text-lg font-bold text-red-700 flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-5 h-5" />
-                Serviços Atrasados ({servicosAtrasadosFiltrados.length})
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                {servicosAtrasadosFiltrados.map(servico => (
-                  <Link key={servico.id} to={createPageUrl('Servicos')}>
-                    <div className="p-3 rounded-lg border-2 border-red-300 bg-red-50 hover:shadow-md transition-all cursor-pointer">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-gray-900 truncate">{servico.cliente_nome}</p>
-                          <p className="text-xs text-gray-600 truncate">{servico.tipo_servico}</p>
-                          <p className="text-xs text-red-600 font-medium mt-1">
-                            {Math.abs(differenceInDays(new Date(servico.data_programada), new Date()))}d atrasado
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Serviços de Hoje */}
-          {servicosFiltradosPorEquipe.length > 0 && (
-            <div>
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-3">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                Serviços de Hoje ({servicosFiltradosPorEquipe.length})
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                {servicosFiltradosPorEquipe.map(servico => {
-                  const statusColors = {
-                    'aberto': 'bg-gray-50 border-gray-200',
-                    'andamento': 'bg-blue-50 border-blue-200',
-                    'agendado': 'bg-amber-50 border-amber-200',
-                    'reagendado': 'bg-purple-50 border-purple-200'
-                  };
-                  const statusDot = {
-                    'aberto': 'bg-gray-500',
-                    'andamento': 'bg-blue-500',
-                    'agendado': 'bg-amber-500',
-                    'reagendado': 'bg-purple-500'
-                  };
-                  const statusClass = statusColors[servico.status] || statusColors.aberto;
-                  const dotClass = statusDot[servico.status] || statusDot.aberto;
-                  
-                  return (
-                    <Link key={servico.id} to={createPageUrl('Servicos')}>
-                      <div className={`p-2.5 rounded-lg border ${statusClass} hover:shadow-sm transition-all cursor-pointer`}>
-                        <div className="flex items-start gap-2">
-                          <div className={`w-2 h-2 rounded-full ${dotClass} mt-1.5 flex-shrink-0`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-gray-800 truncate">{servico.cliente_nome}</p>
-                            <p className="text-xs text-gray-600 truncate">{servico.tipo_servico}</p>
-                            {servico.horario && (
-                              <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {servico.horario}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Card Ganhos Pessoais - Destacado para Técnicos */}
       {currentUser?.role !== 'admin' && (
@@ -504,128 +425,170 @@ export default function Dashboard() {
 
       {/* Content Grid - Manutenções e Clientes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Manutenções Pendentes por Equipe */}
+        {/* Manutenções e Serviços Pendentes */}
         <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-              Manutenções Pendentes
+              Pendências
             </CardTitle>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-                {manutencoesAtrasadas.length} atrasadas
-              </span>
-              <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                {manutencoesDoDia.length} hoje
-              </span>
+            <div className="flex gap-1 flex-wrap justify-end">
+              {servicosAtrasadosFiltrados.length > 0 && (
+                <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                  {servicosAtrasadosFiltrados.length} serv. atrasados
+                </span>
+              )}
+              {servicosFiltradosPorEquipe.length > 0 && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                  {servicosFiltradosPorEquipe.length} hoje
+                </span>
+              )}
+              {manutencoesAtrasadas.length > 0 && (
+                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                  {manutencoesAtrasadas.length} manut.
+                </span>
+              )}
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            {manutencoesPendentes.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Serviços Atrasados */}
+              {servicosAtrasadosFiltrados.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    Serviços Atrasados
+                  </h4>
+                  <div className="space-y-1">
+                    {servicosAtrasadosFiltrados.slice(0, 3).map(servico => (
+                      <Link key={servico.id} to={createPageUrl('Servicos')}>
+                        <div className="p-2 rounded-lg border-2 border-red-200 bg-red-50 hover:bg-red-100 transition-colors">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-gray-900 truncate">{servico.cliente_nome}</p>
+                              <p className="text-xs text-gray-600 truncate">{servico.tipo_servico}</p>
+                            </div>
+                            <p className="text-xs text-red-600 font-medium whitespace-nowrap">
+                              {Math.abs(differenceInDays(new Date(servico.data_programada), new Date()))}d atraso
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                    {servicosAtrasadosFiltrados.length > 3 && (
+                      <Link to={createPageUrl('Servicos')}>
+                        <p className="text-xs text-blue-600 hover:text-blue-700 text-center py-1">
+                          +{servicosAtrasadosFiltrados.length - 3} mais
+                        </p>
+                      </Link>
+                    )}
+                  </div>
                 </div>
-                <p className="text-gray-400 text-sm">Nenhuma manutenção pendente</p>
-              </div>
-            ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {/* Atrasadas */}
-                {manutencoesAtrasadas.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-red-700 mb-2">⚠️ Atrasadas</h4>
-                    {currentUser?.role === 'admin' ? (
-                      <div className="space-y-3">
-                        {equipes.map(equipe => {
-                          const atrasadasEquipe = manutencoesAtrasadas.filter(c => {
-                            const servicosCliente = servicos.filter(s => 
-                              s.cliente_nome === c.nome && s.equipe_id === equipe.id
-                            );
-                            return servicosCliente.length > 0;
-                          });
-                          
-                          if (atrasadasEquipe.length === 0) return null;
-                          
-                          return (
-                            <div key={equipe.id} className="border-l-4 pl-3" style={{ borderColor: equipe.cor || '#ef4444' }}>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">{equipe.nome} ({atrasadasEquipe.length})</p>
-                              <div className="space-y-1">
-                                {atrasadasEquipe.slice(0, 3).map(c => (
-                                  <Link key={c.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                                    <div className="p-2 bg-red-50 rounded-lg text-xs hover:bg-red-100 transition-colors">
-                                      <p className="font-medium text-gray-800">{c.nome}</p>
-                                      <p className="text-red-600">{Math.abs(differenceInDays(new Date(c.proxima_manutencao), new Date()))}d atrasado</p>
-                                    </div>
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {manutencoesAtrasadas.slice(0, 3).map(c => (
-                          <Link key={c.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                            <div className="p-2 bg-red-50 rounded-lg border border-red-200">
-                              <p className="font-medium text-gray-800 text-sm">{c.nome}</p>
-                              <p className="text-xs text-red-600">{Math.abs(differenceInDays(new Date(c.proxima_manutencao), new Date()))}d atrasado</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+              )}
 
-                {/* Do Dia */}
-                {manutencoesDoDia.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-orange-700 mb-2">📅 Hoje</h4>
-                    {currentUser?.role === 'admin' ? (
-                      <div className="space-y-3">
-                        {equipes.map(equipe => {
-                          const doDiaEquipe = manutencoesDoDia.filter(c => {
-                            const servicosCliente = servicos.filter(s => 
-                              s.cliente_nome === c.nome && s.equipe_id === equipe.id
-                            );
-                            return servicosCliente.length > 0;
-                          });
-                          
-                          if (doDiaEquipe.length === 0) return null;
-                          
-                          return (
-                            <div key={equipe.id} className="border-l-4 pl-3" style={{ borderColor: equipe.cor || '#f97316' }}>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">{equipe.nome} ({doDiaEquipe.length})</p>
-                              <div className="space-y-1">
-                                {doDiaEquipe.slice(0, 3).map(c => (
-                                  <Link key={c.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                                    <div className="p-2 bg-orange-50 rounded-lg text-xs hover:bg-orange-100 transition-colors">
-                                      <p className="font-medium text-gray-800">{c.nome}</p>
-                                      <p className="text-orange-600">Vence hoje</p>
-                                    </div>
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {manutencoesDoDia.slice(0, 3).map(c => (
-                          <Link key={c.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                            <div className="p-2 bg-orange-50 rounded-lg border border-orange-200">
-                              <p className="font-medium text-gray-800 text-sm">{c.nome}</p>
-                              <p className="text-xs text-orange-600">Vence hoje</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
+              {/* Serviços de Hoje */}
+              {servicosFiltradosPorEquipe.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Serviços Hoje
+                  </h4>
+                  <div className="space-y-1">
+                    {servicosFiltradosPorEquipe.slice(0, 3).map(servico => {
+                      const statusColors = {
+                        'aberto': 'bg-gray-50 border-gray-200',
+                        'andamento': 'bg-blue-50 border-blue-200',
+                        'agendado': 'bg-amber-50 border-amber-200',
+                        'reagendado': 'bg-purple-50 border-purple-200'
+                      };
+                      const statusClass = statusColors[servico.status] || statusColors.aberto;
+                      
+                      return (
+                        <Link key={servico.id} to={createPageUrl('Servicos')}>
+                          <div className={`p-2 rounded-lg border ${statusClass} hover:shadow-sm transition-all`}>
+                            <p className="font-medium text-sm text-gray-800 truncate">{servico.cliente_nome}</p>
+                            <p className="text-xs text-gray-600 truncate">{servico.tipo_servico}</p>
+                            {servico.horario && (
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3" />
+                                {servico.horario}
+                              </p>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                    {servicosFiltradosPorEquipe.length > 3 && (
+                      <Link to={createPageUrl('Servicos')}>
+                        <p className="text-xs text-blue-600 hover:text-blue-700 text-center py-1">
+                          +{servicosFiltradosPorEquipe.length - 3} mais
+                        </p>
+                      </Link>
                     )}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+
+              {/* Manutenções Atrasadas */}
+              {manutencoesAtrasadas.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-orange-700 mb-2">⚠️ Manutenções Atrasadas</h4>
+                  <div className="space-y-1">
+                    {manutencoesAtrasadas.slice(0, 3).map(c => (
+                      <Link key={c.id} to={createPageUrl('PreventivasFuturas')} className="block">
+                        <div className="p-2 bg-orange-50 rounded-lg border border-orange-200 hover:bg-orange-100 transition-colors">
+                          <p className="font-medium text-gray-800 text-sm">{c.nome}</p>
+                          <p className="text-xs text-orange-600">{Math.abs(differenceInDays(new Date(c.proxima_manutencao), new Date()))}d atrasado</p>
+                        </div>
+                      </Link>
+                    ))}
+                    {manutencoesAtrasadas.length > 3 && (
+                      <Link to={createPageUrl('PreventivasFuturas')}>
+                        <p className="text-xs text-blue-600 hover:text-blue-700 text-center py-1">
+                          +{manutencoesAtrasadas.length - 3} mais
+                        </p>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Manutenções do Dia */}
+              {manutencoesDoDia.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-green-700 mb-2">📅 Manutenções Hoje</h4>
+                  <div className="space-y-1">
+                    {manutencoesDoDia.slice(0, 3).map(c => (
+                      <Link key={c.id} to={createPageUrl('PreventivasFuturas')} className="block">
+                        <div className="p-2 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors">
+                          <p className="font-medium text-gray-800 text-sm">{c.nome}</p>
+                          <p className="text-xs text-green-600">Vence hoje</p>
+                        </div>
+                      </Link>
+                    ))}
+                    {manutencoesDoDia.length > 3 && (
+                      <Link to={createPageUrl('PreventivasFuturas')}>
+                        <p className="text-xs text-blue-600 hover:text-blue-700 text-center py-1">
+                          +{manutencoesDoDia.length - 3} mais
+                        </p>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Vazio */}
+              {servicosAtrasadosFiltrados.length === 0 && 
+               servicosFiltradosPorEquipe.length === 0 && 
+               manutencoesAtrasadas.length === 0 && 
+               manutencoesDoDia.length === 0 && (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  </div>
+                  <p className="text-gray-400 text-sm">Nenhuma pendência no momento</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
