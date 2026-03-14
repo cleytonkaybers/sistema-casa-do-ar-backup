@@ -302,23 +302,6 @@ export default function ServicosPage() {
            queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
            queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
 
-           // Atualizar preventiva do cliente
-           if (!servicoSnapshot.sem_registro_cliente) {
-             base44.entities.Cliente.filter({ telefone: servicoSnapshot.telefone })
-               .then(clientesMatch => {
-                 if (clientesMatch.length > 0) {
-                   const dataConc = servicoSnapshot.data_programada || new Date().toISOString().split('T')[0];
-                   const proxima = new Date(dataConc);
-                   proxima.setMonth(proxima.getMonth() + 6);
-                   return base44.entities.Cliente.update(clientesMatch[0].id, {
-                     ultima_manutencao: dataConc,
-                     proxima_manutencao: proxima.toISOString().split('T')[0]
-                   });
-                 }
-               }).then(() => queryClient.invalidateQueries({ queryKey: ['clientes'] }))
-               .catch(() => {});
-           }
-
            // Registrar ganhos para todos os membros da equipe
            return Promise.all([
              base44.entities.PrecificacaoServico.filter({ tipo_servico: servicoSnapshot.tipo_servico }),
@@ -376,6 +359,22 @@ export default function ServicosPage() {
                if (ganhosParaCriar.length > 0) {
                  return base44.entities.GanhoTecnico.bulkCreate(ganhosParaCriar);
                }
+             }
+           }).then(() => {
+             // Atualizar preventiva do cliente APENAS APÓS criar o atendimento com sucesso
+             if (!servicoSnapshot.sem_registro_cliente) {
+               return base44.entities.Cliente.filter({ telefone: servicoSnapshot.telefone })
+                 .then(clientesMatch => {
+                   if (clientesMatch.length > 0) {
+                     const dataConc = servicoSnapshot.data_programada || new Date().toISOString().split('T')[0];
+                     const proxima = new Date(dataConc);
+                     proxima.setMonth(proxima.getMonth() + 6);
+                     return base44.entities.Cliente.update(clientesMatch[0].id, {
+                       ultima_manutencao: dataConc,
+                       proxima_manutencao: proxima.toISOString().split('T')[0]
+                     });
+                   }
+                 }).then(() => queryClient.invalidateQueries({ queryKey: ['clientes'] }));
              }
            });
          })
