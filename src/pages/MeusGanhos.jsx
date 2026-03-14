@@ -381,29 +381,29 @@ export default function MeusGanhos() {
                       <p className="text-blue-100 text-xs">Pendente</p>
                       <p className="font-bold">R$ {grupo.totalPendente.toFixed(2)}</p>
                     </div>
-                  </div>
-                  {isAdmin && (
-                    <div className="flex items-end gap-2 mt-3 lg:mt-0">
-                      <div>
-                        <Label className="text-blue-100 text-xs block mb-1">Valor Pago</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={valoresPagosPorTecnico[grupo.tecnicoEmail] || ''}
-                          onChange={(e) => handleValorPagoChange(grupo.tecnicoEmail, e.target.value)}
-                          className="w-28 h-8 text-sm bg-white text-gray-900"
-                        />
+                    {isAdmin && (
+                      <div className="ml-4 flex items-end gap-2">
+                        <div>
+                          <Label className="text-blue-100 text-xs block mb-1">Valor Pago</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={valoresPagosPorTecnico[grupo.tecnicoEmail] || ''}
+                            onChange={(e) => handleValorPagoChange(grupo.tecnicoEmail, e.target.value)}
+                            className="w-28 h-8 text-sm bg-white text-gray-900"
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleConfirmarPagamento(grupo.tecnicoEmail)}
+                          className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          Confirmar
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleConfirmarPagamento(grupo.tecnicoEmail)}
-                        className="h-8 bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        Confirmar
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -425,12 +425,12 @@ export default function MeusGanhos() {
                       {grupo.ganhos
                         .sort((a, b) => new Date(b.data_conclusao) - new Date(a.data_conclusao))
                         .map((ganho) => (
-                            <TableRow 
-                               key={ganho.id}
-                               className={ganho.pago ? 'bg-green-50' : 'hover:bg-gray-50'}
-                             >
-                               <TableCell className="font-medium">{ganho.cliente_nome}</TableCell>
-                               <TableCell className="text-sm">{ganho.tipo_servico}</TableCell>
+                          <TableRow 
+                            key={ganho.id}
+                            className={ganho.pago ? 'bg-green-50' : 'hover:bg-gray-50'}
+                          >
+                            <TableCell className="font-medium">{ganho.cliente_nome}</TableCell>
+                            <TableCell className="text-sm">{ganho.tipo_servico}</TableCell>
                             <TableCell className="text-sm text-gray-600">
                               {format(parseISO(ganho.data_conclusao), "dd/MM/yy HH:mm", { locale: ptBR })}
                             </TableCell>
