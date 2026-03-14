@@ -309,6 +309,26 @@ export default function ServicosPage() {
              base44.entities.User.list()
            ]).then(([precList, servicosEquipe, todosUsuarios]) => {
              if (servicoSnapshot.equipe_id && servicoSnapshot.valor > 0) {
+               // Validar se existe precificação cadastrada
+               const prec = precList.length > 0 ? precList[0] : null;
+               
+               if (!prec) {
+                 // Notificar admin sobre tipo de serviço sem precificação
+                 const admins = todosUsuarios.filter(u => u.role === 'admin');
+                 admins.forEach(admin => {
+                   base44.entities.Notificacao.create({
+                     usuario_email: admin.email,
+                     tipo: 'atendimento_concluido',
+                     titulo: '⚠️ Erro ao Gerar Ganhos',
+                     mensagem: `Serviço "${servicoSnapshot.tipo_servico}" não possui precificação cadastrada. Cadastre no Financeiro e recalcule os ganhos.`,
+                     atendimento_id: atendimentoCriado.id,
+                     cliente_nome: servicoSnapshot.cliente_nome,
+                     lida: false
+                   }).catch(() => {});
+                 });
+                 return;
+               }
+
                // Encontrar todos os membros não-admin que trabalham nessa equipe
                const usuariosAtivos = todosUsuarios.filter(u => u.role !== 'admin');
                const emailsMembros = new Set();
@@ -324,9 +344,9 @@ export default function ServicosPage() {
 
                if (emailsMembros.size === 0) return;
 
-               const prec = precList.length > 0 ? precList[0] : null;
-               const comissaoPerc = prec?.comissao_tecnico_percentual || 15;
-               const valorComissao = (servicoSnapshot.valor * comissaoPerc) / 100;
+               const comissaoPerc = 15; // Sempre 15% fixo
+               const valorServico = servicoSnapshot.valor;
+               const valorComissao = Number((valorServico * 0.15).toFixed(2));
 
                const dataConc = new Date();
                const getWeekNumber = (d) => {
@@ -346,18 +366,36 @@ export default function ServicosPage() {
                    atendimento_id: atendimentoCriado.id,
                    cliente_nome: servicoSnapshot.cliente_nome,
                    tipo_servico: servicoSnapshot.tipo_servico,
-                   valor_servico: servicoSnapshot.valor,
-                   comissao_percentual: comissaoPerc,
+                   valor_servico: valorServico,
+                   comissao_percentual: 15,
                    valor_comissao: valorComissao,
                    data_conclusao: agora,
                    semana: semana,
                    mes: mes,
-                   pago: false
+                   pago: false,
+                   equipe_id: servicoSnapshot.equipe_id,
+                   equipe_nome: servicoSnapshot.equipe_nome
                  };
                });
 
                if (ganhosParaCriar.length > 0) {
-                 return base44.entities.GanhoTecnico.bulkCreate(ganhosParaCriar);
+                 return base44.entities.GanhoTecnico.bulkCreate(ganhosParaCriar)
+                   .catch(erro => {
+                     // Notificar admin sobre erro ao criar ganhos
+                     const admins = todosUsuarios.filter(u => u.role === 'admin');
+                     admins.forEach(admin => {
+                       base44.entities.Notificacao.create({
+                         usuario_email: admin.email,
+                         tipo: 'atendimento_concluido',
+                         titulo: '❌ Erro ao Criar Ganhos',
+                         mensagem: `Falha ao registrar ganhos para atendimento ${atendimentoCriado.id}. Verificar e corrigir manualmente.`,
+                         atendimento_id: atendimentoCriado.id,
+                         cliente_nome: servicoSnapshot.cliente_nome,
+                         lida: false
+                       }).catch(() => {});
+                     });
+                     throw erro;
+                   });
                }
              }
            }).then(() => {
