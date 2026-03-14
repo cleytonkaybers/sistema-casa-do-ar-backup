@@ -21,6 +21,19 @@ export default function FinanceiroAdmin() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [filtroEquipe, setFiltroEquipe] = useState('');
+  const [filtroTecnico, setFiltroTecnico] = useState('');
+  const [filtroSemana, setFiltroSemana] = useState('atual');
+  const [showModalPagamento, setShowModalPagamento] = useState(false);
+  const [tecnicoSelecionado, setTecnicoSelecionado] = useState(null);
+  const [loadingPagamento, setLoadingPagamento] = useState(false);
+  const [pagamentoForm, setPagamentoForm] = useState({
+    valor_pago: '',
+    data_pagamento: new Date().toISOString().split('T')[0],
+    metodo_pagamento: 'PIX',
+    nota: '',
+    lancamentos_relacionados: []
+  });
   
   useEffect(() => {
     const checkAdmin = async () => {
@@ -42,20 +55,6 @@ export default function FinanceiroAdmin() {
 
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
   if (!isAdmin) return null;
-
-  const [filtroEquipe, setFiltroEquipe] = useState('');
-  const [filtroTecnico, setFiltroTecnico] = useState('');
-  const [filtroSemana, setFiltroSemana] = useState('atual');
-  const [showModalPagamento, setShowModalPagamento] = useState(false);
-  const [tecnicoSelecionado, setTecnicoSelecionado] = useState(null);
-  const [loadingPagamento, setLoadingPagamento] = useState(false);
-  const [pagamentoForm, setPagamentoForm] = useState({
-    valor_pago: '',
-    data_pagamento: new Date().toISOString().split('T')[0],
-    metodo_pagamento: 'PIX',
-    nota: '',
-    lancamentos_relacionados: []
-  });
 
   const { data: lancamentos = [] } = useQuery({
     queryKey: ['lancamentos'],
