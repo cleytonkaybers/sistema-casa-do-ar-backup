@@ -349,8 +349,9 @@ export default function MeuFinanceiro() {
                                 </Button>
                               )}
                             </TableCell>
-                          </TableRow>
-                        ))}
+                            </TableRow>
+                            );
+                            })}
                       </TableBody>
                     </Table>
                   </div>
