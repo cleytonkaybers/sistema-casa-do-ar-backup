@@ -644,14 +644,33 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
            </div>
            <div className="space-y-2">
              <Label htmlFor="valor">Valor (R$)</Label>
-             <Input
-               id="valor"
-               type="number"
-               step="0.01"
-               value={formData.valor}
-               onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-             />
-           </div>
+             <div className="space-y-1">
+               <Input
+                 id="valor"
+                 type="number"
+                 step="0.01"
+                 value={formData.valor}
+                 onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                 placeholder="Automático pela tabela"
+               />
+               {!servico && formData.tipos_servico.length > 0 && (
+                 <div className="text-xs text-gray-500 space-y-1">
+                   {formData.tipos_servico.map((item, idx) => {
+                     const valor = getValorTipo(item.tipo);
+                     const subtotal = valor * (parseInt(item.quantidade) || 1);
+                     return (
+                       <div key={idx}>
+                         {item.tipo}: R$ {valor.toFixed(2)} × {item.quantidade} = R$ {subtotal.toFixed(2)}
+                       </div>
+                     );
+                   })}
+                   <div className="font-semibold text-gray-700 pt-1 border-t">
+                     Total: R$ {calcularValorTotal().toFixed(2)}
+                   </div>
+                 </div>
+               )}
+             </div>
+            </div>
           </div>
 
           <div className="space-y-2">
