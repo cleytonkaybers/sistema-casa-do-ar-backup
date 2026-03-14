@@ -182,16 +182,51 @@ export default function TabelaServicos() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Tipo de Serviço</Label>
-              <select
-                value={novoTipo}
-                onChange={(e) => setNovoTipo(e.target.value)}
-                className="w-full border rounded-md px-3 py-2"
-              >
-                <option value="">Selecione...</option>
-                {tiposSemValor.map(tipo => (
-                  <option key={tipo} value={tipo}>{tipo}</option>
-                ))}
-              </select>
+              {!isCustomType ? (
+                <div className="space-y-2">
+                  <select
+                    value={novoTipo}
+                    onChange={(e) => setNovoTipo(e.target.value)}
+                    className="w-full border rounded-md px-3 py-2"
+                  >
+                    <option value="">Selecione...</option>
+                    {tiposSemValor.map(tipo => (
+                      <option key={tipo} value={tipo}>{tipo}</option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsCustomType(true);
+                      setNovoTipo('');
+                    }}
+                    className="w-full"
+                  >
+                    + Criar Tipo Customizado
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Ex: 1/2 carga de gás"
+                    value={novoTipo}
+                    onChange={(e) => setNovoTipo(e.target.value)}
+                    autoFocus
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsCustomType(false);
+                      setNovoTipo('');
+                    }}
+                    className="w-full"
+                  >
+                    Voltar aos Serviços Pré-definidos
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
