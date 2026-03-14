@@ -145,6 +145,27 @@ export default function MeuFinanceiro() {
     }
   };
 
+  const handleEditarServico = (servicoId) => {
+    const servico = servicos.find(s => s.id === servicoId);
+    if (servico) {
+      setServicoEditando(servico);
+      // Aqui seria aberto um modal de edição
+      toast.info('Funcionalidade de edição em desenvolvimento');
+    }
+  };
+
+  const handleExcluirComissao = async (comissaoId, servicoId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta comissão?')) {
+      try {
+        await base44.entities.LancamentoFinanceiro.delete(comissaoId);
+        toast.success('Comissão excluída com sucesso');
+        // Recarregar dados
+      } catch (error) {
+        toast.error('Erro ao excluir comissão');
+      }
+    }
+  };
+
   const getServicoDetalhes = (servicoId) => {
     return servicos.find(s => s.id === servicoId);
   };
