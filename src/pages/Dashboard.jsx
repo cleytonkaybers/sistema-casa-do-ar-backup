@@ -585,51 +585,70 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Últimos Clientes */}
+        {/* Próximas Manutenções */}
         <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
             <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-              Últimos Clientes
+              Próximas Manutenções
             </CardTitle>
-            <Link to={createPageUrl('Clientes')}>
+            <Link to={createPageUrl('PreventivasFuturas')}>
               <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm">
-                Ver todos <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                Ver todas <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
               </Button>
             </Link>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            {clientes.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-6 h-6 text-blue-500" />
-                </div>
-                <p className="text-gray-400 text-sm">Nenhum cliente cadastrado</p>
-                <Link to={createPageUrl('Clientes')}>
-                  <Button variant="outline" className="mt-3 text-sm">
-                    Cadastrar primeiro cliente
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {clientes.slice(0, 5).map((cliente) => (
-                  <Link key={cliente.id} to={createPageUrl('Clientes')} className="block">
-                    <div className="flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer group border border-gray-100 hover:border-blue-200 hover:bg-blue-50">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}>
-                          {cliente.nome?.charAt(0).toUpperCase()}
+            {(() => {
+              const proximasManutencoes = clientes
+                .filter(c => c.proxima_manutencao)
+                .map(c => ({
+                  ...c,
+                  diasRestantes: differenceInDays(new Date(c.proxima_manutencao), new Date())
+                }))
+                .filter(c => c.diasRestantes >= 0)
+                .sort((a, b) => a.diasRestantes - b.diasRestantes)
+                .slice(0, 5);
+
+              if (proximasManutencoes.length === 0) {
+                return (
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    </div>
+                    <p className="text-gray-400 text-sm">Nenhuma manutenção programada</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  {proximasManutencoes.map((cliente) => (
+                    <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block">
+                      <div className="flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer group border border-gray-100 hover:border-green-200 hover:bg-green-50">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-100">
+                            <Snowflake className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm group-hover:text-green-600 transition-colors">{cliente.nome}</p>
+                            <p className="text-xs text-gray-400">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-800 text-sm group-hover:text-blue-600 transition-colors">{cliente.nome}</p>
-                          <p className="text-xs text-gray-400">{cliente.cidade || 'Sem cidade'}</p>
+                        <div className="text-right">
+                          <p className={`text-xs font-semibold ${
+                            cliente.diasRestantes <= 7 ? 'text-orange-600' : 
+                            cliente.diasRestantes <= 15 ? 'text-amber-600' : 
+                            'text-green-600'
+                          }`}>
+                            {cliente.diasRestantes === 0 ? 'Hoje' : `${cliente.diasRestantes}d`}
+                          </p>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-400">{format(new Date(cliente.created_date), "dd/MM/yy")}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+                    </Link>
+                  ))}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
