@@ -72,24 +72,35 @@ export default function MeusGanhos() {
   const handleEditarGanho = (ganho) => {
     setEditandoGanho(ganho);
     setValorEditado(ganho.valor_servico?.toString() || '');
+    setTipoServicoEditado(ganho.tipo_servico || '');
+    setMultiplicadorEditado('1');
   };
 
   const handleSalvarEdicao = () => {
     if (!editandoGanho || !valorEditado) return;
-    
+
     const novoValor = parseFloat(valorEditado);
+    const multiplicador = parseFloat(multiplicadorEditado) || 1;
+
     if (isNaN(novoValor) || novoValor < 0) {
       toast.error('Digite um valor válido');
       return;
     }
 
-    const novaComissao = (novoValor * (editandoGanho.comissao_percentual || 15)) / 100;
-    
+    if (isNaN(multiplicador) || multiplicador <= 0) {
+      toast.error('Multiplicador deve ser um número positivo');
+      return;
+    }
+
+    const valorComMultiplicador = novoValor * multiplicador;
+    const novaComissao = (valorComMultiplicador * (editandoGanho.comissao_percentual || 15)) / 100;
+
     updateMutation.mutate({
       id: editandoGanho.id,
       data: {
         ...editandoGanho,
-        valor_servico: novoValor,
+        tipo_servico: tipoServicoEditado,
+        valor_servico: valorComMultiplicador,
         valor_comissao: novaComissao
       }
     });
