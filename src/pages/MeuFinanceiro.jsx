@@ -95,6 +95,18 @@ export default function MeuFinanceiro() {
     enabled: !!user?.email
   });
 
+  const { data: meusPagamentosRegistrados = [] } = useQuery({
+    queryKey: ['pagamentosTecnico', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.PagamentoTecnico.filter({
+        tecnico_id: user.email,
+        status: 'Confirmado'
+      });
+    },
+    enabled: !!user?.email
+  });
+
   if (loading) {
     return <div className="text-center py-8">Carregando...</div>;
   }
@@ -197,6 +209,39 @@ export default function MeuFinanceiro() {
           </div>
         </CardHeader>
       </Card>
+
+      {/* Histórico de Pagamentos */}
+      {meusPagamentosRegistrados.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Pagamentos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Método</TableHead>
+                    <TableHead>Observação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {meusPagamentosRegistrados.map(pag => (
+                    <TableRow key={pag.id}>
+                      <TableCell className="text-sm">{format(parseISO(pag.data_pagamento), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
+                      <TableCell className="font-bold text-green-600">R$ {pag.valor_pago.toFixed(2)}</TableCell>
+                      <TableCell className="text-sm">{pag.metodo_pagamento}</TableCell>
+                      <TableCell className="text-sm text-gray-500">{pag.observacao || '-'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabela de Comissões por Dia */}
       {Object.keys(comissoesPorDia).length > 0 ? (

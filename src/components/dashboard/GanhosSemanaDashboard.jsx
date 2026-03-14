@@ -29,6 +29,18 @@ export default function GanhosSemanaDashboard() {
     enabled: !!user?.email
   });
 
+  const { data: meusPagamentos = [] } = useQuery({
+    queryKey: ['pagamentosSemana', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.PagamentoTecnico.filter({
+        tecnico_id: user.email,
+        status: 'Confirmado'
+      });
+    },
+    enabled: !!user?.email
+  });
+
   // Calcular ganhos da semana
   useEffect(() => {
     if (minhasComissoes.length > 0) {
@@ -49,9 +61,15 @@ export default function GanhosSemanaDashboard() {
         .filter(c => c.status === 'pago' || c.status === 'creditado')
         .reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
 
+      // Calcular pagamentos registrados esta semana
+      const pagamentosSemana = meusPagamentos.filter(p => {
+        const dataPag = parseISO(p.data_pagamento);
+        return dataPag >= inicioSemana && dataPag <= fimSemana;
+      }).reduce((sum, p) => sum + (p.valor_pago || 0), 0);
+
       const total = pendente + pago;
 
-      setGanhosDetalhes({ pendente, pago, total });
+      setGanhosDetalhes({ pendente, pago, total, pagamentosSemana });
 
       // Animar contador
       let current = 0;
@@ -93,12 +111,12 @@ export default function GanhosSemanaDashboard() {
           {/* Subtítulo com breakdown */}
           <div className="space-y-1 text-sm border-t border-green-200 pt-2">
             <div className="flex justify-between text-gray-600">
-              <span>Ganho:</span>
-              <span className="font-semibold text-green-700">R$ {ganhosDetalhes.pago.toFixed(2)}</span>
+              <span>Pago esta semana:</span>
+              <span className="font-semibold text-green-700">R$ {ganhosDetalhes.pagamentosSemana?.toFixed(2) || '0.00'}</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Pendente:</span>
-              <span className="font-semibold text-amber-600">R$ {ganhosDetalhes.pendente.toFixed(2)}</span>
+              <span className="font-semibold text-amber-600">R$ {ganhosDetalhes.pendente?.toFixed(2) || '0.00'}</span>
             </div>
           </div>
 

@@ -6,108 +6,69 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      return Response.json({ error: 'Acesso negado. Apenas administradores podem registrar pagamentos.' }, { status: 403 });
     }
 
-    const {
-      tecnico_id,
-      valor_pago,
-      data_pagamento,
-      metodo_pagamento,
-      lancamentos_relacionados = [],
-      nota = ''
-    } = await req.json();
+    const { tecnico_id, valor_pago, data_pagamento, metodo_pagamento, observacao, lancamentos_id = [] } = await req.json();
 
-    if (!tecnico_id || !valor_pago || !data_pagamento || !metodo_pagamento) {
-      return Response.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
+    if (!tecnico_id || !valor_pago || valor_pago <= 0) {
+      return Response.json({ error: 'Dados inválidos. Verifique tecnico_id e valor_pago.' }, { status: 400 });
     }
 
-    if (valor_pago <= 0) {
-      return Response.json({ error: 'Valor pago deve ser maior que zero' }, { status: 400 });
-    }
-
-    // Buscar técnico
-    const tecnicos = await base44.asServiceRole.entities.User.filter({
-      email: tecnico_id
-    });
-
-    if (tecnicos.length === 0) {
-      return Response.json({ error: 'Técnico não encontrado' }, { status: 404 });
-    }
-
-    const tecnico = tecnicos[0];
-
-    // Buscar registro financeiro do técnico
-    const tecnicoFinanceiroExistente = await base44.asServiceRole.entities.TecnicoFinanceiro.filter({
+    // Buscar informações do técnico
+    const tecnicoFinanceiro = await base44.asServiceRole.entities.TecnicoFinanceiro.filter({
       tecnico_id: tecnico_id
     });
 
-    if (tecnicoFinanceiroExistente.length === 0) {
-      return Response.json({ error: 'Nenhum registro financeiro encontrado para este técnico' }, { status: 404 });
+    if (!tecnicoFinanceiro || tecnicoFinanceiro.length === 0) {
+      return Response.json({ error: 'Técnico não encontrado no sistema financeiro.' }, { status: 404 });
     }
 
-    const tecnicoFin = tecnicoFinanceiroExistente[0];
-
-    if (valor_pago > (tecnicoFin.credito_pendente || 0)) {
-      return Response.json({
-        error: `Valor pago (${valor_pago}) excede o crédito pendente (${tecnicoFin.credito_pendente || 0})`,
-        credito_pendente: tecnicoFin.credito_pendente || 0
-      }, { status: 400 });
-    }
+    const tecnico = tecnicoFinanceiro[0];
 
     // Criar registro de pagamento
-    const pagamento = {
-      tecnico_id: tecnico_id,
-      tecnico_nome: tecnico.full_name,
+    const pagamento = await base44.asServiceRole.entities.PagamentoTecnico.create({
+      tecnico_id,
+      tecnico_nome: tecnico.tecnico_nome,
       equipe_id: tecnico.equipe_id,
-      equipe_nome: '', // Será preenchido se necessário
-      valor_pago: valor_pago,
-      data_pagamento: data_pagamento,
-      metodo_pagamento: metodo_pagamento,
-      lancamentos_relacionados: lancamentos_relacionados,
-      nota: nota,
-      usuario_registrou: user.email,
-      status: 'realizado'
-    };
+      equipe_nome: tecnico.equipe_nome,
+      lancamentos_id,
+      valor_pago,
+      data_pagamento,
+      metodo_pagamento,
+      observacao: observacao || '',
+      registrado_por: user.email,
+      status: 'Confirmado'
+    });
 
-    const pagamentoCriado = await base44.asServiceRole.entities.PagamentoTecnico.create(pagamento);
+    // Atualizar crédito do técnico
+    const novoCredito = Math.max(0, tecnico.credito_pendente - valor_pago);
+    const novoTotal = tecnico.credito_pago + valor_pago;
 
-    // Atualizar lançamentos relacionados para status "pago"
-    if (lancamentos_relacionados && lancamentos_relacionados.length > 0) {
-      for (const lancamento_id of lancamentos_relacionados) {
-        const lancamentos = await base44.asServiceRole.entities.LancamentoFinanceiro.filter({
-          id: lancamento_id
+    await base44.asServiceRole.entities.TecnicoFinanceiro.update(tecnico.id, {
+      credito_pendente: novoCredito,
+      credito_pago: novoTotal,
+      total_ganho: tecnico.credito_pendente + novoTotal,
+      data_ultimo_pagamento: new Date().toISOString()
+    });
+
+    // Marcar lançamentos como pagos (se selecionados)
+    if (lancamentos_id.length > 0) {
+      for (const lancamento_id of lancamentos_id) {
+        await base44.asServiceRole.entities.LancamentoFinanceiro.update(lancamento_id, {
+          status: 'pago',
+          data_pagamento: new Date().toISOString(),
+          usuario_pagamento: user.email
         });
-
-        if (lancamentos.length > 0) {
-          await base44.asServiceRole.entities.LancamentoFinanceiro.update(lancamento_id, {
-            status: 'pago',
-            data_pagamento: new Date().toISOString(),
-            usuario_pagamento: user.email
-          });
-        }
       }
     }
 
-    // Atualizar saldo do técnico
-    const novo_credito_pendente = (tecnicoFin.credito_pendente || 0) - valor_pago;
-    const novo_credito_pago = (tecnicoFin.credito_pago || 0) + valor_pago;
-
-    await base44.asServiceRole.entities.TecnicoFinanceiro.update(tecnicoFin.id, {
-      credito_pendente: novo_credito_pendente,
-      credito_pago: novo_credito_pago,
-      data_ultimo_pagamento: new Date().toISOString(),
-      data_ultima_atualizacao: new Date().toISOString()
-    });
-
     return Response.json({
       success: true,
-      message: 'Pagamento registrado com sucesso',
-      pagamento: pagamentoCriado,
-      novo_saldo_pendente: novo_credito_pendente,
-      novo_saldo_pago: novo_credito_pago
+      pagamento,
+      novoCredito,
+      mensagem: `Pagamento de R$ ${valor_pago.toFixed(2)} registrado com sucesso.`
     });
-
   } catch (error) {
     console.error('Erro ao registrar pagamento:', error);
     return Response.json({ error: error.message }, { status: 500 });
