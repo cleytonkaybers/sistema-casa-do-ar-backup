@@ -48,10 +48,7 @@ Deno.serve(async (req) => {
       tipo_servico: servico.tipo_servico
     });
 
-    const comissaoPercentual = precificacoes.length > 0 ? 
-      (precificacoes[0].comissao_tecnico_percentual || 15) : 15;
-
-    const valorComissao = (servico.valor || 0) * (comissaoPercentual / 100);
+    const comissaoPercentual = 15; // Sempre 15% fixo
 
     let ganhosCriados = 0;
 
@@ -59,14 +56,17 @@ Deno.serve(async (req) => {
     for (const emailMembro of emailsMembros) {
       const usuarioMembro = usuarios.find(u => u.email === emailMembro);
       
+      const valorServico = servico.valor || 0;
+      const valorComissao = Number((valorServico * 0.15).toFixed(2)); // 15% com 2 casas decimais
+      
       const novoGanho = {
         tecnico_email: emailMembro,
         tecnico_nome: usuarioMembro?.full_name || 'Sistema',
         atendimento_id: servicoId,
         cliente_nome: servico.cliente_nome,
         tipo_servico: servico.tipo_servico,
-        valor_servico: servico.valor || 0,
-        comissao_percentual: comissaoPercentual,
+        valor_servico: valorServico,
+        comissao_percentual: 15,
         valor_comissao: valorComissao,
         data_conclusao: servico.data_atualizacao_status || new Date().toISOString(),
         semana: getWeekOfYear(new Date(servico.data_atualizacao_status || new Date())),
