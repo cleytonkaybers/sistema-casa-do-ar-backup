@@ -228,9 +228,56 @@ export default function FinanceiroAdmin() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Pagamentos</CardTitle>
-        </CardHeader>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Relatório de Comissões por Serviço</CardTitle>
+         </CardHeader>
+         <CardContent>
+           <div className="overflow-x-auto">
+             <Table>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Equipe</TableHead>
+                   <TableHead>Técnico</TableHead>
+                   <TableHead>Cliente</TableHead>
+                   <TableHead>Serviço</TableHead>
+                   <TableHead>Valor Serviço</TableHead>
+                   <TableHead>Comissão Técnico</TableHead>
+                   <TableHead>% Ganha</TableHead>
+                   <TableHead>Status</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {lancamentos.map(lanc => {
+                   const percentualGanho = lanc.valor_total_servico > 0
+                     ? ((lanc.valor_comissao_tecnico / lanc.valor_total_servico) * 100).toFixed(1)
+                     : 0;
+                   return (
+                     <TableRow key={lanc.id}>
+                       <TableCell className="font-medium">{lanc.equipe_nome}</TableCell>
+                       <TableCell className="text-sm">{lanc.tecnico_nome}</TableCell>
+                       <TableCell className="text-sm">{lanc.cliente_nome}</TableCell>
+                       <TableCell className="text-sm">{lanc.tipo_servico}</TableCell>
+                       <TableCell className="font-semibold">R$ {lanc.valor_total_servico.toFixed(2)}</TableCell>
+                       <TableCell className="font-bold text-green-600">R$ {lanc.valor_comissao_tecnico.toFixed(2)}</TableCell>
+                       <TableCell className="font-semibold text-blue-600">{percentualGanho}%</TableCell>
+                       <TableCell>
+                         <Badge variant={lanc.status === 'pendente' ? 'destructive' : lanc.status === 'pago' ? 'default' : 'secondary'}>
+                           {lanc.status === 'pendente' ? 'Pendente' : lanc.status === 'pago' ? 'Pago' : 'Creditado'}
+                         </Badge>
+                       </TableCell>
+                     </TableRow>
+                   );
+                 })}
+               </TableBody>
+             </Table>
+           </div>
+         </CardContent>
+       </Card>
+
+      <Card>
+         <CardHeader>
+           <CardTitle>Histórico de Pagamentos</CardTitle>
+         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
