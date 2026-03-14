@@ -18,10 +18,35 @@ export default function RelatoriosGanhos() {
   const [filtroTecnico, setFiltroTecnico] = useState('todos');
   const [gerando, setGerando] = useState(false);
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Bloquear acesso para não-admins
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Acesso Restrito</h2>
+            <p className="text-gray-600">Apenas administradores podem gerar relatórios de ganhos.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const { data: ganhos = [] } = useQuery({
     queryKey: ['ganhos-relatorio'],
@@ -37,8 +62,6 @@ export default function RelatoriosGanhos() {
     queryKey: ['usuarios'],
     queryFn: () => base44.entities.User.list(),
   });
-
-  const isAdmin = user?.role === 'admin';
 
   // Filtrar ganhos
   const ganhosFiltrados = ganhos.filter(g => {
@@ -178,38 +201,36 @@ export default function RelatoriosGanhos() {
             </div>
           </div>
 
-          {isAdmin && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Equipe</Label>
-                <Select value={filtroEquipe} onValueChange={setFiltroEquipe}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas as Equipes</SelectItem>
-                    {equipes.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Técnico</Label>
-                <Select value={filtroTecnico} onValueChange={setFiltroTecnico}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os Técnicos</SelectItem>
-                    {usuarios.filter(u => u.role !== 'admin').map(u => (
-                      <SelectItem key={u.email} value={u.email}>{u.full_name || u.email}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Equipe</Label>
+              <Select value={filtroEquipe} onValueChange={setFiltroEquipe}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as Equipes</SelectItem>
+                  {equipes.map(e => (
+                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            <div>
+              <Label>Técnico</Label>
+              <Select value={filtroTecnico} onValueChange={setFiltroTecnico}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Técnicos</SelectItem>
+                  {usuarios.filter(u => u.role !== 'admin').map(u => (
+                    <SelectItem key={u.email} value={u.email}>{u.full_name || u.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           <Button 
             onClick={handleGerarPDF}

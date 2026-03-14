@@ -66,12 +66,12 @@ import PreferencesNotificacao from './pages/PreferencesNotificacao';
 import PreventivasFuturas from './pages/PreventivasFuturas';
 import Relatorios from './pages/Relatorios';
 import RelatoriosAutomaticos from './pages/RelatoriosAutomaticos';
+import RelatoriosGanhos from './pages/RelatoriosGanhos';
 import RenovacaoPlano from './pages/RenovacaoPlano';
 import SaaSLanding from './pages/SaaSLanding';
 import Servicos from './pages/Servicos';
 import Suporte from './pages/Suporte';
 import Usuarios from './pages/Usuarios';
-import RelatoriosGanhos from './pages/RelatoriosGanhos';
 import __Layout from './Layout.jsx';
 
 
@@ -95,12 +95,12 @@ export const PAGES = {
     "PreventivasFuturas": PreventivasFuturas,
     "Relatorios": Relatorios,
     "RelatoriosAutomaticos": RelatoriosAutomaticos,
+    "RelatoriosGanhos": RelatoriosGanhos,
     "RenovacaoPlano": RenovacaoPlano,
     "SaaSLanding": SaaSLanding,
     "Servicos": Servicos,
     "Suporte": Suporte,
     "Usuarios": Usuarios,
-    "RelatoriosGanhos": RelatoriosGanhos,
 }
 
 export const pagesConfig = {
