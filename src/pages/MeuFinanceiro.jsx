@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DollarSign, TrendingUp, CheckCircle2, Clock, Eye, Send } from 'lucide-react';
+import { DollarSign, TrendingUp, CheckCircle2, Clock, Eye, Send, FileText } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -192,23 +192,65 @@ export default function MeuFinanceiro() {
         </Card>
       </div>
 
-      {/* Filtros */}
+      {/* Relatório de Comissões por Serviço */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Minhas Comissões</CardTitle>
-            <Select value={periodoFiltro} onValueChange={handleChangePeriodo}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="atual">Semana Atual</SelectItem>
-                <SelectItem value="anterior">Semana Anterior</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-      </Card>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Relatório de Comissões por Serviço</CardTitle>
+         </CardHeader>
+         <CardContent>
+           <div className="mb-4">
+             <Select value={periodoFiltro} onValueChange={handleChangePeriodo}>
+               <SelectTrigger className="w-48">
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="atual">Semana Atual</SelectItem>
+                 <SelectItem value="anterior">Semana Anterior</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
+           <div className="overflow-x-auto">
+             <Table>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Cliente</TableHead>
+                   <TableHead>Serviço</TableHead>
+                   <TableHead>Equipe</TableHead>
+                   <TableHead>Valor Serviço</TableHead>
+                   <TableHead>Sua Comissão</TableHead>
+                   <TableHead>% Ganha</TableHead>
+                   <TableHead>Status</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {comissoesFiltradas.map(comissao => {
+                   const percentualGanho = comissao.valor_total_servico > 0 
+                     ? ((comissao.valor_comissao_tecnico / comissao.valor_total_servico) * 100).toFixed(1)
+                     : 0;
+                   return (
+                     <TableRow key={comissao.id}>
+                       <TableCell className="font-medium">{comissao.cliente_nome}</TableCell>
+                       <TableCell className="text-sm">{comissao.tipo_servico}</TableCell>
+                       <TableCell className="text-sm">{comissao.equipe_nome}</TableCell>
+                       <TableCell className="font-semibold">R$ {comissao.valor_total_servico.toFixed(2)}</TableCell>
+                       <TableCell className="font-bold text-green-600">R$ {comissao.valor_comissao_tecnico.toFixed(2)}</TableCell>
+                       <TableCell className="font-semibold text-blue-600">{percentualGanho}%</TableCell>
+                       <TableCell>
+                         <Badge variant={comissao.status === 'pendente' ? 'destructive' : 'default'}>
+                           {comissao.status === 'pendente' ? 'Pendente' : comissao.status === 'pago' ? 'Pago' : 'Creditado'}
+                         </Badge>
+                       </TableCell>
+                     </TableRow>
+                   );
+                 })}
+               </TableBody>
+             </Table>
+           </div>
+           {comissoesFiltradas.length === 0 && (
+             <p className="text-center text-gray-500 text-sm py-4">Nenhuma comissão neste período</p>
+           )}
+         </CardContent>
+       </Card>
 
       {/* Histórico de Pagamentos */}
       {meusPagamentosRegistrados.length > 0 && (
