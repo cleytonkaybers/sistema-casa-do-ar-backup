@@ -330,15 +330,29 @@ export default function FinanceiroAdmin() {
               </div>
 
               <div className="space-y-2">
-                <Label>Valor a Pagar *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={pagamentoForm.valor_pago}
-                  onChange={(e) => setPagamentoForm({ ...pagamentoForm, valor_pago: e.target.value })}
-                  placeholder="0.00"
-                />
-              </div>
+                 <Label>Valor a Pagar *</Label>
+                 <div className="flex gap-2 mb-2">
+                   <Button
+                     type="button"
+                     size="sm"
+                     variant="outline"
+                     onClick={() => setPagamentoForm({ ...pagamentoForm, valor_pago: tecnicoSelecionado.credito_pendente.toString() })}
+                     className="flex-1"
+                   >
+                     Quitar Tudo (R$ {tecnicoSelecionado.credito_pendente.toFixed(2)})
+                   </Button>
+                 </div>
+                 <Input
+                   type="number"
+                   step="0.01"
+                   value={pagamentoForm.valor_pago}
+                   onChange={(e) => setPagamentoForm({ ...pagamentoForm, valor_pago: e.target.value })}
+                   placeholder="0.00"
+                 />
+                 {pagamentoForm.valor_pago && parseFloat(pagamentoForm.valor_pago) < tecnicoSelecionado.credito_pendente && (
+                   <p className="text-xs text-amber-600 mt-1">⚠️ Valor parcial: faltam R$ {(tecnicoSelecionado.credito_pendente - parseFloat(pagamentoForm.valor_pago)).toFixed(2)}</p>
+                 )}
+               </div>
 
               <div className="space-y-2">
                 <Label>Data do Pagamento *</Label>
