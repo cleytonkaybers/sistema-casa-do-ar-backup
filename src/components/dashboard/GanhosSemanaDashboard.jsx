@@ -28,15 +28,8 @@ export default function GanhosSemanaDashboard() {
     enabled: !!user?.email
   });
 
-  const { data: meusPagamentos = [] } = useQuery({
-    queryKey: ['pagamentosSemana', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      const todos = await base44.entities.PagamentoTecnico.list();
-      return todos.filter(p => p.tecnico_id === user.email && p.status === 'Confirmado');
-    },
-    enabled: !!user?.email
-  });
+  // Não exibir pagamentos antigos, apenas comissões pendentes da semana
+  const meusPagamentos = [];
 
   // Calcular ganhos da semana (segunda 00:00 até domingo 23:59)
   useEffect(() => {
@@ -44,33 +37,20 @@ export default function GanhosSemanaDashboard() {
     const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 }); // 1 = Segunda-feira
     const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
 
+    // Filtrar apenas comissões geradas na semana atual (segunda a domingo 23:59)
     const comissoesSemana = minhasComissoes.filter(c => {
       if (!c.data_geracao) return false;
       try {
-        const dataReferencia = new Date(c.data_geracao);
-        const dentroDaSemana = dataReferencia >= inicioSemana && dataReferencia <= fimSemana;
-        return c.status === 'pendente' && dentroDaSemana;
+        const dataGeracao = new Date(c.data_geracao);
+        return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
       } catch (e) {
         return false;
       }
     });
 
-    // Filtrar pagamentos da semana atual
-    const pagamentosSemana = meusPagamentos.filter(p => {
-      if (!p.data_pagamento) return false;
-      try {
-        const dataPagamento = new Date(p.data_pagamento);
-        return dataPagamento >= inicioSemana && dataPagamento <= fimSemana;
-      } catch (e) {
-        return false;
-      }
-    });
+    const total = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
 
-    const pendente = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
-    const pago = pagamentosSemana.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
-    const total = pendente + pago;
-
-    setGanhosDetalhes({ pendente, pago, total, pagamentosSemana: pagamentosSemana.length });
+    setGanhosDetalhes({ pendente: total, pago: 0, total, pagamentosSemana: 0 });
 
     // Animar contador
     let current = 0;
@@ -86,7 +66,7 @@ export default function GanhosSemanaDashboard() {
     }, 27); // ~800ms total
 
     return () => clearInterval(timer);
-  }, [minhasComissoes, meusPagamentos]);
+  }, [minhasComissoes]);
 
   if (!user) return null;
 
@@ -111,15 +91,9 @@ export default function GanhosSemanaDashboard() {
           {/* Subtítulo com breakdown */}
           <div className="space-y-1 text-sm border-t border-green-200 pt-2">
             <div className="flex justify-between text-gray-600">
-              <span>Pendente:</span>
-              <span className="font-semibold text-amber-600">R$ {ganhosDetalhes.pendente?.toFixed(2) || '0.00'}</span>
+              <span>Ganhos da semana (segunda a domingo):</span>
+              <span className="font-semibold text-green-600">R$ {ganhosDetalhes.total?.toFixed(2) || '0.00'}</span>
             </div>
-            {ganhosDetalhes.pago > 0 && (
-              <div className="flex justify-between text-gray-600">
-                <span>Pago (semana):</span>
-                <span className="font-semibold text-green-600">R$ {ganhosDetalhes.pago?.toFixed(2) || '0.00'}</span>
-              </div>
-            )}
           </div>
 
           {/* Botão de ação */}
