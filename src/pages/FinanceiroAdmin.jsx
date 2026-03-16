@@ -148,11 +148,38 @@ export default function FinanceiroAdmin() {
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
   if (!isAdmin) return null;
 
-  const filteredTecnicos = tecnicos.filter(t => {
-    const matchEquipe = !filtroEquipe || t.equipe_id === filtroEquipe;
-    const matchTecnico = !filtroTecnico || t.tecnico_id.includes(filtroTecnico);
-    return matchEquipe && matchTecnico;
-  });
+  // Filtrar técnicos e recalcular seus valores baseado apenas na semana atual
+  const filteredTecnicos = tecnicos
+    .filter(t => {
+      const matchEquipe = !filtroEquipe || t.equipe_id === filtroEquipe;
+      const matchTecnico = !filtroTecnico || t.tecnico_id.includes(filtroTecnico);
+      return matchEquipe && matchTecnico;
+    })
+    .map(t => {
+      // Filtrar lançamentos PENDENTES da semana atual para este técnico
+      const agora = new Date();
+      const inicioSemana = startOfWeek(agora, { weekStartsOn: 0 });
+      const fimSemana = endOfWeek(agora, { weekStartsOn: 0 });
+
+      const lancamentosSemana = lancamentos.filter(l => {
+        const dataGeracao = new Date(l.data_geracao);
+        return (
+          l.tecnico_id === t.tecnico_id &&
+          l.status === 'pendente' &&
+          dataGeracao >= inicioSemana &&
+          dataGeracao <= fimSemana
+        );
+      });
+
+      const creditoPendenteSemana = lancamentosSemana.reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
+
+      return {
+        ...t,
+        credito_pendente: creditoPendenteSemana,
+        credito_pago: 0, // Zerado semanalmente
+        total_ganho: creditoPendenteSemana // Apenas pendentes da semana
+      };
+    });
 
   const lancamentosParaTecnico = (tecnico_id) => {
     return lancamentos.filter(l => l.tecnico_id === tecnico_id && l.status === 'pendente');
@@ -219,8 +246,9 @@ export default function FinanceiroAdmin() {
     return l.status === 'pendente' && diasPassados > 7;
   });
 
+  // Totais baseados nos valores recalculados da semana
   const totalPendente = filteredTecnicos.reduce((sum, t) => sum + (t.credito_pendente || 0), 0);
-  const totalPago = filteredTecnicos.reduce((sum, t) => sum + (t.credito_pago || 0), 0);
+  const totalPago = 0; // Sempre zero (zerado semanalmente)
 
   const gerarPDF = async () => {
     try {
