@@ -112,21 +112,20 @@ export default function MeuFinanceiro() {
     return <div className="text-center py-8">Carregando...</div>;
   }
 
-  // Filtrar comissões por período (apenas lançamentos do técnico logado, status pendente/pago)
+  // Filtrar comissões por período - APENAS PENDENTES da semana atual
   const comissoesFiltradas = minhasComissoes.filter(c => {
-    if (!dataInicio || !dataFim) return true;
+    if (!dataInicio || !dataFim) return c.status === 'pendente';
     const dataGeracao = format(parseISO(c.data_geracao), 'yyyy-MM-dd');
-    const statusValido = c.status === 'pendente' || c.status === 'pago' || c.status === 'creditado';
-    return dataGeracao >= dataInicio && dataGeracao <= dataFim && statusValido;
+    return dataGeracao >= dataInicio && dataGeracao <= dataFim && c.status === 'pendente';
   });
 
-  const comissoesPendentes = comissoesFiltradas.filter(c => c.status === 'pendente');
-  const comissoesPagas = comissoesFiltradas.filter(c => c.status === 'pago' || c.status === 'creditado');
+  const comissoesPendentes = comissoesFiltradas;
+  const comissoesPagas = [];
 
-  // Totais semanais
+  // Totais semanais (apenas pendentes)
   const totalPendente = comissoesPendentes.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
-  const totalPago = comissoesPagas.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
-  const totalSemana = totalPendente + totalPago;
+  const totalPago = 0;
+  const totalSemana = totalPendente;
 
   // Agrupar por dia
   const comissoesPorDia = comissoesFiltradas.reduce((acc, comissao) => {
