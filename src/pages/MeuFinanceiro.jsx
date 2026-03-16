@@ -47,14 +47,6 @@ export default function MeuFinanceiro() {
       const semanaAnterior = subWeeks(hoje, 1);
       inicio = startOfWeek(semanaAnterior, { weekStartsOn: 0 });
       fim = endOfWeek(semanaAnterior, { weekStartsOn: 0 });
-    } else if (periodo.startsWith('hist_')) {
-      const histId = periodo.replace('hist_', '');
-      const historico = historicosSemanas.find(h => h.id === histId);
-      if (historico) {
-        setDataInicio(historico.semana_inicio);
-        setDataFim(historico.semana_fim);
-        return;
-      }
     }
     
     setDataInicio(format(inicio, 'yyyy-MM-dd'));
@@ -111,17 +103,6 @@ export default function MeuFinanceiro() {
       return base44.entities.PagamentoTecnico.filter({
         tecnico_id: user.email,
         status: 'Confirmado'
-      });
-    },
-    enabled: !!user?.email
-  });
-
-  const { data: historicosSemanas = [] } = useQuery({
-    queryKey: ['historicosSemanas', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.HistoricoGanhosSemanal.filter({
-        tecnico_id: user.email
       });
     },
     enabled: !!user?.email
@@ -239,7 +220,7 @@ export default function MeuFinanceiro() {
            <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Relatório de Comissões por Serviço</CardTitle>
          </CardHeader>
          <CardContent>
-           <div className="mb-4 flex gap-3 flex-wrap">
+           <div className="mb-4">
              <Select value={periodoFiltro} onValueChange={handleChangePeriodo}>
                <SelectTrigger className="w-48">
                  <SelectValue />
@@ -247,16 +228,8 @@ export default function MeuFinanceiro() {
                <SelectContent>
                  <SelectItem value="atual">Semana Atual</SelectItem>
                  <SelectItem value="anterior">Semana Anterior</SelectItem>
-                 {historicosSemanas.map((hist, idx) => (
-                   <SelectItem key={hist.id} value={`hist_${hist.id}`}>
-                     {format(parseISO(hist.semana_inicio), 'dd/MM', { locale: ptBR })} - {format(parseISO(hist.semana_fim), 'dd/MM/yyyy', { locale: ptBR })}
-                   </SelectItem>
-                 ))}
                </SelectContent>
              </Select>
-             <div className="text-sm text-gray-600 self-center">
-               {dataInicio && dataFim && `${format(parseISO(dataInicio), 'dd/MM', { locale: ptBR })} - ${format(parseISO(dataFim), 'dd/MM/yyyy', { locale: ptBR })}`}
-             </div>
            </div>
            <div className="overflow-x-auto">
              <Table>
