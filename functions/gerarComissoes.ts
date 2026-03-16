@@ -143,15 +143,19 @@ Deno.serve(async (req) => {
       const created = await base44.asServiceRole.entities.LancamentoFinanceiro.create(lancamento);
       lancamentos.push(created);
 
-      // Atualizar/criar registro de crédito do técnico
+      // Atualizar/criar registro de crédito do técnico (respeitando crédito negativo)
       const tecnicoFinanceiroExistente = await base44.asServiceRole.entities.TecnicoFinanceiro.filter({
         tecnico_id: tecnico.email
       });
 
       if (tecnicoFinanceiroExistente.length > 0) {
         const tecnicoFin = tecnicoFinanceiroExistente[0];
+        const creditoAtual = tecnicoFin.credito_pendente || 0;
+        // Se tinha crédito negativo (adiantamento), a nova comissão abate do negativo
+        const novoCredito = creditoAtual + valor_por_tecnico;
+        
         await base44.asServiceRole.entities.TecnicoFinanceiro.update(tecnicoFin.id, {
-          credito_pendente: (tecnicoFin.credito_pendente || 0) + valor_por_tecnico,
+          credito_pendente: novoCredito,
           total_ganho: (tecnicoFin.total_ganho || 0) + valor_por_tecnico,
           data_ultima_atualizacao: new Date().toISOString()
         });
