@@ -23,7 +23,8 @@ export default function GanhosSemanaDashboard() {
     queryFn: async () => {
       if (!user?.email) return [];
       const todas = await base44.entities.LancamentoFinanceiro.list();
-      return todas.filter(c => c.tecnico_id === user.email);
+      // Filtrar apenas comissões PENDENTES do técnico logado
+      return todas.filter(c => c.tecnico_id === user.email && c.status === 'pendente');
     },
     enabled: !!user?.email
   });
