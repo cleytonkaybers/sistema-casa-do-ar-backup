@@ -49,12 +49,9 @@ export default function GanhosSemanaDashboard() {
     const comissoesSemana = minhasComissoes.filter(c => {
       if (!c.data_geracao) return false;
       try {
-        const dataGeracao = new Date(c.data_geracao);
-        return (
-          c.status === 'pendente' && // Apenas pendentes
-          dataGeracao >= inicioSemana && 
-          dataGeracao <= fimSemana
-        );
+        const dataReferencia = new Date(c.data_geracao);
+        const dentroDaSemana = dataReferencia >= inicioSemana && dataReferencia <= fimSemana;
+        return c.status === 'pendente' && dentroDaSemana;
       } catch (e) {
         return false;
       }
