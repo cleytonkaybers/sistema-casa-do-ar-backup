@@ -48,6 +48,29 @@ Deno.serve(async (req) => {
 
     // Buscar valor da tabela se não houver valor no serviço
     let valorFinal = servico.valor;
+    
+    // Se o tipo de serviço contém "+" (múltiplos serviços), recalcular somando valores da tabela
+    if (servico.tipo_servico && servico.tipo_servico.includes('+')) {
+      const partes = servico.tipo_servico.split('+').map(p => p.trim());
+      let somaTabela = 0;
+      
+      for (const parte of partes) {
+        const tiposServico = await base44.asServiceRole.entities.TipoServicoValor.filter({
+          tipo_servico: parte
+        });
+        
+        if (tiposServico.length > 0) {
+          somaTabela += tiposServico[0].valor_tabela;
+        }
+      }
+      
+      if (somaTabela > 0) {
+        valorFinal = somaTabela;
+        console.log(`Serviço combinado detectado. Valor recalculado: R$ ${somaTabela}`);
+      }
+    }
+    
+    // Se ainda não tem valor ou é zero, buscar na tabela normalmente
     if (!valorFinal || valorFinal <= 0) {
       const tiposServico = await base44.asServiceRole.entities.TipoServicoValor.filter({
         tipo_servico: servico.tipo_servico
