@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, TrendingUp } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { getLocalDate, getStartOfWeek, getEndOfWeek, toLocalDate } from '@/lib/dateUtils';
 
 export default function GanhosSemanaDashboard() {
   const [user, setUser] = useState(null);
@@ -32,30 +31,17 @@ export default function GanhosSemanaDashboard() {
   // Não exibir pagamentos antigos, apenas comissões pendentes da semana
   const meusPagamentos = [];
 
-  // Calcular ganhos da semana PASSADA (segunda a domingo anteriores)
+  // Calcular ganhos da semana atual (segunda a domingo)
   useEffect(() => {
-    const hoje = new Date();
-    
-    // Se hoje é segunda (dia 1), pegar semana passada
-    const diasParaSubtrair = hoje.getDay() === 1 ? 7 : 0;
-    const referencia = new Date(hoje);
-    referencia.setDate(referencia.getDate() - diasParaSubtrair);
-    
-    const inicioSemana = startOfWeek(referencia, { weekStartsOn: 1 }); // Segunda
-    inicioSemana.setHours(0, 0, 0, 0);
-    
-    const fimSemana = endOfWeek(referencia, { weekStartsOn: 1 }); // Domingo
-    fimSemana.setHours(23, 59, 59, 999);
+    const inicioSemana = getStartOfWeek();
+    const fimSemana = getEndOfWeek();
 
     // Filtrar apenas comissões geradas na semana atual (segunda 00:00 a domingo 23:59)
     const comissoesSemana = minhasComissoes.filter(c => {
       if (!c.data_geracao) return false;
-      try {
-        const dataGeracao = parseISO(c.data_geracao);
-        return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
-      } catch (e) {
-        return false;
-      }
+      const dataGeracao = toLocalDate(c.data_geracao);
+      if (!dataGeracao) return false;
+      return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
     });
 
     const total = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
