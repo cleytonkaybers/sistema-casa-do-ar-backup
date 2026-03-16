@@ -1,4 +1,4 @@
-import { format, startOfWeek, endOfWeek, addDays, parseISO, isValid } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Timezone do app: America/Manaus (UTC-4)
@@ -8,7 +8,9 @@ const TIMEZONE = 'America/Manaus';
  * Obtém a data atual no timezone do app
  */
 export function getLocalDate() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: TIMEZONE }));
+  const now = new Date();
+  // Criar data no timezone local sem conversão
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
 }
 
 /**
@@ -16,25 +18,38 @@ export function getLocalDate() {
  */
 export function toLocalDate(date) {
   if (!date) return null;
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  if (!isValid(d)) return null;
-  return new Date(d.toLocaleString('en-US', { timeZone: TIMEZONE }));
+  
+  // Se já é um objeto Date válido, retornar como está
+  if (date instanceof Date && isValid(date)) {
+    return date;
+  }
+  
+  // Se é string, fazer parse
+  if (typeof date === 'string') {
+    const d = parseISO(date);
+    if (!isValid(d)) return null;
+    return d;
+  }
+  
+  return null;
 }
 
 /**
- * Obtém o início da semana atual (segunda-feira)
+ * Obtém o início da semana atual (segunda-feira 00:00:00)
  */
 export function getStartOfWeek(date = null) {
   const baseDate = date ? toLocalDate(date) : getLocalDate();
-  return startOfWeek(baseDate, { weekStartsOn: 1 }); // 1 = segunda-feira
+  const start = startOfWeek(baseDate, { weekStartsOn: 1, locale: ptBR });
+  return startOfDay(start);
 }
 
 /**
- * Obtém o fim da semana atual (domingo)
+ * Obtém o fim da semana atual (domingo 23:59:59)
  */
 export function getEndOfWeek(date = null) {
   const baseDate = date ? toLocalDate(date) : getLocalDate();
-  return endOfWeek(baseDate, { weekStartsOn: 1 });
+  const end = endOfWeek(baseDate, { weekStartsOn: 1, locale: ptBR });
+  return endOfDay(end);
 }
 
 /**
