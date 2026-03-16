@@ -32,14 +32,20 @@ export default function GanhosSemanaDashboard() {
   // Não exibir pagamentos antigos, apenas comissões pendentes da semana
   const meusPagamentos = [];
 
-  // Calcular ganhos da semana (segunda 00:00 até domingo 23:59)
+  // Calcular ganhos da semana PASSADA (segunda a domingo anteriores)
   useEffect(() => {
     const hoje = new Date();
-    const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 }); // 1 = Segunda-feira
-    inicioSemana.setHours(0, 0, 0, 0); // Garantir 00:00:00
     
-    const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
-    fimSemana.setHours(23, 59, 59, 999); // Garantir 23:59:59
+    // Se hoje é segunda (dia 1), pegar semana passada
+    const diasParaSubtrair = hoje.getDay() === 1 ? 7 : 0;
+    const referencia = new Date(hoje);
+    referencia.setDate(referencia.getDate() - diasParaSubtrair);
+    
+    const inicioSemana = startOfWeek(referencia, { weekStartsOn: 1 }); // Segunda
+    inicioSemana.setHours(0, 0, 0, 0);
+    
+    const fimSemana = endOfWeek(referencia, { weekStartsOn: 1 }); // Domingo
+    fimSemana.setHours(23, 59, 59, 999);
 
     // Filtrar apenas comissões geradas na semana atual (segunda 00:00 a domingo 23:59)
     const comissoesSemana = minhasComissoes.filter(c => {
