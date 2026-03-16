@@ -59,12 +59,36 @@ export default function FinanceiroAdmin() {
 
   const updateLancamento = async (id, novoValor) => {
     try {
+      // 1. Buscar lançamento atual
+      const lancamentosAtuais = await base44.entities.LancamentoFinanceiro.filter({ id });
+      const lancAtual = lancamentosAtuais[0];
+      if (!lancAtual) throw new Error('Lançamento não encontrado');
+
+      const valorAntigo = lancAtual.valor_comissao_tecnico;
+      const valorNovo = parseFloat(novoValor) * 0.15;
+      const diferenca = valorNovo - valorAntigo;
+
+      // 2. Atualizar lançamento
       await base44.entities.LancamentoFinanceiro.update(id, {
         valor_total_servico: parseFloat(novoValor),
         valor_comissao_equipe: parseFloat(novoValor) * 0.30,
-        valor_comissao_tecnico: parseFloat(novoValor) * 0.15
+        valor_comissao_tecnico: valorNovo
       });
-      toast.success('Lançamento atualizado');
+
+      // 3. Atualizar ganhos do técnico
+      const tecnicosFinanceiros = await base44.entities.TecnicoFinanceiro.filter({ 
+        tecnico_id: lancAtual.tecnico_id 
+      });
+      
+      if (tecnicosFinanceiros.length > 0) {
+        const tecFin = tecnicosFinanceiros[0];
+        await base44.entities.TecnicoFinanceiro.update(tecFin.id, {
+          credito_pendente: (tecFin.credito_pendente || 0) + diferenca,
+          total_ganho: (tecFin.total_ganho || 0) + diferenca
+        });
+      }
+
+      toast.success('Lançamento e ganhos atualizados');
       setEditandoLancamento(null);
     } catch (error) {
       toast.error('Erro ao atualizar lançamento');
@@ -74,8 +98,30 @@ export default function FinanceiroAdmin() {
   const deleteLancamento = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir este lançamento?')) return;
     try {
+      // 1. Buscar lançamento antes de excluir
+      const lancamentosAtuais = await base44.entities.LancamentoFinanceiro.filter({ id });
+      const lancAtual = lancamentosAtuais[0];
+      if (!lancAtual) throw new Error('Lançamento não encontrado');
+
+      const valorRemover = lancAtual.valor_comissao_tecnico;
+
+      // 2. Excluir lançamento
       await base44.entities.LancamentoFinanceiro.delete(id);
-      toast.success('Lançamento excluído');
+
+      // 3. Atualizar ganhos do técnico
+      const tecnicosFinanceiros = await base44.entities.TecnicoFinanceiro.filter({ 
+        tecnico_id: lancAtual.tecnico_id 
+      });
+      
+      if (tecnicosFinanceiros.length > 0) {
+        const tecFin = tecnicosFinanceiros[0];
+        await base44.entities.TecnicoFinanceiro.update(tecFin.id, {
+          credito_pendente: Math.max(0, (tecFin.credito_pendente || 0) - valorRemover),
+          total_ganho: Math.max(0, (tecFin.total_ganho || 0) - valorRemover)
+        });
+      }
+
+      toast.success('Lançamento excluído e ganhos atualizados');
     } catch (error) {
       toast.error('Erro ao excluir lançamento');
     }
