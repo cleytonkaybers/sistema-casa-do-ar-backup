@@ -64,6 +64,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: tecnicosFinanceiro = [] } = useQuery({
+    queryKey: ['tecnicosFinanceiro'],
+    queryFn: () => base44.entities.TecnicoFinanceiro.list(),
+  });
+
   // Estatísticas
   const totalClientes = clientes.length;
   const clientesAtivos = clientes.filter(c => c.status === 'Ativo').length;
@@ -273,6 +278,40 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Ganhos dos Técnicos - Apenas para Admin */}
+      {currentUser?.role === 'admin' && tecnicosFinanceiro.length > 0 && (
+        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl col-span-full">
+          <CardHeader className="pb-3 px-4 pt-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-100">
+                <Users className="w-4 h-4 text-green-600" />
+              </div>
+              <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
+                Ganhos dos Técnicos (Semana Passada)
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {tecnicosFinanceiro.map(tecnico => (
+                <div key={tecnico.id} className="rounded-xl p-4 border border-gray-100 bg-gradient-to-br from-green-50 to-emerald-50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold text-sm">
+                      {tecnico.tecnico_nome?.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs text-gray-600 font-medium">{tecnico.tecnico_nome}</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-700">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(tecnico.credito_pendente || 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Pendente</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Stats Grid - Com card de ganhos para técnicos */}
