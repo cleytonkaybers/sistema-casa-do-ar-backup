@@ -40,23 +40,23 @@ export default function GanhosSemanaDashboard() {
     enabled: !!user?.email
   });
 
-  // Calcular ganhos da semana
+  // Calcular ganhos da semana (segunda 00:00 até domingo 23:59)
   useEffect(() => {
     if (minhasComissoes.length > 0) {
       const hoje = new Date();
-      const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 });
-      const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
+      const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 }); // 1 = Segunda-feira
+      const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 });
 
       const comissoesSemana = minhasComissoes.filter(c => {
         const dataGeracao = parseISO(c.data_geracao);
-        return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
+        return (
+          c.status === 'pendente' && // Apenas pendentes
+          dataGeracao >= inicioSemana && 
+          dataGeracao <= fimSemana
+        );
       });
 
-      // Apenas comissões PENDENTES da semana atual
-      const pendente = comissoesSemana
-        .filter(c => c.status === 'pendente')
-        .reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
-
+      const pendente = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
       const total = pendente;
 
       setGanhosDetalhes({ pendente, pago: 0, total, pagamentosSemana: 0 });

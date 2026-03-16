@@ -158,8 +158,8 @@ export default function FinanceiroAdmin() {
     .map(t => {
       // Filtrar lançamentos PENDENTES da semana atual para este técnico
       const agora = new Date();
-      const inicioSemana = startOfWeek(agora, { weekStartsOn: 0 });
-      const fimSemana = endOfWeek(agora, { weekStartsOn: 0 });
+      const inicioSemana = startOfWeek(agora, { weekStartsOn: 1 }); // 1 = Segunda-feira
+      const fimSemana = endOfWeek(agora, { weekStartsOn: 1 });
 
       const lancamentosSemana = lancamentos.filter(l => {
         const dataGeracao = new Date(l.data_geracao);
@@ -221,10 +221,10 @@ export default function FinanceiroAdmin() {
     }
   };
 
-  // Filtrar por semana
+  // Filtrar por semana (segunda 00:00 até domingo 23:59)
   const agora = new Date();
-  const inicioSemanaAtual = startOfWeek(agora, { weekStartsOn: 0 });
-  const fimSemanaAtual = endOfWeek(agora, { weekStartsOn: 0 });
+  const inicioSemanaAtual = startOfWeek(agora, { weekStartsOn: 1 }); // 1 = Segunda-feira
+  const fimSemanaAtual = endOfWeek(agora, { weekStartsOn: 1 });
   const inicioSemanaPassada = new Date(inicioSemanaAtual);
   inicioSemanaPassada.setDate(inicioSemanaPassada.getDate() - 7);
   const fimSemanaPassada = new Date(fimSemanaAtual);
