@@ -19,8 +19,9 @@ import {
   Plus,
   Filter
 } from 'lucide-react';
-import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getLocalDate, getStartOfWeek, getEndOfWeek, toLocalDate } from '@/lib/dateUtils';
 
 const formatPhone = (phone) => {
   if (!phone) return '';
@@ -89,19 +90,20 @@ export default function Dashboard() {
     return daysA - daysB;
   });
 
-  // Filtrar serviços por período
+  // Filtrar serviços por período com timezone correto
   const servicosFiltrados = servicos.filter(s => {
     if (!s.data_programada) return false;
-    const dataServico = new Date(s.data_programada);
-    const hoje = new Date();
+    const dataServico = toLocalDate(s.data_programada);
+    if (!dataServico) return false;
+    const hoje = getLocalDate();
     
     switch(filtroServicos) {
       case 'dia':
         return isToday(dataServico);
       case 'semana':
         return isWithinInterval(dataServico, {
-          start: startOfWeek(hoje, { locale: ptBR }),
-          end: endOfWeek(hoje, { locale: ptBR })
+          start: getStartOfWeek(),
+          end: getEndOfWeek()
         });
       case 'mes':
         return isWithinInterval(dataServico, {
@@ -119,10 +121,12 @@ export default function Dashboard() {
   const servicosAgendados = servicosFiltrados.filter(s => s.status === 'agendado' || s.status === 'reagendado').length;
 
   const atendimentosDoMes = atendimentos.filter(a => {
-    const dataAtendimento = new Date(a.data_atendimento);
+    const dataAtendimento = toLocalDate(a.data_atendimento);
+    if (!dataAtendimento) return false;
+    const hoje = getLocalDate();
     return isWithinInterval(dataAtendimento, {
-      start: startOfMonth(new Date()),
-      end: endOfMonth(new Date())
+      start: startOfMonth(hoje),
+      end: endOfMonth(hoje)
     });
   });
 
@@ -132,7 +136,9 @@ export default function Dashboard() {
   const servicosHoje = servicos.filter(s => {
     if (!s.data_programada) return false;
     if (s.status === 'concluido') return false;
-    return isToday(new Date(s.data_programada));
+    const dataServico = toLocalDate(s.data_programada);
+    if (!dataServico) return false;
+    return isToday(dataServico);
   });
 
   // Buscar equipe do usuário atual
@@ -202,7 +208,7 @@ export default function Dashboard() {
           <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
           <p className="text-blue-200/80 mt-1 flex items-center gap-2 text-xs sm:text-sm">
             <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-            {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {format(getLocalDate(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
         </div>
         <Link to={createPageUrl('Servicos')}>
