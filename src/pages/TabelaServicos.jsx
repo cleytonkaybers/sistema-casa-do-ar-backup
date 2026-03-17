@@ -16,9 +16,13 @@ import { toast } from 'sonner';
 export default function TabelaServicos() {
   const [editingId, setEditingId] = useState(null);
   const [editingValor, setEditingValor] = useState('');
+  const [editingPercEquipe, setEditingPercEquipe] = useState('');
+  const [editingPercTecnico, setEditingPercTecnico] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [novoTipo, setNovoTipo] = useState('');
   const [novoValor, setNovoValor] = useState('');
+  const [novoPercEquipe, setNovoPercEquipe] = useState('30');
+  const [novoPercTecnico, setNovoPercTecnico] = useState('15');
   const [isCustomType, setIsCustomType] = useState(true);
   const queryClient = useQueryClient();
 
@@ -28,12 +32,12 @@ export default function TabelaServicos() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, valor_tabela }) =>
-      base44.entities.TipoServicoValor.update(id, { valor_tabela }),
+    mutationFn: ({ id, valor_tabela, percentual_equipe, percentual_tecnico }) =>
+      base44.entities.TipoServicoValor.update(id, { valor_tabela, percentual_equipe, percentual_tecnico }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tiposServicoValor'] });
       setEditingId(null);
-      toast.success('Valor atualizado');
+      toast.success('Valores atualizados');
     },
     onError: () => toast.error('Erro ao atualizar')
   });
@@ -48,13 +52,15 @@ export default function TabelaServicos() {
   });
 
   const createMutation = useMutation({
-    mutationFn: ({ tipo_servico, valor_tabela }) =>
-      base44.entities.TipoServicoValor.create({ tipo_servico, valor_tabela, ativo: true }),
+    mutationFn: ({ tipo_servico, valor_tabela, percentual_equipe, percentual_tecnico }) =>
+      base44.entities.TipoServicoValor.create({ tipo_servico, valor_tabela, percentual_equipe, percentual_tecnico, ativo: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tiposServicoValor'] });
       setShowModal(false);
       setNovoTipo('');
       setNovoValor('');
+      setNovoPercEquipe('30');
+      setNovoPercTecnico('15');
       setCustomTipo('');
       setIsCustomType(true);
       toast.success('Tipo de serviço adicionado');
@@ -72,7 +78,9 @@ export default function TabelaServicos() {
     }
     createMutation.mutate({
       tipo_servico: tipoFinal,
-      valor_tabela: parseFloat(novoValor)
+      valor_tabela: parseFloat(novoValor),
+      percentual_equipe: parseFloat(novoPercEquipe) || 30,
+      percentual_tecnico: parseFloat(novoPercTecnico) || 15
     });
   };
 
@@ -92,6 +100,8 @@ export default function TabelaServicos() {
                 <TableRow>
                   <TableHead>Tipo de Serviço</TableHead>
                   <TableHead>Valor (R$)</TableHead>
+                  <TableHead>% Equipe</TableHead>
+                  <TableHead>% Técnico</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
@@ -107,11 +117,41 @@ export default function TabelaServicos() {
                           step="0.01"
                           value={editingValor}
                           onChange={(e) => setEditingValor(e.target.value)}
-                          className="w-32"
+                          className="w-28"
                           autoFocus
                         />
                       ) : (
                         <span className="font-bold">R$ {item.valor_tabela.toFixed(2)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === item.id ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={editingPercEquipe}
+                          onChange={(e) => setEditingPercEquipe(e.target.value)}
+                          className="w-20"
+                        />
+                      ) : (
+                        <span className="text-sm">{item.percentual_equipe || 30}%</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === item.id ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={editingPercTecnico}
+                          onChange={(e) => setEditingPercTecnico(e.target.value)}
+                          className="w-20"
+                        />
+                      ) : (
+                        <span className="text-sm">{item.percentual_tecnico || 15}%</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -125,7 +165,12 @@ export default function TabelaServicos() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => updateMutation.mutate({ id: item.id, valor_tabela: parseFloat(editingValor) })}
+                            onClick={() => updateMutation.mutate({ 
+                              id: item.id, 
+                              valor_tabela: parseFloat(editingValor),
+                              percentual_equipe: parseFloat(editingPercEquipe),
+                              percentual_tecnico: parseFloat(editingPercTecnico)
+                            })}
                           >
                             <Save className="w-4 h-4" />
                           </Button>
@@ -145,6 +190,8 @@ export default function TabelaServicos() {
                             onClick={() => {
                               setEditingId(item.id);
                               setEditingValor(item.valor_tabela.toString());
+                              setEditingPercEquipe((item.percentual_equipe || 30).toString());
+                              setEditingPercTecnico((item.percentual_tecnico || 15).toString());
                             }}
                           >
                             <Edit2 className="w-4 h-4" />
@@ -186,7 +233,7 @@ export default function TabelaServicos() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Valor (R$)</Label>
+              <Label>Valor (R$) *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -194,6 +241,32 @@ export default function TabelaServicos() {
                 onChange={(e) => setNovoValor(e.target.value)}
                 placeholder="0.00"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>% Comissão Equipe</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={novoPercEquipe}
+                  onChange={(e) => setNovoPercEquipe(e.target.value)}
+                  placeholder="30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>% Comissão Técnico</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={novoPercTecnico}
+                  onChange={(e) => setNovoPercTecnico(e.target.value)}
+                  placeholder="15"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
