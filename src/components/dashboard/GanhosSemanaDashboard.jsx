@@ -9,8 +9,7 @@ import { getLocalDate, getStartOfWeek, getEndOfWeek, toLocalDate } from '@/lib/d
 
 export default function GanhosSemanaDashboard() {
   const [user, setUser] = useState(null);
-  const [displayValue, setDisplayValue] = useState(0);
-  const [ganhosDetalhes, setGanhosDetalhes] = useState({ pendente: 0, pago: 0, total: 0 });
+  const [totalSemana, setTotalSemana] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,28 +21,21 @@ export default function GanhosSemanaDashboard() {
     queryFn: async () => {
       if (!user?.email) return [];
       const todas = await base44.entities.LancamentoFinanceiro.list();
-      // Filtrar apenas comissões PENDENTES do técnico logado
       return todas.filter(c => c.tecnico_id === user.email && c.status === 'pendente');
     },
     enabled: !!user?.email
   });
 
-  // Não exibir pagamentos antigos, apenas comissões pendentes da semana
-  const meusPagamentos = [];
-
-  // Calcular ganhos da semana atual (segunda a domingo)
-  useEffect(() => {
+  // Calcular ganhos da semana usando useMemo para evitar recalcular sempre
+  const ganhosDetalhes = React.useMemo(() => {
     if (!minhasComissoes || minhasComissoes.length === 0) {
-      setGanhosDetalhes({ pendente: 0, pago: 0, total: 0 });
-      setDisplayValue(0);
-      return;
+      return { total: 0 };
     }
 
     try {
       const inicioSemana = getStartOfWeek();
       const fimSemana = getEndOfWeek();
 
-      // Filtrar apenas comissões geradas na semana atual (segunda 00:00 a domingo 23:59)
       const comissoesSemana = minhasComissoes.filter(c => {
         if (!c.data_geracao) return false;
         try {
@@ -56,32 +48,17 @@ export default function GanhosSemanaDashboard() {
       });
 
       const total = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
-
-      setGanhosDetalhes(prev => {
-        if (prev.total === total) return prev;
-        return { pendente: total, pago: 0, total, pagamentosSemana: 0 };
-      });
-
-      // Animar contador
-      let current = 0;
-      const increment = total / 30; // 30 frames para 800ms
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= total) {
-          setDisplayValue(total);
-          clearInterval(timer);
-        } else {
-          setDisplayValue(current);
-        }
-      }, 27); // ~800ms total
-
-      return () => clearInterval(timer);
+      return { total };
     } catch (error) {
-      console.error('Erro ao calcular ganhos da semana:', error);
-      setGanhosDetalhes({ pendente: 0, pago: 0, total: 0 });
-      setDisplayValue(0);
+      console.error('Erro ao calcular ganhos:', error);
+      return { total: 0 };
     }
   }, [minhasComissoes]);
+
+  // Animar apenas quando o total mudar
+  useEffect(() => {
+    setTotalSemana(ganhosDetalhes.total);
+  }, [ganhosDetalhes.total]);
 
   if (!user) return null;
 
@@ -98,16 +75,16 @@ export default function GanhosSemanaDashboard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {/* Valor principal animado */}
+          {/* Valor principal */}
           <div className="text-4xl font-bold text-green-700 tabular-nums">
-            R$ {displayValue.toFixed(2)}
+            R$ {totalSemana.toFixed(2)}
           </div>
 
-          {/* Subtítulo com breakdown */}
+          {/* Subtítulo */}
           <div className="space-y-1 text-sm border-t border-green-200 pt-2">
             <div className="flex justify-between text-gray-600">
               <span>Ganhos da semana (segunda a domingo):</span>
-              <span className="font-semibold text-green-600">R$ {ganhosDetalhes.total?.toFixed(2) || '0.00'}</span>
+              <span className="font-semibold text-green-600">R$ {totalSemana.toFixed(2)}</span>
             </div>
           </div>
 
