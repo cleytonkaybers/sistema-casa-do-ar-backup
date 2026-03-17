@@ -33,35 +33,45 @@ export default function GanhosSemanaDashboard() {
 
   // Calcular ganhos da semana atual (segunda a domingo)
   useEffect(() => {
-    const inicioSemana = getStartOfWeek();
-    const fimSemana = getEndOfWeek();
+    try {
+      const inicioSemana = getStartOfWeek();
+      const fimSemana = getEndOfWeek();
 
-    // Filtrar apenas comissões geradas na semana atual (segunda 00:00 a domingo 23:59)
-    const comissoesSemana = minhasComissoes.filter(c => {
-      if (!c.data_geracao) return false;
-      const dataGeracao = toLocalDate(c.data_geracao);
-      if (!dataGeracao) return false;
-      return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
-    });
+      // Filtrar apenas comissões geradas na semana atual (segunda 00:00 a domingo 23:59)
+      const comissoesSemana = minhasComissoes.filter(c => {
+        if (!c.data_geracao) return false;
+        try {
+          const dataGeracao = toLocalDate(c.data_geracao);
+          if (!dataGeracao) return false;
+          return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
+        } catch {
+          return false;
+        }
+      });
 
-    const total = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
+      const total = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
 
-    setGanhosDetalhes({ pendente: total, pago: 0, total, pagamentosSemana: 0 });
+      setGanhosDetalhes({ pendente: total, pago: 0, total, pagamentosSemana: 0 });
 
-    // Animar contador
-    let current = 0;
-    const increment = total / 30; // 30 frames para 800ms
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= total) {
-        setDisplayValue(total);
-        clearInterval(timer);
-      } else {
-        setDisplayValue(current);
-      }
-    }, 27); // ~800ms total
+      // Animar contador
+      let current = 0;
+      const increment = total / 30; // 30 frames para 800ms
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= total) {
+          setDisplayValue(total);
+          clearInterval(timer);
+        } else {
+          setDisplayValue(current);
+        }
+      }, 27); // ~800ms total
 
-    return () => clearInterval(timer);
+      return () => clearInterval(timer);
+    } catch (error) {
+      console.error('Erro ao calcular ganhos da semana:', error);
+      setGanhosDetalhes({ pendente: 0, pago: 0, total: 0 });
+      setDisplayValue(0);
+    }
   }, [minhasComissoes]);
 
   if (!user) return null;
