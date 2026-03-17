@@ -33,6 +33,12 @@ export default function GanhosSemanaDashboard() {
 
   // Calcular ganhos da semana atual (segunda a domingo)
   useEffect(() => {
+    if (!minhasComissoes || minhasComissoes.length === 0) {
+      setGanhosDetalhes({ pendente: 0, pago: 0, total: 0 });
+      setDisplayValue(0);
+      return;
+    }
+
     try {
       const inicioSemana = getStartOfWeek();
       const fimSemana = getEndOfWeek();
@@ -51,7 +57,10 @@ export default function GanhosSemanaDashboard() {
 
       const total = comissoesSemana.reduce((sum, c) => sum + (c.valor_comissao_tecnico || 0), 0);
 
-      setGanhosDetalhes({ pendente: total, pago: 0, total, pagamentosSemana: 0 });
+      setGanhosDetalhes(prev => {
+        if (prev.total === total) return prev;
+        return { pendente: total, pago: 0, total, pagamentosSemana: 0 };
+      });
 
       // Animar contador
       let current = 0;
