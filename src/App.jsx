@@ -11,6 +11,7 @@ import FinanceiroAdmin from '@/pages/FinanceiroAdmin';
 import MeuFinanceiro from '@/pages/MeuFinanceiro';
 import TabelaServicos from '@/pages/TabelaServicos';
 import RelatorioComissoes from '@/pages/RelatorioComissoes';
+import LogsAuditoria from '@/pages/LogsAuditoria';
 import { Suspense } from 'react';
 
 const LoadingFallback = () => (
@@ -88,6 +89,11 @@ const AuthenticatedApp = () => {
         <Route path="/RelatorioComissoes" element={
           <LayoutWrapper currentPageName="RelatorioComissoes">
             <RelatorioComissoes />
+          </LayoutWrapper>
+        } />
+        <Route path="/LogsAuditoria" element={
+          <LayoutWrapper currentPageName="LogsAuditoria">
+            <LogsAuditoria />
           </LayoutWrapper>
         } />
         <Route path="*" element={<PageNotFound />} />
