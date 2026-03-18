@@ -17,7 +17,9 @@ import {
   Users, 
   Filter,
   X,
-  CloudUpload
+  CloudUpload,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 import ClienteForm from '@/components/clientes/ClienteForm';
@@ -36,6 +38,8 @@ export default function Clientes() {
   const { filterByEmpresa, currentEmpresa } = useEmpresa();
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -146,9 +150,20 @@ export default function Clientes() {
 
   const clearFilters = () => {
     setSearchTerm('');
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = searchTerm !== '';
+
+  // Paginação
+  const totalPages = Math.ceil(filteredClientes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClientes = filteredClientes.slice(startIndex, endIndex);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const [exportandoDrive, setExportandoDrive] = useState(false);
 
@@ -232,7 +247,39 @@ export default function Clientes() {
 
       {isLoading ? (
         <LoadingSpinner text="Carregando clientes..." />
-      ) : filteredClientes.length === 0 ? (
+      ) : (
+        <>
+          {filteredClientes.length > 0 && (
+            <div className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{Math.min(endIndex, filteredClientes.length)}</span> de <span className="font-medium">{filteredClientes.length}</span> clientes
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="border-gray-200"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="border-gray-200"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          {filteredClientes.length === 0 ? (
         <EmptyState 
           title={hasActiveFilters ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
           description={hasActiveFilters 
@@ -243,14 +290,16 @@ export default function Clientes() {
           action={!hasActiveFilters ? () => { setEditingCliente(null); setFormOpen(true); } : null}
           actionLabel="Cadastrar Cliente"
         />
-      ) : (
-        <ClientesTable
-          clientes={filteredClientes}
+          ) : (
+            <ClientesTable
+              clientes={paginatedClientes}
           onEdit={(isAdmin || hasPermission('clientes_editar')) ? handleEdit : undefined}
           onDelete={(isAdmin || hasPermission('clientes_deletar')) ? handleDelete : undefined}
           onViewHistory={handleViewHistory}
           isAdmin={isAdmin}
         />
+          )}
+        </>
       )}
 
       <ClienteForm
