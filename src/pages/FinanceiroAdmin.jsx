@@ -243,17 +243,12 @@ export default function FinanceiroAdmin() {
 
     setLoadingPagamento(true);
     try {
-      // Buscar todos os lançamentos pendentes do técnico
-      const lancamentosPendentes = lancamentos.filter(l => 
-        l.tecnico_id === tecnicoSelecionado.tecnico_id && l.status === 'pendente'
-      );
-
       const response = await base44.functions.invoke('registrarPagamentoTecnico', {
         tecnico_id: tecnicoSelecionado.tecnico_id,
         valor_pago: parseFloat(pagamentoForm.valor_pago),
         data_pagamento: pagamentoForm.data_pagamento,
         metodo_pagamento: pagamentoForm.metodo_pagamento,
-        lancamentos_relacionados: lancamentosPendentes.map(l => l.id),
+        lancamentos_relacionados: [],
         nota: pagamentoForm.nota
       });
 
@@ -599,7 +594,6 @@ export default function FinanceiroAdmin() {
                    <TableHead>Valor Serviço</TableHead>
                    <TableHead>Comissão Técnico</TableHead>
                    <TableHead>% Ganha</TableHead>
-                   <TableHead>Status</TableHead>
                    <TableHead>Ações</TableHead>
                    </TableRow>
                    </TableHeader>
@@ -630,11 +624,6 @@ export default function FinanceiroAdmin() {
                        </TableCell>
                        <TableCell className="font-bold text-green-600">R$ {lanc.valor_comissao_tecnico.toFixed(2)}</TableCell>
                        <TableCell className="font-semibold text-blue-600">{percentualGanho}%</TableCell>
-                       <TableCell>
-                         <Badge variant={lanc.status === 'pendente' ? 'destructive' : lanc.status === 'pago' ? 'default' : 'secondary'}>
-                           {lanc.status === 'pendente' ? 'Pendente' : lanc.status === 'pago' ? 'Pago' : 'Creditado'}
-                         </Badge>
-                       </TableCell>
                        <TableCell className="space-x-1">
                          {editandoLancamento === lanc.id ? (
                            <>

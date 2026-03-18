@@ -55,16 +55,8 @@ Deno.serve(async (req) => {
       data_ultimo_pagamento: new Date().toISOString()
     });
 
-    // Marcar lançamentos como pagos (se selecionados)
-    if (lancamentosIds.length > 0) {
-      for (const lancamento_id of lancamentosIds) {
-        await base44.asServiceRole.entities.LancamentoFinanceiro.update(lancamento_id, {
-          status: 'pago',
-          data_pagamento: new Date().toISOString(),
-          usuario_pagamento: user.email
-        });
-      }
-    }
+    // Sistema simplificado: não vincular pagamentos a lançamentos específicos
+    // O valor pago é apenas abatido do crédito pendente do técnico
 
     return Response.json({
       success: true,
