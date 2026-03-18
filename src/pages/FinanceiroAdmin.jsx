@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Users, TrendingUp, AlertCircle, Check, X, FileText, Download, Calendar, Edit2, Trash2, Save } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, AlertCircle, Check, X, FileText, Download, Calendar, Edit2, Trash2, Save, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,6 +37,8 @@ export default function FinanceiroAdmin() {
   });
   const [editandoLancamento, setEditandoLancamento] = useState(null);
   const [editValor, setEditValor] = useState('');
+  const [confirmCancelPagamento, setConfirmCancelPagamento] = useState(null);
+  const [estornando, setEstornando] = useState(false);
   
   const { data: lancamentos = [] } = useQuery({
     queryKey: ['lancamentos'],
@@ -97,6 +99,28 @@ export default function FinanceiroAdmin() {
   };
 
   const [confirmDeleteLanc, setConfirmDeleteLanc] = useState(null);
+
+  const handleCancelarPagamento = async (pagamento) => {
+    setEstornando(true);
+    try {
+      const response = await base44.functions.invoke('estornarPagamentoTecnico', {
+        pagamento_id: pagamento.id
+      });
+
+      if (response.data.success) {
+        toast.success('Pagamento cancelado e crédito estornado com sucesso');
+        refetchPagamentos();
+        refetchTecnicos();
+      } else {
+        throw new Error(response.data.error || 'Erro ao cancelar pagamento');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Erro ao cancelar pagamento');
+    } finally {
+      setEstornando(false);
+      setConfirmCancelPagamento(null);
+    }
+  };
 
   const deleteLancamento = async (id) => {
     try {
@@ -652,6 +676,7 @@ export default function FinanceiroAdmin() {
                   <TableHead>Data</TableHead>
                   <TableHead>Método</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -670,6 +695,22 @@ export default function FinanceiroAdmin() {
                       <Badge variant={pag.status === 'Confirmado' ? 'default' : 'destructive'}>
                         {pag.status === 'Confirmado' ? 'Confirmado' : pag.status === 'Estornado' ? 'Estornado' : 'Cancelado'}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {pag.status === 'Confirmado' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setConfirmCancelPagamento(pag)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Cancelar
+                        </Button>
+                      )}
+                      {pag.status === 'Estornado' && pag.motivo_estorno && (
+                        <p className="text-xs text-gray-500">{pag.motivo_estorno}</p>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -810,6 +851,17 @@ export default function FinanceiroAdmin() {
         description={`Tem certeza que deseja excluir o lançamento de R$ ${confirmDeleteLanc?.valor_comissao_tecnico?.toFixed(2)} para ${confirmDeleteLanc?.tecnico_nome}? Esta ação irá recalcular automaticamente os créditos do técnico.`}
         confirmText="Excluir Lançamento"
         variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={!!confirmCancelPagamento}
+        onClose={() => setConfirmCancelPagamento(null)}
+        onConfirm={() => handleCancelarPagamento(confirmCancelPagamento)}
+        title="Cancelar Pagamento"
+        description={`Tem certeza que deseja cancelar o pagamento de R$ ${confirmCancelPagamento?.valor_pago?.toFixed(2)} para ${confirmCancelPagamento?.tecnico_nome}? O crédito será devolvido como pendente.`}
+        confirmText={estornando ? "Cancelando..." : "Sim, Cancelar Pagamento"}
+        variant="destructive"
+        disabled={estornando}
       />
       </div>
       </>
