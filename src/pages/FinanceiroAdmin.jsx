@@ -823,32 +823,11 @@ export default function FinanceiroAdmin() {
               </div>
 
               <div className="space-y-2">
-                <Label>Lançamentos a Quitar</Label>
-                <div className="max-h-40 overflow-y-auto border rounded p-2 space-y-2">
-                  {lancamentosParaTecnico(tecnicoSelecionado.tecnico_id).map(lanc => (
-                    <label key={lanc.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={pagamentoForm.lancamentos_relacionados.includes(lanc.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setPagamentoForm({
-                              ...pagamentoForm,
-                              lancamentos_relacionados: [...pagamentoForm.lancamentos_relacionados, lanc.id]
-                            });
-                          } else {
-                            setPagamentoForm({
-                              ...pagamentoForm,
-                              lancamentos_relacionados: pagamentoForm.lancamentos_relacionados.filter(id => id !== lanc.id)
-                            });
-                          }
-                        }}
-                      />
-                      <span className="text-sm">
-                        {lanc.cliente_nome} - R$ {lanc.valor_comissao_tecnico.toFixed(2)}
-                      </span>
-                    </label>
-                  ))}
+                <Label>Informação</Label>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    ℹ️ Os lançamentos mais antigos serão automaticamente quitados até atingir o valor pago.
+                  </p>
                 </div>
               </div>
             </div>
