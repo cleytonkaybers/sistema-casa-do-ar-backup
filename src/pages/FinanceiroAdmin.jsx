@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import RegistrarPagamentoModal from '@/components/financeiro/RegistrarPagamentoModal';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function FinanceiroAdmin() {
   const navigate = useNavigate();
@@ -95,8 +96,9 @@ export default function FinanceiroAdmin() {
     }
   };
 
+  const [confirmDeleteLanc, setConfirmDeleteLanc] = useState(null);
+
   const deleteLancamento = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este lançamento?')) return;
     try {
       // 1. Buscar lançamento antes de excluir
       const lancamentosAtuais = await base44.entities.LancamentoFinanceiro.filter({ id });
@@ -125,6 +127,7 @@ export default function FinanceiroAdmin() {
     } catch (error) {
       toast.error('Erro ao excluir lançamento');
     }
+    setConfirmDeleteLanc(null);
   };
 
   useEffect(() => {
@@ -619,7 +622,7 @@ export default function FinanceiroAdmin() {
                              <Button
                                size="sm"
                                variant="ghost"
-                               onClick={() => deleteLancamento(lanc.id)}
+                               onClick={() => setConfirmDeleteLanc(lanc)}
                              >
                                <Trash2 className="w-4 h-4 text-red-600" />
                              </Button>
@@ -798,6 +801,16 @@ export default function FinanceiroAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmDeleteLanc}
+        onClose={() => setConfirmDeleteLanc(null)}
+        onConfirm={() => deleteLancamento(confirmDeleteLanc.id)}
+        title="Excluir Lançamento Financeiro"
+        description={`Tem certeza que deseja excluir o lançamento de R$ ${confirmDeleteLanc?.valor_comissao_tecnico?.toFixed(2)} para ${confirmDeleteLanc?.tecnico_nome}? Esta ação irá recalcular automaticamente os créditos do técnico.`}
+        confirmText="Excluir Lançamento"
+        variant="destructive"
+      />
       </div>
       </>
       );

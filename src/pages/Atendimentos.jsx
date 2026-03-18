@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 import { 
   Search, 
   ClipboardList, 
@@ -294,9 +295,7 @@ export default function Atendimentos() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        </div>
+        <TableSkeleton rows={8} />
       ) : (
         <>
           <div className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between">

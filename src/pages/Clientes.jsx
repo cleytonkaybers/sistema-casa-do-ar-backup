@@ -31,6 +31,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import { usePermissions } from '@/components/auth/PermissionGuard';
 import { useEmpresa } from '@/components/auth/EmpresaGuard';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 export default function Clientes() {
   const queryClient = useQueryClient();
@@ -283,7 +284,7 @@ export default function Clientes() {
       </div>
 
       {isLoading ? (
-        <LoadingSpinner text="Carregando clientes..." />
+        <TableSkeleton rows={8} />
       ) : (
         <>
           {filteredClientes.length > 0 && (

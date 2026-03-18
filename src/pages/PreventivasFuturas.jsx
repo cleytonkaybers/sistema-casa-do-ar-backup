@@ -26,6 +26,7 @@ import { format, differenceInDays, addMonths, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ServicoForm from '../components/servicos/ServicoForm';
 import { Label } from '@/components/ui/label';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 export default function PreventivasFuturasPage() {
   const { isAdmin } = usePermissions();
@@ -315,9 +316,7 @@ export default function PreventivasFuturasPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        </div>
+        <TableSkeleton rows={10} />
       ) : (
         <>
           {todosItens.length > 0 && (
