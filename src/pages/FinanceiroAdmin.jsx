@@ -208,6 +208,7 @@ export default function FinanceiroAdmin() {
         fimSemana = new Date();
       }
 
+      // Calcular comissões ganhas na semana
       const lancamentosSemana = lancamentos.filter(l => {
         if (l.tecnico_id !== t.tecnico_id) return false;
         if (!l.data_geracao) return false;
@@ -215,19 +216,28 @@ export default function FinanceiroAdmin() {
         return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
       });
 
-      const creditoPendenteSemana = lancamentosSemana
-        .filter(l => l.status === 'pendente' || l.status === 'creditado')
+      const totalComissoesSemana = lancamentosSemana
         .reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
 
-      const creditoPagoSemana = lancamentosSemana
-        .filter(l => l.status === 'pago')
-        .reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
+      // Calcular pagamentos feitos ao técnico na semana
+      const pagamentosSemana = pagamentos.filter(p => {
+        if (p.tecnico_id !== t.tecnico_id) return false;
+        if (p.status !== 'Confirmado') return false;
+        if (!p.created_date) return false;
+        const dataPagamento = new Date(p.created_date);
+        return dataPagamento >= inicioSemana && dataPagamento <= fimSemana;
+      });
+
+      const totalPagoSemana = pagamentosSemana
+        .reduce((sum, p) => sum + (p.valor_pago || 0), 0);
+
+      const creditoPendenteSemana = Math.max(0, totalComissoesSemana - totalPagoSemana);
 
       return {
         ...t,
         credito_pendente: creditoPendenteSemana,
-        credito_pago: creditoPagoSemana,
-        total_ganho: creditoPendenteSemana + creditoPagoSemana
+        credito_pago: totalPagoSemana,
+        total_ganho: totalComissoesSemana
       };
     });
 
