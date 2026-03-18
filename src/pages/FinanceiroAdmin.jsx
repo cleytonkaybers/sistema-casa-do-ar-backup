@@ -206,6 +206,11 @@ export default function FinanceiroAdmin() {
         .filter(l => l.status === 'pago')
         .reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
 
+      // Debug: mostrar no console
+      if (creditoPagoSemana > 0) {
+        console.log(`Técnico ${t.tecnico_nome}: ${lancamentosSemana.filter(l => l.status === 'pago').length} lançamentos pagos = R$ ${creditoPagoSemana}`);
+      }
+
       return {
         ...t,
         credito_pendente: creditoPendenteSemana,
@@ -285,6 +290,14 @@ export default function FinanceiroAdmin() {
   // Totais baseados nos valores recalculados da semana
   const totalPendente = filteredTecnicos.reduce((sum, t) => sum + (t.credito_pendente || 0), 0);
   const totalPago = filteredTecnicos.reduce((sum, t) => sum + (t.credito_pago || 0), 0);
+  
+  // Debug: mostrar totais no console
+  console.log('=== DEBUG FINANCEIRO ===');
+  console.log('Total de lançamentos carregados:', lancamentos.length);
+  console.log('Lançamentos com status "pago":', lancamentos.filter(l => l.status === 'pago').length);
+  console.log('Total Pendente calculado:', totalPendente);
+  console.log('Total Pago calculado:', totalPago);
+  console.log('========================');
 
   const gerarPDF = async () => {
     try {
