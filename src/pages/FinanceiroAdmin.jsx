@@ -176,7 +176,7 @@ export default function FinanceiroAdmin() {
   if (loading) return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
   if (!isAdmin) return null;
 
-  // Filtrar técnicos e recalcular seus valores baseado apenas na semana atual
+  // Filtrar técnicos e recalcular seus valores baseado apenas na semana selecionada
   const filteredTecnicos = tecnicos
     .filter(t => {
       const matchEquipe = !filtroEquipe || t.equipe_id === filtroEquipe;
@@ -184,22 +184,31 @@ export default function FinanceiroAdmin() {
       return matchEquipe && matchTecnico;
     })
     .map(t => {
-      // Filtrar lançamentos da semana atual para este técnico
+      // Definir intervalo da semana com base no filtro
+      let inicioSemana, fimSemana;
       const agora = new Date();
-      const inicioSemana = startOfWeek(agora, { weekStartsOn: 1 }); // 1 = Segunda-feira
-      const fimSemana = endOfWeek(agora, { weekStartsOn: 1 });
+      
+      if (filtroSemana === 'atual') {
+        inicioSemana = inicioSemanaAtual;
+        fimSemana = fimSemanaAtual;
+      } else if (filtroSemana === 'passada') {
+        inicioSemana = inicioSemanaPassada;
+        fimSemana = fimSemanaPassada;
+      } else {
+        // Sem filtro de semana, usar tudo
+        inicioSemana = new Date(0);
+        fimSemana = new Date();
+      }
 
       const lancamentosSemana = lancamentos.filter(l => {
+        if (l.tecnico_id !== t.tecnico_id) return false;
+        if (!l.data_geracao) return false;
         const dataGeracao = new Date(l.data_geracao);
-        return (
-          l.tecnico_id === t.tecnico_id &&
-          dataGeracao >= inicioSemana &&
-          dataGeracao <= fimSemana
-        );
+        return dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
       });
 
       const creditoPendenteSemana = lancamentosSemana
-        .filter(l => l.status === 'pendente')
+        .filter(l => l.status === 'pendente' || l.status === 'creditado')
         .reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
 
       const creditoPagoSemana = lancamentosSemana
