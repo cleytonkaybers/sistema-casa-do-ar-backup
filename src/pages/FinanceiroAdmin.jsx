@@ -681,8 +681,31 @@ export default function FinanceiroAdmin() {
                           Cancelar
                         </Button>
                       )}
-                      {pag.status === 'Estornado' && pag.motivo_estorno && (
-                        <p className="text-xs text-gray-500">{pag.motivo_estorno}</p>
+                      {pag.status === 'Estornado' && (
+                        <div className="space-y-1">
+                          {pag.motivo_estorno && (
+                            <p className="text-xs text-gray-500">{pag.motivo_estorno}</p>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={async () => {
+                              if (window.confirm('Tem certeza que deseja remover este pagamento estornado da lista?')) {
+                                try {
+                                  await base44.entities.PagamentoTecnico.delete(pag.id);
+                                  toast.success('Pagamento removido da lista');
+                                  refetchPagamentos();
+                                } catch (error) {
+                                  toast.error('Erro ao remover pagamento');
+                                }
+                              }
+                            }}
+                            className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Remover
+                          </Button>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
