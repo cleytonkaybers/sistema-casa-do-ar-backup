@@ -42,6 +42,17 @@ export default function Clientes() {
   const navigate = useNavigate();
   
   const [user, setUser] = React.useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingCliente, setDeletingCliente] = useState(null);
+  const [historicoOpen, setHistoricoOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
+  const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
+  const [exportandoDrive, setExportandoDrive] = useState(false);
   
   React.useEffect(() => {
     const checkUser = async () => {
@@ -57,17 +68,6 @@ export default function Clientes() {
     };
     checkUser();
   }, [navigate]);
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletingCliente, setDeletingCliente] = useState(null);
-  const [historicoOpen, setHistoricoOpen] = useState(false);
-  const [selectedCliente, setSelectedCliente] = useState(null);
-  const [atendimentoFormOpen, setAtendimentoFormOpen] = useState(false);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
@@ -212,12 +212,6 @@ export default function Clientes() {
   };
 
   const hasActiveFilters = searchTerm !== '';
-  
-  if (!user) {
-    return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
-  }
-  
-  if (user.role !== 'admin') return <NoPermission />;
 
   // Paginação
   const totalPages = Math.ceil(filteredClientes.length / itemsPerPage);
@@ -228,8 +222,6 @@ export default function Clientes() {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
-
-  const [exportandoDrive, setExportandoDrive] = useState(false);
 
   const handleExportarDrive = async () => {
     setExportandoDrive(true);
@@ -249,6 +241,12 @@ export default function Clientes() {
       setExportandoDrive(false);
     }
   };
+  
+  if (!user) {
+    return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div></div>;
+  }
+  
+  if (user.role !== 'admin') return <NoPermission />;
 
   return (
     <div className="space-y-6">
