@@ -41,7 +41,7 @@ export default function FinanceiroAdmin() {
   const [estornando, setEstornando] = useState(false);
   
   const { data: lancamentos = [], refetch: refetchLancamentos } = useQuery({
-    queryKey: ['lancamentos'],
+    queryKey: ['lancamentos-financeiros'],
     queryFn: () => base44.entities.LancamentoFinanceiro.list()
   });
 
