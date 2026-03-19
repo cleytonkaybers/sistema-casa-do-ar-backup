@@ -21,7 +21,10 @@ export function EmpresaProvider({ children }) {
   const loadUserAndEmpresa = async (user) => {
     setLoading(false);
     
-    if (!user) {
+    const token = localStorage.getItem('base44_token');
+    if (!token || !user) {
+      setCurrentUser(null);
+      setCurrentEmpresa(null);
       return;
     }
     

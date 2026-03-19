@@ -22,8 +22,10 @@ export function SubscriptionBlocker({ children }) {
     try {
       setLoading(false);
       
-      // Se não há usuário autenticado, não fazer verificação
-      if (!currentUser) {
+      const token = localStorage.getItem('base44_token');
+      if (!token || !currentUser) {
+        setBloqueado(false);
+        setEmpresa(null);
         return;
       }
 
