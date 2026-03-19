@@ -40,6 +40,13 @@ export default function CompartilharModal({ open, onClose, servico, isConclusao 
     return phone;
   };
 
+  const formatarData = (dataString) => {
+    if (!dataString) return null;
+    const [ano, mes, dia] = dataString.split('-').map(Number);
+    const data = new Date(ano, mes - 1, dia);
+    return data.toLocaleDateString('pt-BR');
+  };
+
   const mensagem = isConclusao 
     ? [
         `✅ *Serviço Concluído!*`,
@@ -48,7 +55,7 @@ export default function CompartilharModal({ open, onClose, servico, isConclusao 
         `👤 *Cliente:* ${servico.cliente_nome}`,
         servico.telefone ? `📞 *Telefone:* ${formatPhone(servico.telefone)}` : null,
         `🔧 *Tipo de Serviço:* ${servico.tipo_servico}`,
-        servico.data_programada ? `📅 *Data:* ${new Date(servico.data_programada).toLocaleDateString('pt-BR')}` : null,
+        servico.data_programada ? `📅 *Data:* ${formatarData(servico.data_programada)}` : null,
         servico.horario ? `🕐 *Horário:* ${servico.horario}` : null,
         servico.endereco ? `📍 *Endereço:* ${servico.endereco}` : null,
         servico.valor ? `💰 *Valor:* R$ ${servico.valor.toFixed(2)}` : null,
@@ -61,7 +68,7 @@ export default function CompartilharModal({ open, onClose, servico, isConclusao 
         `👤 *Cliente:* ${servico.cliente_nome}`,
         servico.telefone ? `📞 *Telefone:* ${formatPhone(servico.telefone)}` : null,
         `🔧 *Tipo de Serviço:* ${servico.tipo_servico}`,
-        servico.data_programada ? `📅 *Data:* ${new Date(servico.data_programada).toLocaleDateString('pt-BR')}` : null,
+        servico.data_programada ? `📅 *Data:* ${formatarData(servico.data_programada)}` : null,
         servico.horario ? `🕐 *Horário:* ${servico.horario}` : null,
         servico.endereco ? `📍 *Endereço:* ${servico.endereco}` : null,
         servico.valor ? `💰 *Valor:* R$ ${servico.valor.toFixed(2)}` : null,
