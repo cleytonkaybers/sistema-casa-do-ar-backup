@@ -94,17 +94,25 @@ export const AuthProvider = ({ children }) => {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       setIsAuthenticated(true);
+      setAuthError(null); // Limpar erro em caso de sucesso
       setIsLoadingAuth(false);
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
+      setUser(null);
       
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
+      // Only set error if it's a real auth issue
+      if (error.status === 401) {
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
+        });
+      } else if (error.status === 403) {
+        // 403 pode ser usuário não registrado
+        setAuthError({
+          type: 'user_not_registered',
+          message: 'User not registered for this app'
         });
       }
     }
