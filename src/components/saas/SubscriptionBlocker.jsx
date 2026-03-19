@@ -20,49 +20,55 @@ export function SubscriptionBlocker({ children }) {
 
   async function verificarAssinatura(currentUser) {
     try {
-      // Se o usuário não tem company_id, permitir acesso (sistema legado ou admin)
-      if (!currentUser?.company_id) {
+      // Se não há usuário, permitir acesso (não autenticado)
+      if (!currentUser) {
         setLoading(false);
         return;
       }
 
-        try {
-          const empresas = await base44.entities.EmpresaSaaS.filter({
-            company_id: currentUser.company_id
-          });
+      // Se o usuário não tem company_id, permitir acesso (sistema legado ou admin)
+      if (!currentUser.company_id) {
+        setLoading(false);
+        return;
+      }
 
-          if (empresas.length > 0) {
-            const emp = empresas[0];
-            setEmpresa(emp);
+      try {
+        const empresas = await base44.entities.EmpresaSaaS.filter({
+          company_id: currentUser.company_id
+        });
 
-            // Verificar se está vencida
-            if (emp.status_assinatura === 'vencida' || emp.bloqueada) {
+        if (empresas.length > 0) {
+          const emp = empresas[0];
+          setEmpresa(emp);
+
+          // Verificar se está vencida
+          if (emp.status_assinatura === 'vencida' || emp.bloqueada) {
+            setBloqueado(true);
+          } else if (emp.status_assinatura === 'trial') {
+            // Validar trial
+            const agora = new Date();
+            const fimTrial = new Date(emp.data_fim_trial);
+            if (agora > fimTrial) {
+              // Atualizar para vencida
+              await base44.entities.EmpresaSaaS.update(emp.id, {
+                status_assinatura: 'vencida'
+              });
               setBloqueado(true);
-            } else if (emp.status_assinatura === 'trial') {
-              // Validar trial
-              const agora = new Date();
-              const fimTrial = new Date(emp.data_fim_trial);
-              if (agora > fimTrial) {
-                // Atualizar para vencida
-                await base44.entities.EmpresaSaaS.update(emp.id, {
-                  status_assinatura: 'vencida'
-                });
-                setBloqueado(true);
-                setEmpresa({...emp, status_assinatura: 'vencida'});
-              }
+              setEmpresa({...emp, status_assinatura: 'vencida'});
             }
           }
-        } catch (empresaError) {
-          // Se a entidade EmpresaSaaS não existir ou houver erro, permitir acesso
-          console.log('EmpresaSaaS não encontrada - permitindo acesso');
         }
-      } catch (error) {
-        console.error('Erro ao verificar assinatura:', error);
-        // Em caso de erro, permitir acesso para não bloquear o usuário
-      } finally {
-        setLoading(false);
+      } catch (empresaError) {
+        // Se a entidade EmpresaSaaS não existir ou houver erro, permitir acesso
+        console.log('EmpresaSaaS não encontrada - permitindo acesso');
       }
+    } catch (error) {
+      console.error('Erro ao verificar assinatura:', error);
+      // Em caso de erro, permitir acesso para não bloquear o usuário
+    } finally {
+      setLoading(false);
     }
+  }
 
   if (loading || isLoadingAuth) {
     return (
