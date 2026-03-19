@@ -64,6 +64,11 @@ function LayoutContent({ children }) {
   // Definir navegação com base no tipo de usuário
   let navigation = [];
   
+  const handleLogout = async () => {
+    await base44.auth.logout();
+    window.location.href = '/';
+  };
+
   if (isSuperAdmin()) {
     // Super Admin vê tudo
     navigation = [
@@ -86,7 +91,7 @@ function LayoutContent({ children }) {
       { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
       { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
       { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
-      { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() },
+      { name: 'Sair', href: '#', icon: LogOut, action: handleLogout },
     ];
   } else if (currentUser?.tipo_usuario === 'tecnico') {
     // Técnicos veem apenas o essencial
@@ -98,7 +103,7 @@ function LayoutContent({ children }) {
       { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
       { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
       { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
-      { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() },
+      { name: 'Sair', href: '#', icon: LogOut, action: handleLogout },
     ];
   } else {
     // Admins normais veem tudo exceto gerenciar empresas
@@ -121,7 +126,7 @@ function LayoutContent({ children }) {
       { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
       { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
       { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
-      { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() },
+      { name: 'Sair', href: '#', icon: LogOut, action: handleLogout },
     ];
   }
 
