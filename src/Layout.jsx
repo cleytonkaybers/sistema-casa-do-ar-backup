@@ -77,9 +77,10 @@ function LayoutContent({ children }) {
   // Definir navegação com base no tipo de usuário
   let navigation = [];
   
-  const handleLogout = async () => {
+  const handleLogout = () => {
     localStorage.removeItem('base44_token');
-    window.location.href = '/';
+    sessionStorage.removeItem('base44_token');
+    window.location.replace('/');
   };
 
   if (isSuperAdmin()) {

@@ -62,19 +62,12 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const logout = async () => {
-    try {
-      localStorage.removeItem('base44_token');
-      sessionStorage.removeItem('base44_token');
-      setUser(null);
-      setIsAuthenticated(false);
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      localStorage.removeItem('base44_token');
-      sessionStorage.removeItem('base44_token');
-      window.location.href = '/';
-    }
+  const logout = () => {
+    localStorage.removeItem('base44_token');
+    sessionStorage.removeItem('base44_token');
+    setUser(null);
+    setIsAuthenticated(false);
+    window.location.replace('/');
   };
 
   const navigateToLogin = () => {
