@@ -1,3 +1,4 @@
+import React, { Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -10,6 +11,15 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import FinanceiroAdmin from '@/pages/FinanceiroAdmin';
 import MeuFinanceiro from '@/pages/MeuFinanceiro';
 import TabelaServicos from '@/pages/TabelaServicos';
+import RelatorioComissoes from '@/pages/RelatorioComissoes';
+import LogsAuditoria from '@/pages/LogsAuditoria';
+import GerenciarBackups from '@/pages/GerenciarBackups';
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+  </div>
+);
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -36,48 +46,76 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
+      // Redirect to login automatically - but only once
+      useEffect(() => {
+        if (!window.location.href.includes('/login')) {
+          navigateToLogin();
+        }
+      }, [navigateToLogin]);
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Redirecionando para login...</p>
+          </div>
+        </div>
+      );
     }
   }
 
   // Render the main app
   return (
-    <Routes>
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
-      <Route path="/FinanceiroAdmin" element={
-        <LayoutWrapper currentPageName="FinanceiroAdmin">
-          <FinanceiroAdmin />
-        </LayoutWrapper>
-      } />
-      <Route path="/MeuFinanceiro" element={
-        <LayoutWrapper currentPageName="MeuFinanceiro">
-          <MeuFinanceiro />
-        </LayoutWrapper>
-      } />
-      <Route path="/TabelaServicos" element={
-        <LayoutWrapper currentPageName="TabelaServicos">
-          <TabelaServicos />
-        </LayoutWrapper>
-      } />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route path="/" element={
+          <LayoutWrapper currentPageName={mainPageKey}>
+            <MainPage />
+          </LayoutWrapper>
+        } />
+        {Object.entries(Pages).map(([path, Page]) => (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              <LayoutWrapper currentPageName={path}>
+                <Page />
+              </LayoutWrapper>
+            }
+          />
+        ))}
+        <Route path="/FinanceiroAdmin" element={
+          <LayoutWrapper currentPageName="FinanceiroAdmin">
+            <FinanceiroAdmin />
+          </LayoutWrapper>
+        } />
+        <Route path="/MeuFinanceiro" element={
+          <LayoutWrapper currentPageName="MeuFinanceiro">
+            <MeuFinanceiro />
+          </LayoutWrapper>
+        } />
+        <Route path="/TabelaServicos" element={
+          <LayoutWrapper currentPageName="TabelaServicos">
+            <TabelaServicos />
+          </LayoutWrapper>
+        } />
+        <Route path="/RelatorioComissoes" element={
+          <LayoutWrapper currentPageName="RelatorioComissoes">
+            <RelatorioComissoes />
+          </LayoutWrapper>
+        } />
+        <Route path="/LogsAuditoria" element={
+          <LayoutWrapper currentPageName="LogsAuditoria">
+            <LogsAuditoria />
+          </LayoutWrapper>
+        } />
+        <Route path="/GerenciarBackups" element={
+          <LayoutWrapper currentPageName="GerenciarBackups">
+            <GerenciarBackups />
+          </LayoutWrapper>
+        } />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 
