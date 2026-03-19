@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
       'LancamentoFinanceiro',
       'PagamentoTecnico',
       'AlteracaoStatus',
-      'LogAuditoria'
+      'LogAuditoria',
+      'ManutencaoPreventiva'
     ];
 
     // Coletar apenas registros novos/alterados (últimas 24h)
