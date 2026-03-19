@@ -115,8 +115,8 @@ export default function MeuFinanceiro() {
   // Filtrar comissões por período - APENAS PENDENTES da semana atual
   const comissoesFiltradas = minhasComissoes.filter(c => {
     if (!dataInicio || !dataFim) return c.status === 'pendente';
-    const dataReferencia = format(parseISO(c.data_geracao), 'yyyy-MM-dd');
-    return dataReferencia >= dataInicio && dataReferencia <= dataFim && c.status === 'pendente';
+    const dataGeracao = format(parseISO(c.data_geracao), 'yyyy-MM-dd');
+    return dataGeracao >= dataInicio && dataGeracao <= dataFim && c.status === 'pendente';
   });
 
   const comissoesPendentes = comissoesFiltradas;

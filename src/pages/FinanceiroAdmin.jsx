@@ -664,8 +664,8 @@ export default function FinanceiroAdmin() {
                     <TableCell>{format(parseISO(pag.created_date), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                     <TableCell>{pag.metodo_pagamento}</TableCell>
                     <TableCell>
-                      <Badge variant={pag.status === 'Confirmado' ? 'default' : 'destructive'}>
-                        {pag.status === 'Confirmado' ? 'Confirmado' : pag.status === 'Estornado' ? 'Estornado' : 'Cancelado'}
+                      <Badge variant={pag.status === 'realizado' ? 'default' : 'destructive'}>
+                        {pag.status === 'realizado' ? 'Realizado' : 'Cancelado'}
                       </Badge>
                     </TableCell>
                   </TableRow>

@@ -19,9 +19,8 @@ import {
   Plus,
   Filter
 } from 'lucide-react';
-import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, isToday } from 'date-fns';
+import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getLocalDate, getStartOfWeek, getEndOfWeek, toLocalDate } from '@/lib/dateUtils';
 
 const formatPhone = (phone) => {
   if (!phone) return '';
@@ -65,11 +64,6 @@ export default function Dashboard() {
     queryFn: () => base44.entities.User.list(),
   });
 
-  const { data: tecnicosFinanceiro = [] } = useQuery({
-    queryKey: ['tecnicosFinanceiro'],
-    queryFn: () => base44.entities.TecnicoFinanceiro.list(),
-  });
-
   // Estatísticas
   const totalClientes = clientes.length;
   const clientesAtivos = clientes.filter(c => c.status === 'Ativo').length;
@@ -90,20 +84,19 @@ export default function Dashboard() {
     return daysA - daysB;
   });
 
-  // Filtrar serviços por período com timezone correto
+  // Filtrar serviços por período
   const servicosFiltrados = servicos.filter(s => {
     if (!s.data_programada) return false;
-    const dataServico = toLocalDate(s.data_programada);
-    if (!dataServico) return false;
-    const hoje = getLocalDate();
+    const dataServico = new Date(s.data_programada);
+    const hoje = new Date();
     
     switch(filtroServicos) {
       case 'dia':
         return isToday(dataServico);
       case 'semana':
         return isWithinInterval(dataServico, {
-          start: getStartOfWeek(),
-          end: getEndOfWeek()
+          start: startOfWeek(hoje, { locale: ptBR }),
+          end: endOfWeek(hoje, { locale: ptBR })
         });
       case 'mes':
         return isWithinInterval(dataServico, {
@@ -121,12 +114,10 @@ export default function Dashboard() {
   const servicosAgendados = servicosFiltrados.filter(s => s.status === 'agendado' || s.status === 'reagendado').length;
 
   const atendimentosDoMes = atendimentos.filter(a => {
-    const dataAtendimento = toLocalDate(a.data_atendimento);
-    if (!dataAtendimento) return false;
-    const hoje = getLocalDate();
+    const dataAtendimento = new Date(a.data_atendimento);
     return isWithinInterval(dataAtendimento, {
-      start: startOfMonth(hoje),
-      end: endOfMonth(hoje)
+      start: startOfMonth(new Date()),
+      end: endOfMonth(new Date())
     });
   });
 
@@ -136,9 +127,7 @@ export default function Dashboard() {
   const servicosHoje = servicos.filter(s => {
     if (!s.data_programada) return false;
     if (s.status === 'concluido') return false;
-    const dataServico = toLocalDate(s.data_programada);
-    if (!dataServico) return false;
-    return isToday(dataServico);
+    return isToday(new Date(s.data_programada));
   });
 
   // Buscar equipe do usuário atual
@@ -208,7 +197,7 @@ export default function Dashboard() {
           <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
           <p className="text-blue-200/80 mt-1 flex items-center gap-2 text-xs sm:text-sm">
             <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-            {format(getLocalDate(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
         </div>
         <Link to={createPageUrl('Servicos')}>
@@ -286,40 +275,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Ganhos dos Técnicos - Apenas para Admin */}
-      {currentUser?.role === 'admin' && tecnicosFinanceiro.length > 0 && (
-        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl col-span-full">
-          <CardHeader className="pb-3 px-4 pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-100">
-                <Users className="w-4 h-4 text-green-600" />
-              </div>
-              <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-                Ganhos dos Técnicos (Semana Atual)
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {tecnicosFinanceiro.map(tecnico => (
-                <div key={tecnico.id} className="rounded-xl p-4 border border-gray-100 bg-gradient-to-br from-green-50 to-emerald-50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold text-sm">
-                      {tecnico.tecnico_nome?.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-xs text-gray-600 font-medium">{tecnico.tecnico_nome}</span>
-                  </div>
-                  <p className="text-2xl font-bold text-green-700">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(tecnico.credito_pendente || 0)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">Pendente</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Stats Grid - Com card de ganhos para técnicos */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {currentUser?.role !== 'admin' && <GanhosSemanaDashboard />}
@@ -328,7 +283,7 @@ export default function Dashboard() {
           value={totalClientes}
           icon={Users}
           color="bg-blue-500"
-          subtitle={`${totalClientes} cadastrados`}
+          subtitle={`${clientesAtivos} ativos`}
           href={createPageUrl('Clientes')}
         />
         <StatCard
@@ -340,11 +295,11 @@ export default function Dashboard() {
           href={createPageUrl('Atendimentos')}
         />
         <StatCard
-          title="Preventivas Futuras"
+          title="Pendentes"
           value={manutencoesPendentes.length}
           icon={AlertTriangle}
           color="bg-emerald-500"
-          subtitle={`${manutencoesPendentes.length} agendadas`}
+          subtitle="Próx. 30 dias"
           href={createPageUrl('PreventivasFuturas')}
         />
         <StatCard
