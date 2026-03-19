@@ -19,6 +19,12 @@ export function EmpresaProvider({ children }) {
   }, [authUser]);
 
   const loadUserAndEmpresa = async (user) => {
+    setLoading(false);
+    
+    if (!user) {
+      return;
+    }
+    
     try {
       setCurrentUser(user);
 
@@ -30,8 +36,6 @@ export function EmpresaProvider({ children }) {
       }
     } catch (error) {
       console.error('Erro ao carregar empresa:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

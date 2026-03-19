@@ -20,15 +20,15 @@ export function SubscriptionBlocker({ children }) {
 
   async function verificarAssinatura(currentUser) {
     try {
-      // Se não há usuário, permitir acesso (não autenticado)
+      setLoading(false);
+      
+      // Se não há usuário autenticado, não fazer verificação
       if (!currentUser) {
-        setLoading(false);
         return;
       }
 
       // Se o usuário não tem company_id, permitir acesso (sistema legado ou admin)
       if (!currentUser.company_id) {
-        setLoading(false);
         return;
       }
 
@@ -65,8 +65,6 @@ export function SubscriptionBlocker({ children }) {
     } catch (error) {
       console.error('Erro ao verificar assinatura:', error);
       // Em caso de erro, permitir acesso para não bloquear o usuário
-    } finally {
-      setLoading(false);
     }
   }
 
