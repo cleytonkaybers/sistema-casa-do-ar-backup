@@ -373,8 +373,9 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
       return;
     }
     
-    // Calcular dia da semana automaticamente a partir da data programada
-    const data = parseISO(formData.data_programada);
+    // Calcular dia da semana automaticamente a partir da data programada (forçar horário local)
+    const [ano, mes, dia] = formData.data_programada.split('-').map(Number);
+    const data = new Date(ano, mes - 1, dia);
     const diaSemanaFormatado = format(data, 'EEEE', { locale: ptBR });
     const diaSemana = diaSemanaFormatado.charAt(0).toUpperCase() + diaSemanaFormatado.slice(1);
     
