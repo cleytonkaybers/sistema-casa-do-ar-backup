@@ -51,6 +51,7 @@ function LayoutContent({ children }) {
       const token = localStorage.getItem('base44_token');
       if (!token) {
         setUser(null);
+        setCompanySettings({ company_name: 'Casa do Ar', company_icon: 'Snowflake' });
         return;
       }
 
@@ -58,16 +59,11 @@ function LayoutContent({ children }) {
         const u = await base44.auth.me();
         setUser(u);
         
-        try {
-          const result = await base44.entities.CompanySettings.list();
-          if (result.length > 0) setCompanySettings(result[0]);
-        } catch (err) {
-          // Ignorar erro silenciosamente
-        }
+        const result = await base44.entities.CompanySettings.list();
+        if (result.length > 0) setCompanySettings(result[0]);
       } catch (error) {
         setUser(null);
-        localStorage.removeItem('base44_token');
-        sessionStorage.removeItem('base44_token');
+        setCompanySettings({ company_name: 'Casa do Ar', company_icon: 'Snowflake' });
       }
     };
     
