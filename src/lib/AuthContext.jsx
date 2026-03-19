@@ -23,20 +23,33 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(true);
       setAuthError(null);
       
-      // Apenas verificar se o usuário está autenticado
-      if (appParams.token) {
-        try {
-          const currentUser = await base44.auth.me();
-          setUser(currentUser);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.log('Usuário não autenticado:', error);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } else {
+      // Se não tem token, redirecionar para login
+      if (!appParams.token) {
         setUser(null);
         setIsAuthenticated(false);
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        // Redirecionar para login automaticamente
+        base44.auth.redirectToLogin(window.location.href);
+        return;
+      }
+      
+      // Se tem token, verificar autenticação
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        setIsAuthenticated(true);
+        setAuthError(null);
+      } catch (error) {
+        console.log('Erro de autenticação:', error);
+        setUser(null);
+        setIsAuthenticated(false);
+        
+        // Se o erro for de acesso negado (app privado), redirecionar para login
+        if (error.message?.includes('private') || error.message?.includes('access')) {
+          base44.auth.redirectToLogin(window.location.href);
+          return;
+        }
       }
     } catch (error) {
       console.error('Erro na verificação:', error);
