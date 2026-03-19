@@ -47,18 +47,25 @@ function LayoutContent({ children }) {
   const [companySettings, setCompanySettings] = useState({ company_name: 'Casa do Ar', company_icon: 'Snowflake' });
 
   React.useEffect(() => {
-    base44.auth.me()
-      .then((u) => setUser(u))
-      .catch(() => {
+    const loadData = async () => {
+      try {
+        const u = await base44.auth.me();
+        setUser(u);
+        
+        // Só carregar settings se estiver autenticado
+        try {
+          const result = await base44.entities.CompanySettings.list();
+          if (result.length > 0) setCompanySettings(result[0]);
+        } catch (err) {
+          console.log('Erro ao carregar CompanySettings');
+        }
+      } catch (error) {
         setUser(null);
         console.log('Usuário não autenticado no layout');
-      });
+      }
+    };
     
-    base44.entities.CompanySettings.list()
-      .then((result) => {
-        if (result.length > 0) setCompanySettings(result[0]);
-      })
-      .catch(() => {});
+    loadData();
   }, []);
 
   // Definir navegação com base no tipo de usuário
