@@ -72,7 +72,7 @@ function LayoutContent({ children }) {
   let navigation = [];
   
   const handleLogout = async () => {
-    await base44.auth.logout();
+    localStorage.removeItem('base44_token');
     window.location.href = '/';
   };
 
