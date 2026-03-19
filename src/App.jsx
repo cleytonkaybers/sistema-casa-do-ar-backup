@@ -1,3 +1,4 @@
+import React, { Suspense, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -13,7 +14,6 @@ import TabelaServicos from '@/pages/TabelaServicos';
 import RelatorioComissoes from '@/pages/RelatorioComissoes';
 import LogsAuditoria from '@/pages/LogsAuditoria';
 import GerenciarBackups from '@/pages/GerenciarBackups';
-import { Suspense } from 'react';
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -47,11 +47,11 @@ const AuthenticatedApp = () => {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
       // Redirect to login automatically - but only once
-      React.useEffect(() => {
+      useEffect(() => {
         if (!window.location.href.includes('/login')) {
           navigateToLogin();
         }
-      }, []);
+      }, [navigateToLogin]);
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
           <div className="text-center">
