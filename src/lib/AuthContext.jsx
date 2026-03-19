@@ -44,7 +44,10 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
         
         // Se o erro for de acesso negado (app privado), redirecionar para login
-        if (error.message?.includes('private') || error.message?.includes('access')) {
+        if (error.message?.includes('private') || error.message?.includes('access') || error.message?.includes('do not have access')) {
+          // Limpar token inválido e redirecionar
+          localStorage.removeItem('base44_token');
+          sessionStorage.removeItem('base44_token');
           base44.auth.redirectToLogin(window.location.href);
           return;
         }
