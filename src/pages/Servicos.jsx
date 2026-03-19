@@ -301,8 +301,7 @@ export default function ServicosPage() {
       const statusAnterior = servicoParaReagendar.status || 'aberto';
       const novoStatus = (statusAnterior === 'agendado' || statusAnterior === 'reagendado') ? 'reagendado' : 'agendado';
       
-      const [ano, mes, dia] = novaData.split('-').map(Number);
-      const dataObj = new Date(ano, mes - 1, dia);
+      const dataObj = parseISO(novaData);
       const diaSemanaFormatado = format(dataObj, 'EEEE', { locale: ptBR });
       const diaSemana = diaSemanaFormatado.charAt(0).toUpperCase() + diaSemanaFormatado.slice(1);
       
