@@ -31,6 +31,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import NotificationCenter from '@/components/NotificationCenter';
 import UserMenu from '@/components/UserMenu';
 import { EmpresaProvider, useEmpresa } from '@/components/auth/EmpresaGuard';
+import { useAuth } from '@/lib/AuthContext';
 import SubscriptionBlocker from '@/components/saas/SubscriptionBlocker';
 
 const ICON_MAP = {
