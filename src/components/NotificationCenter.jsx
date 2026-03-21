@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, X, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,8 @@ import { cn } from '@/lib/utils';
 
 export default function NotificationCenter() {
   const [open, setOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    base44.auth.me().then((user) => setCurrentUser(user)).catch(() => {});
-  }, []);
 
   const { data: notificacoes = [], isLoading } = useQuery({
     queryKey: ['notificacoes', currentUser?.email],
@@ -21,7 +18,7 @@ export default function NotificationCenter() {
       return base44.entities.Notificacao.filter({ usuario_email: currentUser.email }, '-created_date', 50);
     },
     enabled: !!currentUser?.email,
-    refetchInterval: 3000
+    refetchInterval: 30000
   });
 
   const markAsReadMutation = useMutation({
