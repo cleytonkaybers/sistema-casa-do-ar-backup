@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -8,12 +9,8 @@ import { DollarSign, TrendingUp } from 'lucide-react';
 import { getLocalDate, getStartOfWeek, getEndOfWeek, toLocalDate } from '@/lib/dateUtils';
 
 export default function GanhosSemanaDashboard() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    base44.auth.me().then(u => setUser(u));
-  }, []);
 
   const { data: dadosSemana = { totalGanho: 0, valorPago: 0, creditoPendente: 0 } } = useQuery({
     queryKey: ['minhasComissoesWeek', user?.email],
