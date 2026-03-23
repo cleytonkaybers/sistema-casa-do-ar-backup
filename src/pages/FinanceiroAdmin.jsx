@@ -248,10 +248,17 @@ export default function FinanceiroAdmin() {
     return true;
   });
 
+  // Técnicos que ainda têm crédito pendente real (considerando pagamentos já feitos)
+  const tecnicosComPendente = new Set(
+    filteredTecnicos.filter(t => (t.credito_pendente || 0) > 0).map(t => t.tecnico_id)
+  );
+
   const pagamentosAtrasados = lancamentos.filter(l => {
+    if (l.status !== 'pendente') return false;
+    if (!tecnicosComPendente.has(l.tecnico_id)) return false;
     const dataLancamento = new Date(l.data_geracao);
     const diasPassados = Math.floor((agora - dataLancamento) / (1000 * 60 * 60 * 24));
-    return l.status === 'pendente' && diasPassados > 7;
+    return diasPassados > 7;
   });
 
   // Totais baseados nos valores recalculados da semana
