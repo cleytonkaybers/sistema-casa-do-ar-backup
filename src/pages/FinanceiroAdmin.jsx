@@ -17,6 +17,7 @@ import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import RegistrarPagamentoModal from '@/components/financeiro/RegistrarPagamentoModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import GerarPDFModal from '@/components/financeiro/GerarPDFModal';
 
 export default function FinanceiroAdmin() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function FinanceiroAdmin() {
   const [editValor, setEditValor] = useState('');
   const [confirmCancelPagamento, setConfirmCancelPagamento] = useState(null);
   const [estornando, setEstornando] = useState(false);
+  const [showPDFModal, setShowPDFModal] = useState(false);
   
   const { data: lancamentos = [], refetch: refetchLancamentos } = useQuery({
     queryKey: ['lancamentos'],
@@ -256,121 +258,16 @@ export default function FinanceiroAdmin() {
   const totalPendente = filteredTecnicos.reduce((sum, t) => sum + (t.credito_pendente || 0), 0);
   const totalPago = filteredTecnicos.reduce((sum, t) => sum + (t.credito_pago || 0), 0);
 
-  const gerarPDF = async () => {
-    try {
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      
-      doc.setFontSize(16);
-      doc.text('Relatório Financeiro - Casa do Ar', 20, 20);
-      
-      doc.setFontSize(10);
-      doc.text(`Data: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 20, 30);
-      doc.text(`Período: ${format(filtroSemana === 'atual' ? inicioSemanaAtual : inicioSemanaPassada, 'dd/MM/yyyy')} a ${format(filtroSemana === 'atual' ? fimSemanaAtual : fimSemanaPassada, 'dd/MM/yyyy')}`, 20, 37);
-      
-      let y = 50;
-      
-      // Seção de Créditos
-      doc.setFontSize(12);
-      doc.text('GESTÃO DE CRÉDITOS', 20, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.text(`Total Pendente: R$ ${totalPendente.toFixed(2)}`, 20, y);
-      y += 7;
-      doc.text(`Total Pago: R$ ${totalPago.toFixed(2)}`, 20, y);
-      y += 12;
-      
-      // Tabela de Técnicos
-      doc.setFontSize(11);
-      doc.text('Créditos por Técnico:', 20, y);
-      y += 7;
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text('Técnico', 20, y);
-      doc.text('Equipe', 70, y);
-      doc.text('Pendente', 110, y);
-      doc.text('Pago', 150, y);
-      doc.text('Total', 180, y);
-      y += 5;
-      
-      doc.setTextColor(0);
-      filteredTecnicos.forEach(tech => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.setFontSize(8);
-        doc.text(tech.tecnico_nome.substring(0, 20), 20, y);
-        doc.text(tech.equipe_nome.substring(0, 20), 70, y);
-        doc.text(`R$ ${(tech.credito_pendente || 0).toFixed(2)}`, 110, y);
-        doc.text(`R$ ${(tech.credito_pago || 0).toFixed(2)}`, 150, y);
-        doc.text(`R$ ${(tech.total_ganho || 0).toFixed(2)}`, 180, y);
-        y += 5;
-      });
-
-      y += 8;
-      doc.setFontSize(11);
-      doc.text('Comissões por Serviço:', 20, y);
-      y += 7;
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text('Equipe', 20, y);
-      doc.text('Técnico', 50, y);
-      doc.text('Cliente', 90, y);
-      doc.text('Serviço', 130, y);
-      doc.text('Valor', 170, y);
-      doc.text('%', 190, y);
-      y += 5;
-
-      doc.setTextColor(0);
-      lancamentosFiltrados.forEach(lanc => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        const percentual = lanc.valor_total_servico > 0 ? ((lanc.valor_comissao_tecnico / lanc.valor_total_servico) * 100).toFixed(1) : 0;
-        doc.setFontSize(8);
-        doc.text(lanc.equipe_nome.substring(0, 15), 20, y);
-        doc.text(lanc.tecnico_nome.substring(0, 15), 50, y);
-        doc.text(lanc.cliente_nome.substring(0, 18), 90, y);
-        doc.text(lanc.tipo_servico.substring(0, 18), 130, y);
-        doc.text(`R$ ${lanc.valor_comissao_tecnico.toFixed(2)}`, 170, y);
-        doc.text(`${percentual}%`, 190, y);
-        y += 5;
-      });
-
-      if (pagamentosAtrasados.length > 0) {
-        if (y > 250) {
-          doc.addPage();
-          y = 20;
-        }
-        y += 8;
-        doc.setTextColor(255, 0, 0);
-        doc.setFontSize(11);
-        doc.text('⚠️ PAGAMENTOS EM ATRASO', 20, y);
-        y += 7;
-        doc.setTextColor(0);
-        doc.setFontSize(9);
-        pagamentosAtrasados.forEach(pag => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
-          const diasAtraso = Math.floor((agora - new Date(pag.data_geracao)) / (1000 * 60 * 60 * 24));
-          doc.text(`${pag.tecnico_nome} - R$ ${pag.valor_comissao_tecnico.toFixed(2)} (${diasAtraso} dias)`, 20, y);
-          y += 5;
-        });
-      }
-      
-      doc.save(`relatorio_financeiro_${format(new Date(), 'dd-MM-yyyy')}.pdf`);
-      toast.success('PDF gerado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao gerar PDF');
-    }
-  };
-
   return (
     <>
+      <GerarPDFModal
+        open={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        equipes={equipes}
+        tecnicos={tecnicos}
+        lancamentos={lancamentos}
+        pagamentos={pagamentos}
+      />
       <RegistrarPagamentoModal 
         open={showModalPagamento} 
         onClose={() => setShowModalPagamento(false)}
@@ -415,10 +312,7 @@ export default function FinanceiroAdmin() {
       <Card>
          <CardHeader className="flex items-center justify-between">
            <CardTitle>Gestão de Créditos</CardTitle>
-           <Button onClick={gerarPDF} size="sm" className="gap-2">
-             <Download className="w-4 h-4" />
-             Gerar PDF
-           </Button>
+           <Button onClick={() => setShowPDFModal(true)} size="sm" className="gap-2">
          </CardHeader>
          <CardContent className="space-y-4">
            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
