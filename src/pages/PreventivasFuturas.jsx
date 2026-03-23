@@ -182,7 +182,7 @@ export default function PreventivasFuturasPage() {
     mutationFn: async (servicoData) => {
       const servico = await base44.entities.Servico.create(servicoData);
       
-      // Remover preventiva do cliente (será regenerada ao concluir o serviço)
+      // Remover cliente das preventivas futuras (limpa proxima_manutencao)
       const todosClientes = await base44.entities.Cliente.list();
       const clienteExistente = todosClientes.find(c => 
         c.telefone?.replace(/\D/g, '') === servicoData.telefone?.replace(/\D/g, '')
@@ -190,7 +190,8 @@ export default function PreventivasFuturasPage() {
       
       if (clienteExistente) {
         await base44.entities.Cliente.update(clienteExistente.id, {
-          proxima_manutencao: null
+          proxima_manutencao: null,
+          ultima_manutencao: format(new Date(), 'yyyy-MM-dd')
         });
       }
       
@@ -201,7 +202,7 @@ export default function PreventivasFuturasPage() {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
       setShowServicoForm(false);
       setSelectedItem(null);
-      toast.success('Serviço agendado! Preventiva será gerada ao concluir.');
+      toast.success('Serviço agendado! Preventiva removida — será gerada ao concluir.');
     },
   });
 
