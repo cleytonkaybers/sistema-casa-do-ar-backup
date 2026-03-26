@@ -409,6 +409,16 @@ export default function ServicosPage() {
   const servicosComData = filteredServicos.filter(s => s.data_programada);
   const servicosSemData = filteredServicos.filter(s => !s.data_programada);
 
+  // Separar serviços atrasados (data passada) dos atuais/futuros
+  const servicosAtrasados = servicosComData.filter(s => {
+    const dataServico = startOfDay(parseISO(s.data_programada));
+    return isBefore(dataServico, today);
+  });
+  const servicosAtuais = servicosComData.filter(s => {
+    const dataServico = startOfDay(parseISO(s.data_programada));
+    return !isBefore(dataServico, today);
+  });
+
   const getDiasAtraso = (servico) => {
     if (!servico.data_programada) return 0;
     const dataServico = startOfDay(parseISO(servico.data_programada));
@@ -417,7 +427,7 @@ export default function ServicosPage() {
 
   const isAtrasadoGrave = (servico) => getDiasAtraso(servico) >= 2;
 
-  const servicosPorDia = servicosComData.reduce((acc, servico) => {
+  const servicosPorDia = servicosAtuais.reduce((acc, servico) => {
     const diaSemana = servico.dia_semana || 'Sem dia';
     
     if (!acc[diaSemana]) {
@@ -533,26 +543,57 @@ export default function ServicosPage() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Serviços em Atraso */}
+          {servicosAtrasados.length > 0 && (
+            <div className="rounded-xl shadow-sm border-2 border-red-400 overflow-hidden bg-white">
+              <div className="px-4 py-3 flex items-center justify-between bg-red-500">
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-lg animate-pulse">🚨</span>
+                  <h3 className="font-bold text-white">Serviços em Atraso</h3>
+                </div>
+                <Badge className="bg-white/20 text-white border-white/30">
+                  {servicosAtrasados.length}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                {servicosAtrasados.map(servico => (
+                  <div key={servico.id} className="rounded-lg border-2 border-red-300 overflow-hidden bg-red-50">
+                    <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 flex items-center gap-1">
+                      <span className="animate-pulse">🚨</span>
+                      ATRASADO {getDiasAtraso(servico)} {getDiasAtraso(servico) === 1 ? 'DIA' : 'DIAS'} — {servico.data_programada ? format(parseISO(servico.data_programada), "dd/MM/yyyy") : ''}
+                    </div>
+                    <div className="p-3">
+                      <ServicoCard
+                        servico={servico}
+                        onEdit={handleEdit}
+                        onDelete={(isAdmin || hasPermission('servicos_deletar')) ? handleDelete : undefined}
+                        onStatusChange={handleStatusChange}
+                        onShare={(servico) => {
+                          setServicoConcluido({ ...servico, isConclusao: false });
+                          setShowCompartilharModal(true);
+                        }}
+                        equipes={equipes}
+                        compact
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
             {diasDaSemana.map(dia => {
               const servicosDoDia = servicosPorDia[dia] || [];
-              
               return (
                 <div key={dia} className="rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full bg-white">
                   <div className={`bg-gradient-to-r ${diaColors[dia]} px-4 py-3 sticky top-0 z-10`}>
-                    <h3 className="font-bold text-white text-center text-sm lg:text-base">
-                      {dia}
-                    </h3>
-                    <p className="text-white/90 text-center text-xs mt-1">
-                      {servicosDoDia.length} {servicosDoDia.length === 1 ? 'serviço' : 'serviços'}
-                    </p>
+                    <h3 className="font-bold text-white text-center text-sm lg:text-base">{dia}</h3>
+                    <p className="text-white/90 text-center text-xs mt-1">{servicosDoDia.length} {servicosDoDia.length === 1 ? 'serviço' : 'serviços'}</p>
                   </div>
-
                   <div className="p-3 space-y-3 flex-1 overflow-y-auto">
                     {servicosDoDia.length === 0 ? (
-                      <p className="text-gray-300 text-center text-sm py-4">
-                        Nenhum serviço
-                      </p>
+                      <p className="text-gray-300 text-center text-sm py-4">Nenhum serviço</p>
                     ) : (
                       servicosDoDia.map(servico => (
                         <div key={servico.id} className={`rounded-lg shadow-sm border overflow-hidden ${isAtrasadoGrave(servico) ? 'border-red-400 bg-red-50 ring-1 ring-red-300' : 'border-gray-100 bg-gray-50'}`}>
@@ -592,9 +633,7 @@ export default function ServicosPage() {
                   <Calendar className="w-5 h-5 text-white" />
                   <h3 className="font-bold text-white">Sem Data Programada</h3>
                 </div>
-                <Badge className="bg-white/20 text-white border-white/30">
-                  {servicosSemData.length}
-                </Badge>
+                <Badge className="bg-white/20 text-white border-white/30">{servicosSemData.length}</Badge>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                 {servicosSemData.map(servico => (
