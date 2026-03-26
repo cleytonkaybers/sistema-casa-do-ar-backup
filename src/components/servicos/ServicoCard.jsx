@@ -177,22 +177,22 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           )}
         </div>
 
-        <div className="flex gap-1.5 pt-2 border-t border-gray-100">
+        <div className="flex gap-2 pt-2 border-t border-gray-100">
           <a
             href={getWhatsAppLink(servico.telefone)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center w-7 h-7 rounded-md transition-opacity hover:opacity-80"
+            className="flex items-center justify-center w-10 h-10 rounded-lg transition-opacity hover:opacity-80 bg-green-50 border border-green-200"
             title="WhatsApp"
           >
             <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" className="w-6 h-6" />
           </a>
           <button
             onClick={() => setShowDetalhes(true)}
-            className="flex items-center justify-center gap-1 px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-medium rounded-md transition-colors"
+            className="flex items-center justify-center gap-1.5 flex-1 h-10 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-semibold rounded-lg transition-colors"
             title="Ver detalhes"
           >
-            <Eye className="w-3 h-3" />
+            <Eye className="w-4 h-4" />
             <span>Ver</span>
           </button>
           {mapsLink && (
@@ -200,19 +200,19 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               href={mapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md transition-colors"
+              className="flex items-center justify-center w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
             >
-              <Navigation className="w-3 h-3" />
+              <Navigation className="w-4 h-4" />
             </a>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {onStatusChange && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 h-8 text-xs">
-                  <StatusIcon className="w-3 h-3 mr-1" />
+                <Button size="sm" variant="outline" className="flex-1 h-10 text-xs font-semibold">
+                  <StatusIcon className="w-4 h-4 mr-1" />
                   Status
                 </Button>
               </DropdownMenuTrigger>
@@ -241,9 +241,9 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               variant="outline"
               size="sm"
               onClick={() => onEdit(servico)}
-              className="h-8 w-8 p-0 text-gray-600 hover:text-blue-600 hover:border-blue-300"
+              className="h-10 w-10 p-0 text-gray-600 hover:text-blue-600 hover:border-blue-300"
             >
-              <Pencil className="w-3 h-3" />
+              <Pencil className="w-4 h-4" />
             </Button>
           )}
           {onDelete && (
@@ -251,9 +251,9 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               variant="outline"
               size="sm"
               onClick={() => onDelete(servico)}
-              className="h-8 w-8 p-0 text-gray-600 hover:text-red-600 hover:border-red-300"
+              className="h-10 w-10 p-0 text-gray-600 hover:text-red-600 hover:border-red-300"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>
