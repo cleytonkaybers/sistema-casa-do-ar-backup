@@ -98,6 +98,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     dia_semana: '',
     data_programada: '',
     horario: '',
+    horario_alerta: false,
     descricao: '',
     valor: '',
     ativo: true,
@@ -122,7 +123,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         dia_semana: servico.dia_semana || '',
         data_programada: servico.data_programada || '',
         horario: servico.horario || '',
-        descricao: servico.descricao || '',
+        horario_alerta: servico.horario_alerta || false,
         valor: servico.valor || '',
         ativo: servico.ativo !== false,
         equipe_id: servico.equipe_id || '',
@@ -683,6 +684,18 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                value={formData.horario}
                onChange={(time) => setFormData({ ...formData, horario: time })}
              />
+             <div className="flex items-center gap-2 mt-1">
+               <input
+                 type="checkbox"
+                 id="horario_alerta"
+                 checked={formData.horario_alerta || false}
+                 onChange={(e) => setFormData({ ...formData, horario_alerta: e.target.checked })}
+                 className="h-4 w-4 accent-red-500 cursor-pointer"
+               />
+               <label htmlFor="horario_alerta" className="text-xs font-medium text-red-600 cursor-pointer flex items-center gap-1">
+                 🔴 Horário fixo — exibir alerta para técnicos
+               </label>
+             </div>
            </div>
            <div className="space-y-2">
              <Label htmlFor="valor">Valor (R$)</Label>

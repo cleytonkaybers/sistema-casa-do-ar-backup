@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Phone, MapPin, Calendar, Pencil, Trash2, MessageCircle, Navigation, Clock, DollarSign, Share2, CreditCard, CheckCircle, Pause, Play, CalendarClock, Eye } from 'lucide-react';
+import { Phone, MapPin, Calendar, Pencil, Trash2, MessageCircle, Navigation, Clock, DollarSign, Share2, CreditCard, CheckCircle, Pause, Play, CalendarClock, Eye, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -140,9 +140,13 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
           </div>
           
           {servico.horario && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Clock className="w-3.5 h-3.5 text-blue-400" />
+            <div className={`flex items-center gap-2 text-sm ${servico.horario_alerta ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+              {servico.horario_alerta
+                ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                : <Clock className="w-3.5 h-3.5 text-blue-400" />
+              }
               <span className="text-xs">{servico.horario}</span>
+              {servico.horario_alerta && <span className="text-xs bg-red-100 text-red-600 px-1 rounded">HORA MARCADA</span>}
             </div>
           )}
 
@@ -329,9 +333,17 @@ export default function ServicoCard({ servico, onEdit, onDelete, onStatusChange,
               </div>
             )}
             {servico.horario && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg bg-gray-50">
-                <Clock className="w-4 h-4 text-blue-400" />
+              <div className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border font-medium ${
+                servico.horario_alerta
+                  ? 'text-red-600 border-red-300 bg-red-50'
+                  : 'text-gray-600 border-gray-200 bg-gray-50'
+              }`}>
+                {servico.horario_alerta
+                  ? <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />
+                  : <Clock className="w-4 h-4 text-blue-400" />
+                }
                 {servico.horario}
+                {servico.horario_alerta && <span className="ml-1 text-xs font-bold uppercase">⚠ Hora Marcada</span>}
               </div>
             )}
             {servico.valor > 0 && (
