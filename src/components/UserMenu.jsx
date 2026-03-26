@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { LogOut, User, ChevronDown, Smartphone } from 'lucide-react';
+import { LogOut, User, ChevronDown, Smartphone, X, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function UserMenu({ user }) {
@@ -20,19 +20,57 @@ export default function UserMenu({ user }) {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
+
   const handleInstall = async () => {
-    if (!installPrompt) return;
+    setOpen(false);
+    if (isIOS) {
+      setShowIOSGuide(true);
+      return;
+    }
+    if (!installPrompt) {
+      alert('Para instalar: abra o menu do navegador e escolha "Adicionar à tela inicial" ou "Instalar aplicativo".');
+      return;
+    }
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
     if (outcome === 'accepted') {
       setInstallPrompt(null);
       setIsInstalled(true);
     }
-    setOpen(false);
   };
 
   return (
     <div className="relative">
+      {showIOSGuide && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60" onClick={() => setShowIOSGuide(false)}>
+          <div className="bg-white rounded-t-2xl p-6 w-full max-w-sm mb-0" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-800 text-lg">Instalar no iPhone/iPad</h3>
+              <button onClick={() => setShowIOSGuide(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <ol className="space-y-3 text-sm text-gray-700">
+              <li className="flex items-start gap-3">
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
+                <span>Toque no botão <strong>Compartilhar</strong> <span className="inline-flex items-center justify-center bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs font-bold">⬆ Share</span> na barra inferior do Safari</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
+                <span>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+                <span>Toque em <strong>"Adicionar"</strong> no canto superior direito</span>
+              </li>
+            </ol>
+            <p className="text-xs text-gray-400 mt-4 text-center">O app aparecerá na sua tela inicial como um ícone</p>
+            <button onClick={() => setShowIOSGuide(false)} className="w-full mt-4 bg-blue-600 text-white py-2.5 rounded-xl font-semibold text-sm">Entendido!</button>
+          </div>
+        </div>
+      )}
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-purple-700/30 transition-colors text-purple-200">
