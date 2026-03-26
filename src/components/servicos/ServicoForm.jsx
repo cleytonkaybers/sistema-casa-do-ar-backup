@@ -119,7 +119,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
         endereco: servico.endereco || '',
         latitude: servico.latitude || null,
         longitude: servico.longitude || null,
-        tipos_servico: servico.tipo_servico ? [{ tipo: servico.tipo_servico, quantidade: 1 }] : [{ tipo: 'Limpeza de 9k', quantidade: 1 }],
+        tipos_servico: parseTiposServico(servico.tipo_servico),
         dia_semana: servico.dia_semana || '',
         data_programada: servico.data_programada || '',
         horario: servico.horario || '',
@@ -195,10 +195,21 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     return formatted;
   };
 
+  const parseTiposServico = (tipoServicoStr) => {
+    if (!tipoServicoStr) return [{ tipo: 'Limpeza de 9k', quantidade: 1 }];
+    const partes = tipoServicoStr.split(' + ');
+    // Agrupar duplicados em quantidade
+    const contagem = {};
+    partes.forEach(t => {
+      const tipo = t.trim();
+      contagem[tipo] = (contagem[tipo] || 0) + 1;
+    });
+    return Object.entries(contagem).map(([tipo, quantidade]) => ({ tipo, quantidade }));
+  };
+
   const normalizePhone = (value) => {
     const cleaned = value.replace(/\D/g, '');
     if (!cleaned) return '+55 ';
-    // Se não começa com 55, adiciona o prefixo
     const withPrefix = cleaned.startsWith('55') ? cleaned : '55' + cleaned;
     return formatPhoneInput(withPrefix);
   };
