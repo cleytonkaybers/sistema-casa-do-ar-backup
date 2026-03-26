@@ -13,7 +13,7 @@ import CompartilharModal from '../components/servicos/CompartilharModal';
 import ConclusaoModal from '../components/servicos/ConclusaoModal';
 import AlertaAtraso from '../components/servicos/AlertaAtraso';
 import { toast } from 'sonner';
-import { format, parseISO, startOfMonth, isSameMonth, isBefore, startOfDay } from 'date-fns';
+import { format, parseISO, startOfMonth, isSameMonth, isBefore, startOfDay, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePermissions } from '@/components/auth/PermissionGuard';
 
@@ -400,27 +400,22 @@ export default function ServicosPage() {
     // Serviços concluídos nunca aparecem na agenda
     if (s.status === 'concluido') return false;
 
-    // Serviços abertos ou em andamento ficam SEMPRE na agenda, independente da data
-    if (s.status === 'aberto' || s.status === 'andamento') {
-      const matchSearch = s.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.telefone?.includes(searchTerm);
-      return matchSearch;
-    }
-
-    // Serviços agendados/reagendados: mostrar apenas os de hoje em diante
-    if (s.data_programada) {
-      const dataServico = startOfDay(parseISO(s.data_programada));
-      if (isBefore(dataServico, today)) return false;
-    }
-
+    // Todos os serviços não concluídos aparecem (incluindo atrasados)
     const matchSearch = s.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        s.telefone?.includes(searchTerm);
-    
     return matchSearch;
   });
 
   const servicosComData = filteredServicos.filter(s => s.data_programada);
   const servicosSemData = filteredServicos.filter(s => !s.data_programada);
+
+  const getDiasAtraso = (servico) => {
+    if (!servico.data_programada) return 0;
+    const dataServico = startOfDay(parseISO(servico.data_programada));
+    return differenceInDays(today, dataServico);
+  };
+
+  const isAtrasadoGrave = (servico) => getDiasAtraso(servico) >= 2;
 
   const servicosPorDia = servicosComData.reduce((acc, servico) => {
     const diaSemana = servico.dia_semana || 'Sem dia';
@@ -560,7 +555,13 @@ export default function ServicosPage() {
                       </p>
                     ) : (
                       servicosDoDia.map(servico => (
-                        <div key={servico.id} className="rounded-lg shadow-sm border border-gray-100 overflow-hidden bg-gray-50">
+                        <div key={servico.id} className={`rounded-lg shadow-sm border overflow-hidden ${isAtrasadoGrave(servico) ? 'border-red-400 bg-red-50 ring-1 ring-red-300' : 'border-gray-100 bg-gray-50'}`}>
+                          {isAtrasadoGrave(servico) && (
+                            <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 flex items-center gap-1">
+                              <span className="animate-pulse">🚨</span>
+                              ATRASADO {getDiasAtraso(servico)} {getDiasAtraso(servico) === 1 ? 'DIA' : 'DIAS'}
+                            </div>
+                          )}
                           <div className="p-3">
                             <ServicoCard
                               servico={servico}
