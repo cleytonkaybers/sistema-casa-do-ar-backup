@@ -631,37 +631,39 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
           {!isPago && !temPrecoDefinido && <p className="text-xs text-yellow-600 font-semibold">Defina o preço primeiro</p>}
         </div>
       </td>
-    </tr>
-  );
-}
 
-function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, emptyMsg }) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr style={{ backgroundColor: '#1e3a8a' }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Cliente</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Serviço / Data</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Contato</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Valor</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lista.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-14 text-gray-400">
-                <Clock className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">{emptyMsg}</p>
-              </td></tr>
-            ) : lista.map(p => (
-              <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} />
-            ))}
-          </tbody>
-        </table>
+      {/* Ações */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button onClick={() => onDetalhes(pag)} className="p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors" title="Ver detalhes">
+            <Eye className="w-4 h-4" />
+          </button>
+          <button onClick={() => onHistorico(pag)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Histórico">
+            <History className="w-4 h-4" />
+          </button>
+          {!isPago && (
+            <>
+              <button onClick={() => onEditarValor(pag)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${
+                  temPrecoDefinido 
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200' 
+                    : 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-300'
+                }`} title="Definir/editar preço">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => onPagar(pag)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                <DollarSign className="w-3.5 h-3.5" />
+                Pagar
+              </button>
+            </>
+          )}
+          <button onClick={() => onDelete(pag.id)} className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors" title="Excluir">
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
       </div>
 
       {/* Mobile cards */}
