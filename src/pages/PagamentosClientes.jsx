@@ -884,8 +884,8 @@ function PagamentosClientesContent() {
   });
 
   const hoje = new Date();
-  const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 });
-  const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
+  const inicioSemana = startOfWeek(hoje, { weekStartsOn: 1 }); // segunda-feira
+  const fimSemana = endOfWeek(hoje, { weekStartsOn: 1 }); // domingo
 
   // Sincronizar apenas ATENDIMENTOS DA SEMANA ATUAL — 1 registro por atendimento
   useEffect(() => {
@@ -1056,12 +1056,13 @@ function PagamentosClientesContent() {
     )
   , [pagamentos, searchTerm]);
 
-  // 1. TODOS os serviços da semana (pendentes, agendados, parciais, pagos)
+  // 1. TODOS os serviços da semana (APENAS DA SEMANA ATUAL: seg-dom)
   const pagsSemana = useMemo(() => {
     const statusOrder = { 'pendente': 0, 'agendado': 1, 'parcial': 2, 'pago': 3 };
     const filtrados = pagsFiltrados
       .filter(p => {
         if (!p.data_conclusao) return false;
+        // Mostrar APENAS serviços que foram concluídos NESTA semana (seg-dom)
         try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
         catch { return false; }
       });
@@ -1088,21 +1089,35 @@ function PagamentosClientesContent() {
     return groupPagamentos(filtrados);
   }, [pagsFiltrados, inicioSemana, fimSemana]);
 
-  // 3. Pagamentos AGENDADOS e ATRASADOS (data de agendamento vencida)
+  // 3. Pagamentos AGENDADOS e ATRASADOS (incluindo pendentes/agendados de semanas anteriores)
   const pagsAgendadosAtrasados = useMemo(() => {
     const filtrados = pagsFiltrados
       .filter(p => {
         if (p.status === 'pago') return false;
-        // Filtrar APENAS por status 'agendado' para garantir que apareça após agendamento
-        return p.status === 'agendado';
+        
+        // Incluir: status agendado OU serviços antigos (pendentes/agendados fora da semana atual) que não foram pagos
+        if (p.status === 'agendado') return true;
+        
+        // Incluir serviços de semanas anteriores que estão pendentes/agendados (nunca pagos)
+        if (p.status !== 'pendente') return false;
+        
+        if (!p.data_conclusao) return false;
+        try {
+          const estaForaSemanaBuscada = !isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana });
+          const temSaldoPendente = (p.valor_total || 0) - (p.valor_pago || 0) > 0.01;
+          return estaForaSemanaBuscada && temSaldoPendente;
+        } catch {
+          return false;
+        }
       })
       .sort((a, b) => {
-        const da = a.data_pagamento_agendado ? new Date(a.data_pagamento_agendado) : new Date(0);
-        const db = b.data_pagamento_agendado ? new Date(b.data_pagamento_agendado) : new Date(0);
+        // Ordenar: por data de agendamento (se houver), depois por data de conclusão
+        const da = a.data_pagamento_agendado ? new Date(a.data_pagamento_agendado) : (a.data_conclusao ? new Date(a.data_conclusao) : new Date(0));
+        const db = b.data_pagamento_agendado ? new Date(b.data_pagamento_agendado) : (b.data_conclusao ? new Date(b.data_conclusao) : new Date(0));
         return da - db;
       });
     return groupPagamentos(filtrados);
-  }, [pagsFiltrados]);
+  }, [pagsFiltrados, inicioSemana, fimSemana]);
 
   // 4. Serviços pagos da semana atual
   const pagsPagos = useMemo(() => {
