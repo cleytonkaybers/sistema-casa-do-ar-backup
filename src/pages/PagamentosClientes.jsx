@@ -1043,11 +1043,14 @@ function PagamentosClientesContent() {
 
   // 1. TODOS os serviços da semana (pendentes, parciais, agendados, pagos)
   const pagsSemana = useMemo(() => {
-    const filtrados = pagsFiltrados.filter(p => {
-      if (!p.data_conclusao) return false;
-      try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
-      catch { return false; }
-    });
+    const statusOrder = { 'pendente': 0, 'agendado': 1, 'pago': 2, 'parcial': 1.5 };
+    const filtrados = pagsFiltrados
+      .filter(p => {
+        if (!p.data_conclusao) return false;
+        try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
+        catch { return false; }
+      })
+      .sort((a, b) => (statusOrder[a.status] || 3) - (statusOrder[b.status] || 3));
     return groupPagamentos(filtrados);
   }, [pagsFiltrados, inicioSemana, fimSemana]);
 
