@@ -41,6 +41,7 @@
       "enum": [
         "pendente",
         "parcial",
+        "agendado",
         "pago"
       ],
       "default": "pendente",
@@ -58,6 +59,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Data em que o pagamento foi conclu\u00eddo"
+    },
+    "data_pagamento_agendado": {
+      "type": "string",
+      "format": "date",
+      "description": "Data agendada para o pagamento"
     },
     "historico_pagamentos": {
       "type": "array",

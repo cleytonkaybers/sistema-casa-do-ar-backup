@@ -1014,7 +1014,7 @@ function PagamentosClientesContent() {
   const handleAgendarData = async (pag, novaData) => {
     const records = pag._records?.length > 1 ? pag._records : [pag];
     for (const rec of records) {
-      await updateMutation.mutateAsync({ id: rec.id, data: { data_pagamento_agendado: novaData } });
+      await updateMutation.mutateAsync({ id: rec.id, data: { data_pagamento_agendado: novaData, status: 'agendado' } });
     }
     toast.success('📅 Data de pagamento agendada!');
   };
@@ -1062,7 +1062,7 @@ function PagamentosClientesContent() {
   const pagsAgendados = useMemo(() => {
     const filtrados = pagsFiltrados
       .filter(p => {
-        if (p.status === 'pago') return false;
+        if (p.status === 'pago' || p.status === 'agendado') return p.status === 'agendado';
         if (!p.data_pagamento_agendado) return false;
         return true;
       })
@@ -1077,7 +1077,7 @@ function PagamentosClientesContent() {
   const pagsDebito = useMemo(() => {
     const filtrados = pagsFiltrados
       .filter(p => {
-        if (p.status === 'pago') return false;
+        if (p.status === 'pago' || p.status === 'agendado') return false;
         if (!p.data_conclusao) return false;
         if (p.data_pagamento_agendado) return false;
         try {
