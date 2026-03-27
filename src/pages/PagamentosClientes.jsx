@@ -526,8 +526,13 @@ export default function PagamentosClientes() {
     toast.success('Valor atualizado!');
   };
 
+  const TIPOS_SEM_COBRANCA = ['Ver defeito', 'Outro tipo de serviço'];
+
   const pagsFiltrados = useMemo(() =>
-    pagamentos.filter(p => !searchTerm || p.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()))
+    pagamentos.filter(p =>
+      (!searchTerm || p.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      !TIPOS_SEM_COBRANCA.includes(p.tipo_servico)
+    )
   , [pagamentos, searchTerm]);
 
   // Semana atual SEM pagos (saem do card principal)
