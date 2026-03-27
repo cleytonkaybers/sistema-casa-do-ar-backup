@@ -909,13 +909,14 @@ export default function PagamentosClientes() {
     const filtrados = pagsFiltrados
       .filter(p => {
         if (p.status === 'pago') return false;
-        if (p.data_conclusao) {
-          try { if (parseISO(p.data_conclusao) < dataCorte) return false; }
-          catch {}
-        } else {
-          return false; // sem data, ignorar
-        }
-        return true;
+        if (!p.data_conclusao) return false;
+        try {
+          const dataConc = parseISO(p.data_conclusao);
+          // Excluir da semana atual (deve ficar apenas em pagsSemana)
+          if (isWithinInterval(dataConc, { start: inicioSemana, end: fimSemana })) return false;
+          // Incluir apenas datas anteriores à semana atual
+          return true;
+        } catch { return false; }
       })
       .sort((a, b) => {
         const da = a.data_conclusao ? new Date(a.data_conclusao) : new Date(0);
