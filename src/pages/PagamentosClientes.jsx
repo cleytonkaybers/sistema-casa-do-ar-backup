@@ -778,10 +778,10 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
               <span className="text-red-700 font-bold">{formatCurrency(saldo)}</span>
             </div>
           )}
-          {pag._records?.some(r => r.valor_total === 0) && (
-            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Defina o preço para registrar pagamento</span>
+          {!temPrecoDefinido && (
+            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 font-semibold animate-pulse">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 animate-bounce" />
+              <span>🚨 CRÍTICO: Defina o preço deste serviço antes de aceitar pagamento!</span>
             </div>
           )}
         </div>
@@ -1067,7 +1067,13 @@ function PagamentosClientesContent() {
         catch { return false; }
       });
     const agrupados = groupPagamentos(filtrados);
-    return agrupados.sort((a, b) => (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4));
+    // Ordenar: preços não definidos SEMPRE no topo
+    return agrupados.sort((a, b) => {
+      const aTemPreco = a.valor_total > 0;
+      const bTemPreco = b.valor_total > 0;
+      if (aTemPreco !== bTemPreco) return aTemPreco ? 1 : -1; // sem preço primeiro
+      return (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
+    });
   }, [pagsFiltrados, inicioSemana, fimSemana]);
 
   // 2. Serviços SEM preço ou que ficaram de uma semana para outra (atrasados)
