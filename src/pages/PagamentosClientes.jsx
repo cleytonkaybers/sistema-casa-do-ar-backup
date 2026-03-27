@@ -931,6 +931,16 @@ export default function PagamentosClientes() {
   const totalSemana = pagsSemana.reduce((s, p) => s + (p.valor_total || 0), 0);
   const totalPagoSemana = pagsSemana.reduce((s, p) => s + (p.valor_pago || 0), 0);
   const totalDebitoGeral = pagsDebito.reduce((s, p) => s + ((p.valor_total || 0) - (p.valor_pago || 0)), 0);
+
+  const inicioMes = startOfMonth(hoje);
+  const fimMes = endOfMonth(hoje);
+  const pagsMes = useMemo(() => pagamentos.filter(p => {
+    if (!p.data_conclusao) return false;
+    try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioMes, end: fimMes }); }
+    catch { return false; }
+  }), [pagamentos, inicioMes, fimMes]);
+  const totalMes = pagsMes.reduce((s, p) => s + (p.valor_total || 0), 0);
+  const totalPagoMes = pagsMes.reduce((s, p) => s + (p.valor_pago || 0), 0);
   const totalRel = pagsRelatorio.reduce((s, p) => s + (p.valor_total || 0), 0);
   const totalPagoRel = pagsRelatorio.reduce((s, p) => s + (p.valor_pago || 0), 0);
 
@@ -951,18 +961,22 @@ export default function PagamentosClientes() {
               Semana: {format(inicioSemana, "dd/MM", { locale: ptBR })} – {format(fimSemana, "dd/MM/yyyy", { locale: ptBR })}
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white/10 rounded-xl px-3 py-2.5 text-center">
+              <p className="text-white font-bold text-lg">{formatCurrency(totalMes).replace('R$', '').trim()}</p>
+              <p className="text-blue-200 text-xs">Faturado no Mês</p>
+            </div>
+            <div className="bg-green-500/20 rounded-xl px-3 py-2.5 text-center">
+              <p className="text-green-300 font-bold text-lg">{formatCurrency(totalPagoMes).replace('R$', '').trim()}</p>
+              <p className="text-blue-200 text-xs">Recebido no Mês</p>
+            </div>
             <div className="bg-white/10 rounded-xl px-3 py-2.5 text-center">
               <p className="text-white font-bold text-lg">{formatCurrency(totalSemana).replace('R$', '').trim()}</p>
-              <p className="text-blue-200 text-xs">Faturado</p>
+              <p className="text-blue-200 text-xs">Faturado na Semana</p>
             </div>
             <div className="bg-green-500/20 rounded-xl px-3 py-2.5 text-center">
               <p className="text-green-300 font-bold text-lg">{formatCurrency(totalPagoSemana).replace('R$', '').trim()}</p>
-              <p className="text-blue-200 text-xs">Recebido</p>
-            </div>
-            <div className="bg-red-500/20 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-red-300 font-bold text-lg">{formatCurrency(totalDebitoGeral).replace('R$', '').trim()}</p>
-              <p className="text-blue-200 text-xs">Em Débito</p>
+              <p className="text-blue-200 text-xs">Recebido na Semana</p>
             </div>
           </div>
         </div>
