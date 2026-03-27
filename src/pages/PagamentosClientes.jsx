@@ -165,7 +165,7 @@ function DefinirPrecoModal({ open, onClose, pagamento, pagamentosAtuais = [], on
 }
 
 // Modal exclusivo para REGISTRAR PAGAMENTO
-function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [] }) {
+function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [], syncKey = 0 }) {
   const [obs, setObs] = useState('');
   const [metodoPagamento, setMetodoPagamento] = useState('');
   const [loading, setLoading] = useState(false);
@@ -215,7 +215,7 @@ function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [
       inicial[tipo] = rec ? Number(rec.valor_total).toFixed(2).replace('.', ',') : '';
     });
     setPrecosGrupo(inicial);
-  }, [open, pagamento, pagamentosAtuais]);
+  }, [open, pagamento, pagamentosAtuais, syncKey]);
 
   const totalDefinido = servicosGrupos.reduce((s, g) => {
     const preco = parseFloat((precosGrupo[g.tipo] || '').replace(',', '.')) || 0;
@@ -762,6 +762,7 @@ export default function PagamentosClientes() {
   const [historicoModal, setHistoricoModal] = useState(null);
   const [detalhesModal, setDetalhesModal] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('semana');
+  const [precosSyncKey, setPrecosSyncKey] = useState(0);
 
   // Relatórios
   const [relFiltro, setRelFiltro] = useState('semana');
@@ -853,6 +854,7 @@ export default function PagamentosClientes() {
       }
     }
     toast.success('💾 Preços salvos com sucesso!');
+    setPrecosSyncKey(k => k + 1);
   };
 
   const handleRegistrarPagamento = async (pag, valor, obs, parcelas = [], precosGrupo = {}) => {
@@ -1153,7 +1155,7 @@ export default function PagamentosClientes() {
       )}
 
       <DefinirPrecoModal open={!!precosModal} onClose={() => setPrecosModal(null)} pagamento={precosModal} pagamentosAtuais={pagamentos} onSave={handleSalvarPrecos} />
-      <PagamentoModal open={!!pagarModal} onClose={() => setPagarModal(null)} pagamento={pagarModal} onSave={handleRegistrarPagamento} pagamentosAtuais={pagamentos} />
+      <PagamentoModal open={!!pagarModal} onClose={() => setPagarModal(null)} pagamento={pagarModal} onSave={handleRegistrarPagamento} pagamentosAtuais={pagamentos} syncKey={precosSyncKey} />
       <EditarValorModal open={!!editarModal} onClose={() => setEditarModal(null)} pagamento={editarModal} onSave={handleEditarValor} />
       <HistoricoModal open={!!historicoModal} onClose={() => setHistoricoModal(null)} pagamento={historicoModal} />
       <DetalhesClienteModal open={!!detalhesModal} onClose={() => setDetalhesModal(null)} pagamento={detalhesModal} />
