@@ -14,6 +14,7 @@ import TabelaServicos from '@/pages/TabelaServicos';
 import RelatorioComissoes from '@/pages/RelatorioComissoes';
 import LogsAuditoria from '@/pages/LogsAuditoria';
 import GerenciarBackups from '@/pages/GerenciarBackups';
+import PagamentosClientes from '@/pages/PagamentosClientes';
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -89,6 +90,11 @@ const AuthenticatedApp = () => {
         <Route path="/LogsAuditoria" element={
           <LayoutWrapper currentPageName="LogsAuditoria">
             <LogsAuditoria />
+          </LayoutWrapper>
+        } />
+        <Route path="/PagamentosClientes" element={
+          <LayoutWrapper currentPageName="PagamentosClientes">
+            <PagamentosClientes />
           </LayoutWrapper>
         } />
         <Route path="/GerenciarBackups" element={
