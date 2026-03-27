@@ -12,7 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import {
   Search, DollarSign, CheckCircle2, AlertCircle, Calendar,
   MessageCircle, Filter, X, Pencil,
-  Clock, History, Trash2
+  Clock, History, Trash2, Eye
 } from 'lucide-react';
 
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -155,6 +155,90 @@ function EditarValorModal({ open, onClose, pagamento, onSave }) {
   );
 }
 
+function DetalhesClienteModal({ open, onClose, pagamento }) {
+  const records = pagamento?._records || (pagamento ? [pagamento] : []);
+
+  // Agrupar serviços por tipo
+  const servicosAgrupados = useMemo(() => {
+    const groups = {};
+    records.forEach(r => {
+      const tipo = r.tipo_servico || 'Sem tipo';
+      if (!groups[tipo]) groups[tipo] = { tipo, qtd: 0, valorTotal: 0, registros: [] };
+      groups[tipo].qtd += 1;
+      groups[tipo].valorTotal += r.valor_total || 0;
+      groups[tipo].registros.push(r);
+    });
+    return Object.values(groups).sort((a, b) => b.qtd - a.qtd);
+  }, [records]);
+
+  const totalGeral = records.reduce((s, r) => s + (r.valor_total || 0), 0);
+  const totalPago = records.reduce((s, r) => s + (r.valor_pago || 0), 0);
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-600" />
+            Detalhes — {pagamento?.cliente_nome}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {/* Resumo financeiro */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+              <p className="text-xs text-gray-400 mb-0.5">Total serviços</p>
+              <p className="font-bold text-gray-800 text-lg">{records.length}</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+              <p className="text-xs text-gray-400 mb-0.5">Faturado</p>
+              <p className="font-bold text-blue-700 text-sm">{formatCurrency(totalGeral)}</p>
+            </div>
+            <div className="bg-red-50 rounded-xl p-3 text-center border border-red-100">
+              <p className="text-xs text-gray-400 mb-0.5">Em débito</p>
+              <p className="font-bold text-red-600 text-sm">{formatCurrency(totalGeral - totalPago)}</p>
+            </div>
+          </div>
+
+          {/* Serviços agrupados por tipo */}
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Serviços por Tipo</p>
+            <div className="space-y-2">
+              {servicosAgrupados.map((g) => (
+                <div key={g.tipo} className="border border-gray-100 rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                        {g.qtd}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-700">{g.tipo}</span>
+                    </div>
+                    <span className="font-bold text-gray-800 text-sm">{formatCurrency(g.valorTotal)}</span>
+                  </div>
+                  {/* Datas de cada execução */}
+                  <div className="divide-y divide-gray-50">
+                    {g.registros.map((r, i) => (
+                      <div key={r.id || i} className="flex items-center justify-between px-4 py-2 text-xs text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-300">└</span>
+                          <span>{r.data_conclusao ? format(parseISO(r.data_conclusao), "dd/MM/yyyy", { locale: ptBR }) : '—'}</span>
+                          {r.equipe_nome && <span className="text-blue-500">· {r.equipe_nome}</span>}
+                        </div>
+                        <span className="font-medium text-gray-600">{formatCurrency(r.valor_total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <DialogFooter><Button variant="outline" onClick={onClose}>Fechar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function HistoricoModal({ open, onClose, pagamento }) {
   const records = pagamento?._records || (pagamento ? [pagamento] : []);
   // Merge historico de todos os records
@@ -218,7 +302,7 @@ function HistoricoModal({ open, onClose, pagamento }) {
 }
 
 // Linha da tabela
-function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete }) {
+function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes }) {
   const saldo = (pag.valor_total || 0) - (pag.valor_pago || 0);
   const isPago = pag.status === 'pago';
   const isParcial = pag.status === 'parcial';
@@ -294,6 +378,9 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete }) {
       {/* Ações */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-1.5">
+          <button onClick={() => onDetalhes(pag)} className="p-1.5 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors" title="Ver detalhes">
+            <Eye className="w-4 h-4" />
+          </button>
           <button onClick={() => onHistorico(pag)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Histórico">
             <History className="w-4 h-4" />
           </button>
@@ -313,7 +400,7 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete }) {
   );
 }
 
-function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, emptyMsg }) {
+function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, emptyMsg }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Desktop table */}
@@ -336,7 +423,7 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete
                 <p className="text-sm">{emptyMsg}</p>
               </td></tr>
             ) : lista.map(p => (
-              <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} />
+              <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} />
             ))}
           </tbody>
         </table>
@@ -385,6 +472,9 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete
                     <MessageCircle className="w-3.5 h-3.5" />
                   </a>
                 )}
+                <button onClick={() => onDetalhes(p)} className="p-2 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 border border-gray-200" title="Ver detalhes">
+                  <Eye className="w-4 h-4" />
+                </button>
                 <button onClick={() => onHistorico(p)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 border border-gray-200">
                   <History className="w-4 h-4" />
                 </button>
@@ -420,6 +510,7 @@ export default function PagamentosClientes() {
   const [pagarModal, setPagarModal] = useState(null);
   const [editarModal, setEditarModal] = useState(null);
   const [historicoModal, setHistoricoModal] = useState(null);
+  const [detalhesModal, setDetalhesModal] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('semana');
 
   // Relatórios
@@ -665,6 +756,7 @@ export default function PagamentosClientes() {
             onPagar={setPagarModal}
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
+            onDetalhes={setDetalhesModal}
             onDelete={(id) => deleteMutation.mutate(id)}
             emptyMsg="Nenhum serviço pendente esta semana"
           />
@@ -690,6 +782,7 @@ export default function PagamentosClientes() {
               onPagar={setPagarModal}
               onEditarValor={setEditarModal}
               onHistorico={setHistoricoModal}
+              onDetalhes={setDetalhesModal}
               onDelete={(id) => deleteMutation.mutate(id)}
               emptyMsg="Nenhum pagamento pendente!"
             />
@@ -748,6 +841,7 @@ export default function PagamentosClientes() {
             onPagar={setPagarModal}
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
+            onDetalhes={setDetalhesModal}
             onDelete={(id) => deleteMutation.mutate(id)}
             emptyMsg="Nenhum registro no período selecionado"
           />
@@ -757,6 +851,7 @@ export default function PagamentosClientes() {
       <PagamentoModal open={!!pagarModal} onClose={() => setPagarModal(null)} pagamento={pagarModal} onSave={handleRegistrarPagamento} />
       <EditarValorModal open={!!editarModal} onClose={() => setEditarModal(null)} pagamento={editarModal} onSave={handleEditarValor} />
       <HistoricoModal open={!!historicoModal} onClose={() => setHistoricoModal(null)} pagamento={historicoModal} />
+      <DetalhesClienteModal open={!!detalhesModal} onClose={() => setDetalhesModal(null)} pagamento={detalhesModal} />
     </div>
   );
 }
