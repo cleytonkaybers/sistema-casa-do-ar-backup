@@ -265,10 +265,16 @@ function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [
                 <AlertCircle className="w-3.5 h-3.5" /> Defina os preços usando o botão 🏷️ Preços antes de pagar
               </div>
             )}
-            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200 text-center">
-              <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 text-sm">{totalDefinido > 0 ? formatCurrency(totalDefinido) : <span className="text-amber-500 text-xs">A definir</span>}</p></div>
-              <div><p className="text-xs text-gray-400">Pago</p><p className="font-bold text-green-600 text-sm">{formatCurrency(totalPago)}</p></div>
-              <div><p className="text-xs text-gray-400">Saldo</p><p className="font-bold text-red-600 text-sm">{formatCurrency(Math.max(0, saldo))}</p></div>
+            <div className="space-y-2 pt-3 border-t border-gray-200">
+              <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+                <p className="text-xs text-red-600 font-semibold mb-0.5">💰 Débito Total</p>
+                <p className="font-bold text-red-700 text-base">{totalDefinido > 0 ? formatCurrency(saldo) : <span className="text-amber-500">A definir</span>}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 text-sm">{totalDefinido > 0 ? formatCurrency(totalDefinido) : <span className="text-amber-500 text-xs">A definir</span>}</p></div>
+                <div><p className="text-xs text-gray-400">Pago</p><p className="font-bold text-green-600 text-sm">{formatCurrency(totalPago)}</p></div>
+                <div><p className="text-xs text-gray-400">Saldo</p><p className="font-bold text-red-600 text-sm">{formatCurrency(Math.max(0, saldo))}</p></div>
+              </div>
             </div>
           </div>
 
