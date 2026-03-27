@@ -180,7 +180,7 @@ export default function CompromissoClientePDF({ isOpen, onClose, pagamento = nul
       const telefone = pagamento.telefone?.replace(/\D/g, '');
       if (!telefone) return toast.error('Telefone não disponível');
 
-      const mensagem = `Olá ${pagamento.cliente_nome}! 👋\n\nSegue o resumo do seu compromisso de pagamento:\n\n💰 *Total*: ${formatCurrency(totalValor)}\n✅ *Pago*: ${formatCurrency(totalPago)}\n⏳ *Pendente*: ${formatCurrency(Math.max(0, saldoRestante))}\n\nPor favor, baixe o PDF anexado com todos os detalhes dos serviços realizados.\n\nQualquer dúvida, estou à disposição!`;
+      const mensagem = `Olá ${pagamento.cliente_nome}! 👋\n\nSegue o resumo do seu compromisso de pagamento:\n\n💰 *Total*: ${formatCurrency(totalValor)}\n✅ *Pago*: ${formatCurrency(totalPago)}\n⏳ *Pendente*: ${formatCurrency(Math.max(0, saldoRestante))}\n\nQualquer dúvida, estou à disposição!`;
 
       const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
       window.open(url, '_blank');
