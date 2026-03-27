@@ -167,12 +167,16 @@ export default function Clientes() {
   });
 
   const filteredClientes = useMemo(() => {
+    if (!searchTerm.trim()) return clientes;
+    
+    const searchLower = searchTerm.toLowerCase().trim();
+    const searchNumeros = searchTerm.replace(/\D/g, '');
+    
     return clientes.filter(cliente => {
-      const matchesSearch = 
-        cliente.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.telefone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
+      const nomeLower = (cliente.nome || '').toLowerCase();
+      const telefoneLimpo = (cliente.telefone || '').replace(/\D/g, '');
       
-      return matchesSearch;
+      return nomeLower.includes(searchLower) || telefoneLimpo.includes(searchNumeros);
     });
   }, [clientes, searchTerm]);
 
