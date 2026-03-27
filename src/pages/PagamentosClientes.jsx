@@ -351,6 +351,8 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete
 export default function PagamentosClientes() {
   const queryClient = useQueryClient();
 
+  const criandoIds = React.useRef(new Set());
+
   const [searchTerm, setSearchTerm] = useState('');
   const [pagarModal, setPagarModal] = useState(null);
   const [editarModal, setEditarModal] = useState(null);
@@ -400,14 +402,14 @@ export default function PagamentosClientes() {
   const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 });
   const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
 
-  // Sincronizar apenas ATENDIMENTOS (serviços concluídos) DA SEMANA ATUAL
-  // Um registro por atendimento — sem duplicar por usuário/equipe
+  // Sincronizar apenas ATENDIMENTOS DA SEMANA ATUAL — 1 registro por atendimento
   useEffect(() => {
     if (isLoading || !atendimentos.length) return;
     const idsRegistrados = new Set(pagamentos.map(p => p.atendimento_id).filter(Boolean));
 
     const novos = atendimentos.filter(a => {
       if (idsRegistrados.has(a.id)) return false;
+      if (criandoIds.current.has(a.id)) return false; // já está sendo criado
       const dataRef = a.data_conclusao || a.created_date;
       if (!dataRef) return false;
       try {
@@ -417,6 +419,7 @@ export default function PagamentosClientes() {
     });
 
     novos.forEach(a => {
+      criandoIds.current.add(a.id); // marca como em criação
       createMutation.mutate({
         atendimento_id: a.id,
         servico_id: a.servico_id || '',
