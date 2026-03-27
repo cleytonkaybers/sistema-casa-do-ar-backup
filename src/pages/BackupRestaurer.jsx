@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Download, Upload, Database, Loader2, CheckCircle, AlertCircle, FileJson, RefreshCw, Cloud } from 'lucide-react';
+import { Download, Upload, Database, Loader2, CheckCircle, AlertCircle, FileJson, RefreshCw, Cloud, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import NoPermission from '../components/NoPermission';
@@ -26,6 +26,11 @@ const ENTIDADES = [
   { key: 'configuracaoRelat',    entity: 'ConfiguracaoRelatorio',  label: 'Configurações de Relatório' },
   { key: 'relatoriosGerados',    entity: 'RelatorioGerado',        label: 'Relatórios Gerados' },
   { key: 'manutencaoPreventiva', entity: 'ManutencaoPreventiva',   label: 'Manutenções Preventivas' },
+  { key: 'pagamentosClientes',   entity: 'PagamentoCliente',       label: 'Pagamentos dos Clientes' },
+  { key: 'pagamentosTecnicos',   entity: 'PagamentoTecnico',       label: 'Pagamentos dos Técnicos' },
+  { key: 'lancamentosFinanceiros', entity: 'LancamentoFinanceiro',  label: 'Lançamentos Financeiros' },
+  { key: 'tecnicoFinanceiro',    entity: 'TecnicoFinanceiro',      label: 'Técnico Financeiro' },
+  { key: 'tipoServicoValor',     entity: 'TipoServicoValor',       label: 'Tipos de Serviço e Valores' },
   { key: 'usuarios',             entity: 'User',                   label: 'Usuários' },
 ];
 
@@ -115,6 +120,98 @@ export default function BackupRestaurerPage() {
     }
   };
 
+  const handleExportWord = async () => {
+    setExporting(true);
+    try {
+      const dataObj = {};
+      for (const e of ENTIDADES) {
+        const records = await base44.entities[e.entity].list();
+        dataObj[e.key] = records;
+      }
+
+      // Gerar HTML estruturado
+      let html = `
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #1e3a8a; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; }
+            h2 { color: #1e3a8a; margin-top: 30px; border-left: 4px solid #1e3a8a; padding-left: 10px; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; page-break-inside: avoid; }
+            th { background-color: #1e3a8a; color: white; padding: 10px; text-align: left; font-weight: bold; }
+            td { border: 1px solid #ddd; padding: 8px; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .summary { background-color: #dbeafe; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+            .summary-item { display: inline-block; margin-right: 30px; font-weight: bold; }
+            .timestamp { color: #666; font-size: 12px; margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>📊 Backup Completo - Casa do Ar</h1>
+          <div class="timestamp">Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}</div>
+          <div class="summary">
+      `;
+
+      // Resumo
+      let totalRecs = 0;
+      ENTIDADES.forEach(e => {
+        const count = dataObj[e.key]?.length || 0;
+        totalRecs += count;
+        html += `<div class="summary-item">${e.label}: <span style="color: #059669;">${count}</span></div>`;
+      });
+      html += `<div class="summary-item">TOTAL: <span style="color: #d97706; font-size: 16px;">${totalRecs}</span></div></div>`;
+
+      // Dados por entidade
+      ENTIDADES.forEach(e => {
+        const records = dataObj[e.key] || [];
+        if (records.length === 0) return;
+
+        html += `<h2>${e.label} (${records.length} registros)</h2>`;
+        
+        if (records.length > 0) {
+          const keys = Object.keys(records[0]).filter(k => !['id', 'created_by'].includes(k));
+          html += `<table><thead><tr>`;
+          keys.forEach(k => {
+            html += `<th>${k.replace(/_/g, ' ').toUpperCase()}</th>`;
+          });
+          html += `</tr></thead><tbody>`;
+          
+          records.forEach(rec => {
+            html += `<tr>`;
+            keys.forEach(k => {
+              let val = rec[k];
+              if (typeof val === 'object') val = JSON.stringify(val);
+              if (val === null || val === undefined) val = '-';
+              html += `<td>${String(val).substring(0, 100)}</td>`;
+            });
+            html += `</tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+      });
+
+      html += `</body></html>`;
+
+      // Exportar como HTML (Word pode abrir)
+      const blob = new Blob([html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup_casa_do_ar_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.doc`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Backup Word exportado com ${totalRecs} registros!`);
+    } catch (error) {
+      toast.error('Erro ao exportar Word: ' + error.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleRestoreFromDrive = async (backupRecord) => {
     if (!backupRecord?.arquivo_drive_id) {
       toast.error('Backup inválido');
@@ -140,7 +237,7 @@ export default function BackupRestaurerPage() {
       }
 
       const entidadesParaImportar = ENTIDADES.filter(
-        e => e.entity !== 'User'
+       e => e.entity !== 'User' && e.entity !== 'PagamentoCliente' && e.entity !== 'PagamentoTecnico' && e.entity !== 'LancamentoFinanceiro' && e.entity !== 'TecnicoFinanceiro'
       );
 
       toast.info('Iniciando restauração...');
@@ -200,7 +297,7 @@ export default function BackupRestaurerPage() {
       }
 
       const entidadesParaImportar = ENTIDADES.filter(
-        e => e.entity !== 'User' // Usuários não podem ser criados por API
+       e => e.entity !== 'User' && e.entity !== 'PagamentoCliente' && e.entity !== 'PagamentoTecnico' && e.entity !== 'LancamentoFinanceiro' && e.entity !== 'TecnicoFinanceiro'
       );
 
       for (let i = 0; i < entidadesParaImportar.length; i++) {
@@ -300,17 +397,30 @@ export default function BackupRestaurerPage() {
               ))}
             </div>
           </div>
-          <Button
-            onClick={handleExportBackup}
-            disabled={exporting}
-            className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 font-semibold"
-          >
-            {exporting ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Exportando todos os dados...</>
-            ) : (
-              <><Download className="w-5 h-5 mr-2" />Exportar Backup Completo ({totalRegistros} registros)</>
-            )}
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button
+              onClick={handleExportBackup}
+              disabled={exporting}
+              className="h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 font-semibold"
+            >
+              {exporting ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Exportando...</>
+              ) : (
+                <><Download className="w-5 h-5 mr-2" />JSON ({totalRegistros} registros)</>
+              )}
+            </Button>
+            <Button
+              onClick={handleExportWord}
+              disabled={exporting}
+              className="h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 font-semibold"
+            >
+              {exporting ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Exportando...</>
+              ) : (
+                <><FileText className="w-5 h-5 mr-2" />WORD ({totalRegistros} registros)</>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
