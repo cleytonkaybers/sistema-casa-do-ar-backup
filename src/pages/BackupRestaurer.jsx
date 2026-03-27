@@ -129,22 +129,23 @@ export default function BackupRestaurerPage() {
         dataObj[e.key] = records;
       }
 
-      // Gerar HTML estruturado
+      // Gerar HTML estruturado com formatação otimizada para Word
       let html = `
         <html>
         <head>
           <meta charset="utf-8">
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #1e3a8a; border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; }
-            h2 { color: #1e3a8a; margin-top: 30px; border-left: 4px solid #1e3a8a; padding-left: 10px; }
-            table { width: 100%; border-collapse: collapse; margin: 15px 0; page-break-inside: avoid; }
-            th { background-color: #1e3a8a; color: white; padding: 10px; text-align: left; font-weight: bold; }
-            td { border: 1px solid #ddd; padding: 8px; }
-            tr:nth-child(even) { background-color: #f9fafb; }
-            .summary { background-color: #dbeafe; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-            .summary-item { display: inline-block; margin-right: 30px; font-weight: bold; }
-            .timestamp { color: #666; font-size: 12px; margin-bottom: 10px; }
+            @page { size: A4 landscape; margin: 10mm; }
+            body { font-family: 'Calibri', Arial, sans-serif; font-size: 10pt; margin: 10px; }
+            h1 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; font-size: 18pt; margin-bottom: 5px; }
+            h2 { color: #1e3a8a; margin-top: 15px; margin-bottom: 10px; border-left: 3px solid #1e3a8a; padding-left: 8px; font-size: 12pt; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; page-break-inside: avoid; font-size: 9pt; }
+            th { background-color: #1e3a8a; color: white; padding: 6px; text-align: left; font-weight: bold; word-wrap: break-word; }
+            td { border: 1px solid #999; padding: 4px; word-wrap: break-word; overflow-wrap: break-word; }
+            tr:nth-child(even) { background-color: #f0f0f0; }
+            .summary { background-color: #dbeafe; padding: 10px; margin-bottom: 15px; font-size: 11pt; }
+            .summary-item { display: inline-block; margin-right: 20px; font-weight: bold; margin-bottom: 5px; }
+            .timestamp { color: #666; font-size: 9pt; margin-bottom: 10px; }
           </style>
         </head>
         <body>
@@ -155,35 +156,39 @@ export default function BackupRestaurerPage() {
 
       // Resumo
       let totalRecs = 0;
+      const summaryItems = [];
       ENTIDADES.forEach(e => {
         const count = dataObj[e.key]?.length || 0;
         totalRecs += count;
-        html += `<div class="summary-item">${e.label}: <span style="color: #059669;">${count}</span></div>`;
+        summaryItems.push(`<div class="summary-item">${e.label}: ${count}</div>`);
       });
-      html += `<div class="summary-item">TOTAL: <span style="color: #d97706; font-size: 16px;">${totalRecs}</span></div></div>`;
+      html += summaryItems.join('');
+      html += `<div class="summary-item" style="font-size: 12pt; color: #d97706;">TOTAL: ${totalRecs}</div></div>`;
 
       // Dados por entidade
       ENTIDADES.forEach(e => {
         const records = dataObj[e.key] || [];
         if (records.length === 0) return;
 
-        html += `<h2>${e.label} (${records.length} registros)</h2>`;
+        html += `<h2>${e.label}</h2>`;
         
         if (records.length > 0) {
-          const keys = Object.keys(records[0]).filter(k => !['id', 'created_by'].includes(k));
+          const keys = Object.keys(records[0]).filter(k => !['id', 'created_by', 'created_date', 'updated_date'].includes(k)).slice(0, 10);
           html += `<table><thead><tr>`;
           keys.forEach(k => {
-            html += `<th>${k.replace(/_/g, ' ').toUpperCase()}</th>`;
+            const displayName = k.replace(/_/g, ' ').substring(0, 15);
+            html += `<th>${displayName}</th>`;
           });
           html += `</tr></thead><tbody>`;
           
-          records.forEach(rec => {
+          records.slice(0, 100).forEach(rec => {
             html += `<tr>`;
             keys.forEach(k => {
               let val = rec[k];
-              if (typeof val === 'object') val = JSON.stringify(val);
+              if (typeof val === 'object') val = JSON.stringify(val).substring(0, 30);
               if (val === null || val === undefined) val = '-';
-              html += `<td>${String(val).substring(0, 100)}</td>`;
+              const displayVal = String(val).substring(0, 50);
+              html += `<td>${displayVal}</td>`;
             });
             html += `</tr>`;
           });
