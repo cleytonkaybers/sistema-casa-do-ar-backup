@@ -654,7 +654,14 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
             {pag.cliente_nome?.charAt(0).toUpperCase() || '?'}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-sm text-gray-800 truncate">{pag.cliente_nome}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-sm text-gray-800">{pag.cliente_nome}</p>
+              {pag.data_pagamento_agendado && (
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold flex-shrink-0">
+                  {format(new Date(pag.data_pagamento_agendado + 'T12:00:00'), 'dd/MM')}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 truncate">{pag._tipoResumido || pag.tipo_servico}</p>
           </div>
         </div>
@@ -704,6 +711,11 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
                <button onClick={() => onDefinirPreco(pag)} className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold whitespace-nowrap">
                  Preço
                </button>
+               {pag.telefone && (
+                 <a href={getWhatsApp(pag.telefone)} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded bg-green-100 hover:bg-green-200 text-green-600 hover:text-green-700 flex-shrink-0" title="WhatsApp">
+                   <MessageCircle className="w-4 h-4" />
+                 </a>
+               )}
                <button onClick={() => onAgendarData(pag)} className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold whitespace-nowrap flex items-center gap-1">
                  <Calendar className="w-3 h-3" /> Agendar
                </button>
