@@ -387,6 +387,52 @@ function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [
   );
 }
 
+function AgendarDataModal({ open, onClose, pagamento, onSave }) {
+  const [data, setData] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && pagamento) {
+      setData(pagamento.data_pagamento_agendado || '');
+    }
+  }, [open, pagamento]);
+
+  const handleSave = async () => {
+    if (!data) return toast.error('Informe a data');
+    setLoading(true);
+    await onSave(pagamento, data);
+    setLoading(false);
+    setData('');
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm w-[95vw]">
+        <DialogHeader><DialogTitle>Agendar Data de Pagamento</DialogTitle></DialogHeader>
+        <div className="py-3 space-y-3">
+          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <span className="font-semibold">{pagamento?.cliente_nome}</span>
+            <br />
+            <span className="text-xs text-gray-500">{pagamento?.tipo_servico}</span>
+          </p>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">📅 Data que o cliente vai pagar</label>
+            <Input type="date" value={data} onChange={e => setData(e.target.value)} className="h-11" autoFocus />
+            {data && <p className="text-xs text-blue-600 mt-2">Você será notificado em {format(new Date(data + 'T12:00:00'), 'dd/MM/yyyy')}</p>}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
+            {loading ? 'Agendando...' : '✓ Agendar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function EditarValorModal({ open, onClose, pagamento, onSave }) {
   const [valor, setValor] = useState('');
   const [loading, setLoading] = useState(false);
@@ -575,7 +621,7 @@ function HistoricoModal({ open, onClose, pagamento }) {
 }
 
 // Card compacto estilo tabela com expansão
-function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco }) {
+function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData }) {
   const [expandido, setExpandido] = useState(false);
   const records = pag._records || [pag];
   const saldo = calcularSaldo(pag.valor_total, pag.valor_pago);
@@ -709,9 +755,14 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
             </div>
           )}
           {!isPago && temPrecoDefinido && (
-            <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-3 py-2">
-              <span className="text-red-700 font-semibold text-xs">Saldo devido:</span>
-              <span className="text-red-700 font-bold">{formatCurrency(saldo)}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 bg-red-50 border border-red-200 rounded px-3 py-2">
+                <span className="text-red-700 font-semibold text-xs">Saldo devido:</span>
+                <span className="text-red-700 font-bold">{formatCurrency(saldo)}</span>
+              </div>
+              <button onClick={() => onAgendarData(pag)} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded font-semibold whitespace-nowrap flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> Agendar
+              </button>
             </div>
           )}
           {pag._records?.some(r => r.valor_total === 0) && (
@@ -726,7 +777,7 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
   );
       }
 
-      function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, emptyMsg }) {
+      function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, emptyMsg }) {
         return (
         <div className="space-y-2">
           {lista.length === 0 ? (
@@ -735,7 +786,7 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
               <p className="text-sm">{emptyMsg}</p>
             </div>
           ) : lista.map(p => (
-            <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} />
+            <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} onAgendarData={onAgendarData} />
           ))}
         </div>
       );
@@ -774,6 +825,7 @@ function PagamentosClientesContent() {
   const [editarModal, setEditarModal] = useState(null);
   const [historicoModal, setHistoricoModal] = useState(null);
   const [detalhesModal, setDetalhesModal] = useState(null);
+  const [agendarDataModal, setAgendarDataModal] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('semana');
   const [precosSyncKey, setPrecosSyncKey] = useState(0);
   const [abrirRelatorio, setAbrirRelatorio] = useState(false);
@@ -961,6 +1013,14 @@ function PagamentosClientesContent() {
     toast.success('Valor atualizado!');
   };
 
+  const handleAgendarData = async (pag, novaData) => {
+    const records = pag._records?.length > 1 ? pag._records : [pag];
+    for (const rec of records) {
+      await updateMutation.mutateAsync({ id: rec.id, data: { data_pagamento_agendado: novaData } });
+    }
+    toast.success('📅 Data de pagamento agendada!');
+  };
+
   // TIPOS_SEM_COBRANCA is now consolidated with TIPOS_IGNORADOS at top
 
   const pagsFiltrados = useMemo(() =>
@@ -1138,6 +1198,7 @@ function PagamentosClientesContent() {
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
             onDetalhes={setDetalhesModal}
+            onAgendarData={setAgendarDataModal}
             onDelete={(id) => deleteMutation.mutate(id)}
             emptyMsg="Nenhum serviço pendente esta semana"
           />
@@ -1158,6 +1219,7 @@ function PagamentosClientesContent() {
                 onEditarValor={setEditarModal}
                 onHistorico={setHistoricoModal}
                 onDetalhes={setDetalhesModal}
+                onAgendarData={setAgendarDataModal}
                 onDelete={(id) => deleteMutation.mutate(id)}
                 emptyMsg="Nenhum serviço pago esta semana"
               />
@@ -1180,6 +1242,7 @@ function PagamentosClientesContent() {
               onEditarValor={setEditarModal}
               onHistorico={setHistoricoModal}
               onDetalhes={setDetalhesModal}
+              onAgendarData={setAgendarDataModal}
               onDelete={(id) => deleteMutation.mutate(id)}
               emptyMsg="Nenhum pagamento pendente!"
             />
@@ -1240,6 +1303,7 @@ function PagamentosClientesContent() {
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
             onDetalhes={setDetalhesModal}
+            onAgendarData={setAgendarDataModal}
             onDelete={(id) => deleteMutation.mutate(id)}
             emptyMsg="Nenhum registro no período selecionado"
           />
@@ -1248,6 +1312,7 @@ function PagamentosClientesContent() {
 
       <DefinirPrecoModal open={!!precosModal} onClose={() => setPrecosModal(null)} pagamento={precosModal} pagamentosAtuais={pagamentos} onSave={handleSalvarPrecos} />
       <PagamentoModal open={!!pagarModal} onClose={() => setPagarModal(null)} pagamento={pagarModal} onSave={handleRegistrarPagamento} pagamentosAtuais={pagamentos} syncKey={precosSyncKey} />
+      <AgendarDataModal open={!!agendarDataModal} onClose={() => setAgendarDataModal(null)} pagamento={agendarDataModal} onSave={handleAgendarData} />
       <EditarValorModal open={!!editarModal} onClose={() => setEditarModal(null)} pagamento={editarModal} onSave={handleEditarValor} />
       <HistoricoModal open={!!historicoModal} onClose={() => setHistoricoModal(null)} pagamento={historicoModal} />
       <DetalhesClienteModal open={!!detalhesModal} onClose={() => setDetalhesModal(null)} pagamento={detalhesModal} />
