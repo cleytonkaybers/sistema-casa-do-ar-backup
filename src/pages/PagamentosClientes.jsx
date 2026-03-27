@@ -28,11 +28,23 @@ const getWhatsApp = (phone) => {
   return `https://wa.me/55${n}`;
 };
 
-// Agrupa pagamentos com mesmo cliente + tipo de serviço
+// Conta ocorrências de cada serviço e retorna string com multiplicadores
+function resumirServicos(records) {
+  const counts = {};
+  records.forEach(r => {
+    const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
+    tipos.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+  });
+  return Object.entries(counts)
+    .map(([tipo, qtd]) => qtd > 1 ? `${tipo} x${qtd}` : tipo)
+    .join(' + ');
+}
+
+// Agrupa pagamentos do mesmo cliente (toda a semana = uma linha)
 function groupPagamentos(lista) {
   const groups = {};
   lista.forEach(p => {
-    const key = `${(p.cliente_nome || '').trim().toLowerCase()}|${(p.tipo_servico || '').trim().toLowerCase()}`;
+    const key = (p.cliente_nome || '').trim().toLowerCase();
     if (!groups[key]) {
       groups[key] = { ...p, _records: [p] };
     } else {
@@ -46,7 +58,7 @@ function groupPagamentos(lista) {
     let status = 'pendente';
     if (saldo <= 0.01) status = 'pago';
     else if ((g.valor_pago || 0) > 0) status = 'parcial';
-    return { ...g, status };
+    return { ...g, status, _tipoResumido: resumirServicos(g._records) };
   });
 }
 
@@ -229,12 +241,7 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete }) {
 
       {/* Serviço */}
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-gray-700 leading-tight">{pag.tipo_servico}</p>
-          {pag._records?.length > 1 && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">{pag._records.length}x</span>
-          )}
-        </div>
+        <p className="text-sm text-gray-700 leading-tight">{pag._tipoResumido || pag.tipo_servico}</p>
         <p className="text-xs text-gray-400 mt-0.5">
           {pag.data_conclusao ? format(parseISO(pag.data_conclusao), "dd/MM/yy HH:mm", { locale: ptBR }) : '-'}
         </p>
@@ -352,7 +359,7 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
                   <p className="font-semibold text-gray-800">{p.cliente_nome}</p>
-                  <p className="text-xs text-gray-500">{p.tipo_servico}</p>
+                  <p className="text-xs text-gray-500">{p._tipoResumido || p.tipo_servico}</p>
                   {p.equipe_nome && <p className="text-xs text-blue-600">👷 {p.equipe_nome}</p>}
                 </div>
                 <div className="text-right">
