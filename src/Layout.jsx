@@ -82,10 +82,11 @@ function LayoutContent({ children }) {
       { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() },
     ];
   } else if (currentUser?.tipo_usuario === 'tecnico' || user?.role === 'user') {
-    // Técnicos veem APENAS Serviços, Atendimentos, Meu Financeiro e Sair
+    // Técnicos veem APENAS Serviços, Atendimentos, Preventivas Futuras, Meu Financeiro e Sair
     navigation = [
       { name: 'Serviços', href: createPageUrl('Servicos'), icon: ClipboardList },
       { name: 'Atendimentos', href: createPageUrl('Atendimentos'), icon: ClipboardList },
+      { name: 'Preventivas Futuras', href: createPageUrl('PreventivasFuturas'), icon: ClipboardList },
       { name: 'Meu Financeiro', href: createPageUrl('MeuFinanceiro'), icon: DollarSign },
       { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() },
     ];
