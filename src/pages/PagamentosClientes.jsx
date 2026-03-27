@@ -644,12 +644,9 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
           {!isPago && (
             <>
               <button onClick={() => onDefinirPreco(pag)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors border ${
-                  temPrecoDefinido 
-                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200' 
-                    : 'bg-amber-100 hover:bg-amber-200 text-amber-700 border-amber-300'
-                }`} title="Definir/editar preço">
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
                 <Tag className="w-3.5 h-3.5" />
+                Preço
               </button>
               <button onClick={() => onPagar(pag)}
                 className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors">
@@ -755,8 +752,9 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
                 </button>
                 {!isPago && (
                   <>
-                    <button onClick={() => onDefinirPreco(p)} className="p-2 rounded-lg text-amber-600 hover:text-amber-800 hover:bg-amber-50 border border-amber-200" title="Definir preços">
-                      <Tag className="w-4 h-4" />
+                    <button onClick={() => onDefinirPreco(p)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                      <Tag className="w-3.5 h-3.5" />
+                      Preço
                     </button>
                     <button onClick={() => onPagar(p)}
                       className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">
