@@ -208,11 +208,19 @@ function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [
       tipos.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
     });
     Object.keys(counts).forEach(tipo => {
+      // Tenta buscar um record com esse tipo que tenha valor_total > 0
       const rec = fonte.find(r => {
         const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
-        return tipos.length === 1 && tipos[0] === tipo && (r.valor_total || 0) > 0;
+        return tipos.includes(tipo) && (r.valor_total || 0) > 0;
       });
-      inicial[tipo] = rec ? Number(rec.valor_total).toFixed(2).replace('.', ',') : '';
+      if (rec) {
+        // Se encontrou, calcula o valor individual dividindo pelo número de tipos nesse record
+        const tipos = (rec.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
+        const valorIndividual = rec.valor_total / tipos.length;
+        inicial[tipo] = Number(valorIndividual).toFixed(2).replace('.', ',');
+      } else {
+        inicial[tipo] = '';
+      }
     });
     setPrecosGrupo(inicial);
   }, [open, pagamento, pagamentosAtuais, syncKey]);
