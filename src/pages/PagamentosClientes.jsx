@@ -16,7 +16,7 @@ import CompromissoClientePDF from '@/components/financeiro/CompromissoClientePDF
 import {
   Search, DollarSign, CheckCircle2, AlertCircle, Calendar,
   MessageCircle, Filter, X, Pencil, Tag,
-  Clock, History, Trash2, Eye, Check, CheckCircle2 as Check2
+  Clock, History, Trash2, Eye, Check
 } from 'lucide-react';
 
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -947,7 +947,9 @@ function PagamentosClientesContent() {
       const tipos = (rec.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
       const novoPreco = tipos.reduce((sum, t) => sum + (parseFloat((precosGrupo[t] || '').replace(',', '.')) || 0), 0);
       if (novoPreco > 0 && novoPreco !== rec.valor_total) {
-        await updateMutation.mutateAsync({ id: rec.id, data: { valor_total: novoPreco } });
+        // Quando define preço, retorna para pendente se não tiver nada agendado
+        const novoStatus = rec.data_pagamento_agendado ? 'agendado' : 'pendente';
+        await updateMutation.mutateAsync({ id: rec.id, data: { valor_total: novoPreco, status: novoStatus } });
       }
     }
     toast.success('💾 Preços salvos com sucesso!');
@@ -958,6 +960,12 @@ function PagamentosClientesContent() {
     const records = pag._records?.length > 1 ? pag._records : [pag];
     let remaining = valor;
     const dataStr = format(new Date(), "dd/MM/yyyy HH:mm");
+    // Se registrou pagamento sem agendar data, manter como pendente até quitar
+    const novoStatus = (novoPago) => {
+      const isQuitado = novoPago >= (rec.valor_total || 0) - 0.01;
+      if (isQuitado) return 'pago';
+      return dataPagamentoAgendado ? 'agendado' : 'parcial';
+    };
 
     const calcularValorRecord = (rec) => {
       const tipos = (rec.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
@@ -992,10 +1000,11 @@ function PagamentosClientesContent() {
         ...parcelasAgendadas,
       ];
       const isQuitado = novoPago >= (rec.valor_total || 0) - 0.01;
+      const statusFinal = isQuitado ? 'pago' : (dataPagamentoAgendado ? 'agendado' : 'parcial');
       await updateMutation.mutateAsync({
         id: rec.id, data: {
           valor_pago: novoPago,
-          status: isQuitado ? 'pago' : 'parcial',
+          status: statusFinal,
           historico_pagamentos: novoHistorico,
           data_pagamento_completo: isQuitado ? new Date().toISOString() : undefined,
           data_pagamento_agendado: dataPagamentoAgendado || undefined,
@@ -1007,18 +1016,19 @@ function PagamentosClientesContent() {
   };
 
   const handleEditarValor = async (pag, novoValor) => {
-    await updateMutation.mutateAsync({ id: pag.id, data: { valor_total: novoValor } });
-    toast.success('Valor atualizado!');
+    await updateMutation.mutateAsync({ id: pag.id, data: { valor_total: novoValor, status: 'pendente' } });
+    toast.success('Valor atualizado! Status retornado para pendente.');
   };
 
   const handleAgendarData = async (pag, novaData) => {
     const records = pag._records?.length > 1 ? pag._records : [pag];
     for (const rec of records) {
-      await updateMutation.mutateAsync({ id: rec.id, data: { data_pagamento_agendado: novaData, status: 'agendado' } });
+      // Apenas agende se não estiver pago
+      const saldo = calcularSaldo(rec.valor_total, rec.valor_pago);
+      if (saldo > 0.01) {
+        await updateMutation.mutateAsync({ id: rec.id, data: { data_pagamento_agendado: novaData, status: 'agendado' } });
+      }
     }
-    // Força recarregamento para garantir que o status seja atualizado
-    await new Promise(resolve => setTimeout(resolve, 500));
-    queryClient.invalidateQueries({ queryKey: ['pagamentos-clientes'] });
     toast.success('📅 Data de pagamento agendada!');
   };
 
