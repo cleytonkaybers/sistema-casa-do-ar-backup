@@ -66,24 +66,44 @@ function PagamentoModal({ open, onClose, pagamento, onSave }) {
   const [valor, setValor] = useState('');
   const [obs, setObs] = useState('');
   const [loading, setLoading] = useState(false);
+  const [parcelas, setParcelas] = useState([]);
+  const [novaData, setNovaData] = useState('');
+  const [novoValorParcela, setNovoValorParcela] = useState('');
 
-  useEffect(() => { if (open) { setValor(''); setObs(''); } }, [open]);
+  useEffect(() => {
+    if (open) { setValor(''); setObs(''); setParcelas([]); setNovaData(''); setNovoValorParcela(''); }
+  }, [open]);
 
   const saldo = (pagamento?.valor_total || 0) - (pagamento?.valor_pago || 0);
+
+  const totalAgendado = parcelas.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
+  const valorAtualNum = parseFloat(valor.replace(',', '.')) || 0;
+  const saldoRestante = saldo - valorAtualNum - totalAgendado;
+
+  const adicionarParcela = () => {
+    if (!novaData) return toast.error('Informe a data da parcela');
+    const v = parseFloat(novoValorParcela.replace(',', '.'));
+    if (!v || v <= 0) return toast.error('Informe o valor da parcela');
+    setParcelas(prev => [...prev, { data: novaData, valor: v }]);
+    setNovaData('');
+    setNovoValorParcela('');
+  };
+
+  const removerParcela = (idx) => setParcelas(prev => prev.filter((_, i) => i !== idx));
 
   const handleSave = async () => {
     const v = parseFloat(valor.replace(',', '.'));
     if (!v || v <= 0) return toast.error('Informe um valor válido');
     if (v > saldo + 0.01) return toast.error(`Valor maior que o saldo (${formatCurrency(saldo)})`);
     setLoading(true);
-    await onSave(pagamento, v, obs);
+    await onSave(pagamento, v, obs, parcelas);
     setLoading(false);
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Registrar Pagamento</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
           <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
@@ -105,6 +125,47 @@ function PagamentoModal({ open, onClose, pagamento, onSave }) {
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Observação (opcional)</label>
             <Input placeholder="Ex: PIX, dinheiro, cartão..." value={obs} onChange={e => setObs(e.target.value)} />
+          </div>
+
+          {/* Parcelas futuras */}
+          <div className="border border-blue-100 rounded-xl p-3 bg-blue-50/40 space-y-3">
+            <p className="text-sm font-semibold text-blue-800">📅 Parcelas Futuras (agendadas)</p>
+
+            {parcelas.length > 0 && (
+              <div className="space-y-1.5">
+                {parcelas.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between bg-white border border-blue-100 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="text-sm text-gray-700 font-medium">{format(new Date(p.data + 'T12:00:00'), 'dd/MM/yyyy')}</span>
+                      <span className="text-xs text-gray-400">—</span>
+                      <span className="text-sm font-semibold text-blue-700">{formatCurrency(p.valor)}</span>
+                    </div>
+                    <button onClick={() => removerParcela(i)} className="text-gray-300 hover:text-red-500 transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <div className="flex justify-between text-xs font-semibold px-1 pt-1">
+                  <span className="text-gray-500">Saldo após todas as parcelas:</span>
+                  <span className={saldoRestante < -0.01 ? 'text-red-600' : 'text-green-600'}>{formatCurrency(saldoRestante)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Data da parcela</label>
+                <Input type="date" value={novaData} onChange={e => setNovaData(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Valor (R$)</label>
+                <Input placeholder="0,00" value={novoValorParcela} onChange={e => setNovoValorParcela(e.target.value)} className="h-9 text-sm" />
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={adicionarParcela} className="w-full text-blue-700 border-blue-200 hover:bg-blue-100">
+              + Adicionar parcela futura
+            </Button>
           </div>
         </div>
         <DialogFooter>
@@ -279,12 +340,16 @@ function HistoricoModal({ open, onClose, pagamento }) {
             ) : (
               <div className="space-y-2">
                 {todosPagamentos.map((h, i) => (
-                  <div key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
+                  <div key={i} className={`flex items-center justify-between border rounded-lg px-4 py-2.5 ${h.agendada ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
                     <div>
-                      <p className="text-xs font-medium text-gray-700">{h.data}</p>
-                      {h.observacao && <p className="text-xs text-gray-400">{h.observacao}</p>}
+                      <div className="flex items-center gap-1.5">
+                        {h.agendada && <Calendar className="w-3 h-3 text-blue-500" />}
+                        <p className="text-xs font-medium text-gray-700">{h.data}</p>
+                        {h.agendada && <span className="text-xs bg-blue-100 text-blue-600 px-1.5 rounded font-medium">Agendado</span>}
+                      </div>
+                      {h.observacao && !h.agendada && <p className="text-xs text-gray-400">{h.observacao}</p>}
                     </div>
-                    <span className="font-bold text-green-600">{formatCurrency(h.valor)}</span>
+                    <span className={`font-bold ${h.agendada ? 'text-blue-600' : 'text-green-600'}`}>{formatCurrency(h.valor)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between font-semibold text-sm px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
@@ -593,7 +658,7 @@ export default function PagamentosClientes() {
     });
   }, [atendimentos, pagamentos, isLoading]);
 
-  const handleRegistrarPagamento = async (pag, valor, obs) => {
+  const handleRegistrarPagamento = async (pag, valor, obs, parcelas = []) => {
     const records = pag._records?.length > 1 ? pag._records : [pag];
     let remaining = valor;
     const dataStr = format(new Date(), "dd/MM/yyyy HH:mm");
@@ -605,7 +670,17 @@ export default function PagamentosClientes() {
       const toPay = Math.min(remaining, recSaldo);
       remaining -= toPay;
       const novoPago = (rec.valor_pago || 0) + toPay;
-      const novoHistorico = [...(rec.historico_pagamentos || []), { valor: toPay, data: dataStr, observacao: obs }];
+      const parcelasAgendadas = parcelas.map(p => ({
+        valor: p.valor,
+        data: format(new Date(p.data + 'T12:00:00'), 'dd/MM/yyyy'),
+        observacao: '📅 Parcela agendada',
+        agendada: true,
+      }));
+      const novoHistorico = [
+        ...(rec.historico_pagamentos || []),
+        { valor: toPay, data: dataStr, observacao: obs },
+        ...parcelasAgendadas,
+      ];
       const isQuitado = novoPago >= (rec.valor_total || 0) - 0.01;
       await updateMutation.mutateAsync({
         id: rec.id, data: {
