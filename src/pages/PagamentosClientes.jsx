@@ -14,7 +14,7 @@ import CompromissoClientePDF from '@/components/financeiro/CompromissoClientePDF
 import {
   Search, DollarSign, CheckCircle2, AlertCircle, Calendar,
   MessageCircle, Filter, X, Pencil, Tag,
-  Clock, History, Trash2, Eye
+  Clock, History, Trash2, Eye, Check
 } from 'lucide-react';
 
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -905,6 +905,23 @@ export default function PagamentosClientes() {
   // Todos os pendentes/parciais, ordenados por data mais próxima primeiro
   const dataCorte = new Date('2026-03-23T00:00:00');
 
+  // Serviços pagos da semana atual
+  const pagsPagos = useMemo(() => {
+    const filtrados = pagsFiltrados
+      .filter(p => {
+        if (p.status !== 'pago') return false;
+        if (!p.data_conclusao) return false;
+        try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
+        catch { return false; }
+      })
+      .sort((a, b) => {
+        const da = a.data_conclusao ? new Date(a.data_conclusao) : new Date(0);
+        const db = b.data_conclusao ? new Date(b.data_conclusao) : new Date(0);
+        return db - da;
+      });
+    return groupPagamentos(filtrados);
+  }, [pagsFiltrados, inicioSemana, fimSemana]);
+
   const pagsDebito = useMemo(() => {
     const filtrados = pagsFiltrados
       .filter(p => {
@@ -1066,6 +1083,28 @@ export default function PagamentosClientes() {
               emptyMsg="Nenhum pagamento pendente!"
             />
           </div>
+
+          {/* Serviços pagos da semana atual */}
+          {pagsPagos.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600" />
+                  Serviços Pagos desta Semana
+                </h2>
+              </div>
+              <TabelaPagamentos
+                lista={pagsPagos}
+                onPagar={setPagarModal}
+                onDefinirPreco={setPrecosModal}
+                onEditarValor={setEditarModal}
+                onHistorico={setHistoricoModal}
+                onDetalhes={setDetalhesModal}
+                onDelete={(id) => deleteMutation.mutate(id)}
+                emptyMsg="Nenhum serviço pago esta semana"
+              />
+            </div>
+          )}
         </div>
       )}
 
