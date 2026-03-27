@@ -876,7 +876,8 @@ export default function PagamentosClientes() {
       });
       
       const debitoTotal = debitosAtrasados.reduce((sum, p) => sum + ((p.valor_total || 0) - (p.valor_pago || 0)), 0);
-      
+
+      // Novo cliente sempre inicia com R$ 1.00 e status pendente para ADM editar
       createMutation.mutate({
         atendimento_id: a.id,
         servico_id: a.servico_id || '',
