@@ -562,9 +562,9 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
   return (
     <div className={`border rounded-lg transition-all ${expandido ? 'border-blue-300 bg-blue-50/30' : 'border-gray-200 hover:border-gray-300'}`}>
       {/* Linha principal compacta */}
-      <div onClick={() => setExpandido(!expandido)} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${expandido ? 'bg-white border-b border-blue-200' : 'hover:bg-gray-50/50'}`}>
-        {/* Avatar + Cliente */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div onClick={() => setExpandido(!expandido)} className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${expandido ? 'bg-white border-b border-blue-200' : 'hover:bg-gray-50/50'}`}>
+        {/* Avatar + Cliente - mobile stacked */}
+        <div className="flex items-center gap-2 flex-1 min-w-0 w-full sm:w-auto">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${isPago ? 'bg-green-500' : isParcial ? 'bg-amber-500' : 'bg-blue-500'}`}>
             {pag.cliente_nome?.charAt(0).toUpperCase() || '?'}
           </div>
@@ -574,25 +574,29 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
           </div>
         </div>
 
-        {/* Valor */}
-        <div className="text-right flex-shrink-0">
-          <p className={`font-semibold text-sm ${pag.valor_total === 0 ? 'text-amber-500' : 'text-gray-800'}`}>
-            {pag.valor_total === 0 ? 'A def.' : formatCurrency(pag.valor_total).replace('R$', '').trim()}
-          </p>
+        {/* Info row mobile */}
+        <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+          {/* Valor */}
+          <div className="text-left flex-shrink-0">
+            <p className="text-xs text-gray-400">Valor</p>
+            <p className={`font-semibold text-sm ${pag.valor_total === 0 ? 'text-amber-500' : 'text-gray-800'}`}>
+              {pag.valor_total === 0 ? 'A def.' : formatCurrency(pag.valor_total).replace('R$', '').trim()}
+            </p>
+          </div>
+
+          {/* Status badge */}
+          <div className="flex-shrink-0">
+            {isPago
+              ? <Badge className="bg-green-100 text-green-700 border border-green-200 text-xs">✓ Pago</Badge>
+              : isParcial
+              ? <Badge className="bg-amber-100 text-amber-700 border border-amber-200 text-xs">Parcial</Badge>
+              : temPrecoDefinido ? <Badge className="bg-red-100 text-red-700 border border-red-200 text-xs">Pendente</Badge> : <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-200 text-xs">Sem preço</Badge>
+            }
+          </div>
         </div>
 
-        {/* Status badge */}
-        <div className="flex-shrink-0">
-          {isPago
-            ? <Badge className="bg-green-100 text-green-700 border border-green-200 text-xs">✓ Pago</Badge>
-            : isParcial
-            ? <Badge className="bg-amber-100 text-amber-700 border border-amber-200 text-xs">Parcial</Badge>
-            : temPrecoDefinido ? <Badge className="bg-red-100 text-red-700 border border-red-200 text-xs">Pendente</Badge> : <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-200 text-xs">Sem preço</Badge>
-          }
-        </div>
-
-        {/* Progresso */}
-        <div className="w-16 flex-shrink-0">
+        {/* Progress row mobile */}
+        <div className="w-full sm:w-16 flex-shrink-0">
           <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div className={`h-1.5 rounded-full transition-all ${isPago ? 'bg-green-500' : isParcial ? 'bg-amber-500' : 'bg-red-400'}`}
               style={{ width: `${pct}%` }} />
@@ -600,64 +604,64 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
           <p className="text-xs text-gray-400 text-right mt-0.5">{pct}%</p>
         </div>
 
-        {/* Botões ação compactos */}
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => onDetalhes(pag)} className="p-1.5 rounded text-gray-400 hover:text-purple-600 hover:bg-purple-50" title="Detalhes">
+        {/* Botões ação - scrollable no mobile */}
+        <div className="flex items-center gap-1 flex-shrink-0 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => onDetalhes(pag)} className="p-1.5 rounded text-gray-400 hover:text-purple-600 hover:bg-purple-50 flex-shrink-0" title="Detalhes">
             <Eye className="w-4 h-4" />
           </button>
-          <button onClick={() => onHistorico(pag)} className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50" title="Histórico">
+          <button onClick={() => onHistorico(pag)} className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex-shrink-0" title="Histórico">
             <History className="w-4 h-4" />
           </button>
           {!isPago && (
             <>
-              <button onClick={() => onDefinirPreco(pag)} className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold">
+              <button onClick={() => onDefinirPreco(pag)} className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold whitespace-nowrap">
                 Preço
               </button>
-              <button onClick={() => onPagar(pag)} className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-semibold">
+              <button onClick={() => onPagar(pag)} className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-semibold whitespace-nowrap">
                 Pagar
               </button>
             </>
           )}
-          <button onClick={() => onDelete(pag.id)} className="p-1.5 rounded text-red-500 hover:bg-red-50" title="Excluir">
+          <button onClick={() => onDelete(pag.id)} className="p-1.5 rounded text-red-500 hover:bg-red-50 flex-shrink-0" title="Excluir">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Painel expandível com detalhes */}
+      {/* Painel expandível com detalhes - mobile otimizado */}
       {expandido && (
-        <div className="px-4 py-3 bg-white border-t border-blue-200 space-y-3">
+        <div className="px-4 py-3 bg-white border-t border-blue-200 space-y-2 text-sm">
           {/* Detalhes do cliente */}
           {pag.telefone && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Contato:</span>
-              <a href={getWhatsApp(pag.telefone)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
-                <MessageCircle className="w-3.5 h-3.5" />
-                {formatPhone(pag.telefone)}
-              </a>
-            </div>
+           <div className="flex items-center justify-between flex-wrap gap-2">
+             <span className="text-gray-600">Contato:</span>
+             <a href={getWhatsApp(pag.telefone)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
+               <MessageCircle className="w-3.5 h-3.5" />
+               {formatPhone(pag.telefone)}
+             </a>
+           </div>
           )}
           {pag.equipe_nome && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Equipe:</span>
-              <span className="text-gray-800 font-medium">👷 {pag.equipe_nome}</span>
-            </div>
+           <div className="flex items-center justify-between flex-wrap gap-2">
+             <span className="text-gray-600">Equipe:</span>
+             <span className="text-gray-800 font-medium">👷 {pag.equipe_nome}</span>
+           </div>
           )}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Data:</span>
-            <span className="text-gray-800 font-medium">
-              {pag.data_conclusao ? format(parseISO(pag.data_conclusao), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
-            </span>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+           <span className="text-gray-600">Data:</span>
+           <span className="text-gray-800 font-medium text-xs">
+             {pag.data_conclusao ? format(parseISO(pag.data_conclusao), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
+           </span>
           </div>
           {pag._records && pag._records.length > 1 && (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-gray-600">
               <span className="font-medium">Serviços: {pag._records.length} registros</span>
             </div>
           )}
           {!isPago && temPrecoDefinido && (
-            <div className="flex items-center justify-between text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
-              <span className="text-red-700 font-semibold">Saldo devido:</span>
-              <span className="text-red-700 font-bold text-base">{formatCurrency(saldo)}</span>
+            <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-3 py-2">
+              <span className="text-red-700 font-semibold text-xs">Saldo devido:</span>
+              <span className="text-red-700 font-bold">{formatCurrency(saldo)}</span>
             </div>
           )}
           {pag._records?.some(r => r.valor_total === 0) && (
@@ -1015,51 +1019,51 @@ function PagamentosClientesContent() {
 
   return (
     <div className="space-y-5">
-      {/* Header com resumo */}
-      <div className="rounded-2xl p-5" style={{ backgroundColor: '#1e3a8a' }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header com resumo - mobile otimizado */}
+      <div className="rounded-2xl p-4 sm:p-5" style={{ backgroundColor: '#1e3a8a' }}>
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Pagamentos dos Clientes</h1>
-            <p className="text-blue-200/80 text-sm mt-1 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
+            <h1 className="text-lg sm:text-2xl font-bold text-white">Pagamentos dos Clientes</h1>
+            <p className="text-blue-200/80 text-xs sm:text-sm mt-1 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
               Semana: {format(inicioSemana, "dd/MM", { locale: ptBR })} – {format(fimSemana, "dd/MM/yyyy", { locale: ptBR })}
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white/10 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-white font-bold text-lg">{formatCurrency(totalMes).replace('R$', '').trim()}</p>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="bg-white/10 rounded-lg px-2 py-2.5 sm:px-3 text-center">
+              <p className="text-white font-bold text-sm sm:text-lg">{formatCurrency(totalMes).replace('R$', '').trim()}</p>
               <p className="text-blue-200 text-xs">Faturado no Mês</p>
             </div>
-            <div className="bg-green-500/20 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-green-300 font-bold text-lg">{formatCurrency(totalPagoMes).replace('R$', '').trim()}</p>
+            <div className="bg-green-500/20 rounded-lg px-2 py-2.5 sm:px-3 text-center">
+              <p className="text-green-300 font-bold text-sm sm:text-lg">{formatCurrency(totalPagoMes).replace('R$', '').trim()}</p>
               <p className="text-blue-200 text-xs">Recebido no Mês</p>
             </div>
-            <div className="bg-white/10 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-white font-bold text-lg">{formatCurrency(totalSemana).replace('R$', '').trim()}</p>
+            <div className="bg-white/10 rounded-lg px-2 py-2.5 sm:px-3 text-center">
+              <p className="text-white font-bold text-sm sm:text-lg">{formatCurrency(totalSemana).replace('R$', '').trim()}</p>
               <p className="text-blue-200 text-xs">Faturado na Semana</p>
             </div>
-            <div className="bg-green-500/20 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-green-300 font-bold text-lg">{formatCurrency(totalPagoSemana).replace('R$', '').trim()}</p>
+            <div className="bg-green-500/20 rounded-lg px-2 py-2.5 sm:px-3 text-center">
+              <p className="text-green-300 font-bold text-sm sm:text-lg">{formatCurrency(totalPagoSemana).replace('R$', '').trim()}</p>
               <p className="text-blue-200 text-xs">Recebido na Semana</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Busca + Abas */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      {/* Busca + Abas - mobile otimizado */}
+      <div className="flex flex-col gap-3">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input placeholder="Buscar cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 h-10 bg-white border-gray-200" />
+          <Input placeholder="Buscar cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 h-10 bg-white border-gray-200 text-sm" />
           {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="w-4 h-4 text-gray-400" /></button>}
         </div>
-        <Button onClick={() => setAbrirRelatorio(true)} variant="outline" className="gap-2">
+        <Button onClick={() => setAbrirRelatorio(true)} variant="outline" className="gap-2 w-full sm:w-auto">
           📄 Gerar PDF
         </Button>
-        <div className="flex border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        <div className="flex gap-2 border border-gray-200 rounded-xl overflow-x-auto bg-white shadow-sm">
           {abas.map(a => (
             <button key={a.key} onClick={() => setAbaAtiva(a.key)}
-              className={`flex-1 px-4 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${abaAtiva === a.key ? 'text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+              className={`flex-1 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 transition-colors whitespace-nowrap ${abaAtiva === a.key ? 'text-white' : 'text-gray-500 hover:bg-gray-50'}`}
               style={abaAtiva === a.key ? { backgroundColor: '#1e3a8a' } : {}}>
               {a.label}
               {a.count !== null && (
@@ -1163,19 +1167,19 @@ function PagamentosClientesContent() {
             )}
           </div>
 
-          {/* Resumo */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Total Faturado', value: totalRel, color: 'border-gray-200 bg-white text-gray-800' },
-              { label: 'Total Recebido', value: totalPagoRel, color: 'border-green-200 bg-green-50 text-green-700' },
-              { label: 'Total em Débito', value: totalRel - totalPagoRel, color: 'border-red-200 bg-red-50 text-red-700' },
-            ].map(item => (
-              <div key={item.label} className={`rounded-xl border p-4 text-center ${item.color}`}>
-                <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-                <p className="font-bold text-base">{formatCurrency(item.value)}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{pagsRelatorio.length} registros</p>
-              </div>
-            ))}
+          {/* Resumo - mobile otimizado */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+           {[
+             { label: 'Total Faturado', value: totalRel, color: 'border-gray-200 bg-white text-gray-800' },
+             { label: 'Total Recebido', value: totalPagoRel, color: 'border-green-200 bg-green-50 text-green-700' },
+             { label: 'Total em Débito', value: totalRel - totalPagoRel, color: 'border-red-200 bg-red-50 text-red-700' },
+           ].map(item => (
+             <div key={item.label} className={`rounded-lg sm:rounded-xl border p-3 sm:p-4 text-center ${item.color}`}>
+               <p className="text-xs text-gray-500 mb-1">{item.label}</p>
+               <p className="font-bold text-sm sm:text-base">{formatCurrency(item.value)}</p>
+               <p className="text-xs text-gray-400 mt-0.5">{pagsRelatorio.length} registros</p>
+             </div>
+           ))}
           </div>
 
           <TabelaPagamentos
