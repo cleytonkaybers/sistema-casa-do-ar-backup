@@ -1016,6 +1016,9 @@ function PagamentosClientesContent() {
     for (const rec of records) {
       await updateMutation.mutateAsync({ id: rec.id, data: { data_pagamento_agendado: novaData, status: 'agendado' } });
     }
+    // Força recarregamento para garantir que o status seja atualizado
+    await new Promise(resolve => setTimeout(resolve, 500));
+    queryClient.invalidateQueries({ queryKey: ['pagamentos-clientes'] });
     toast.success('📅 Data de pagamento agendada!');
   };
 
@@ -1042,12 +1045,12 @@ function PagamentosClientesContent() {
   const pagsSemPreco = useMemo(() => {
     const filtrados = pagsFiltrados
       .filter(p => {
-        if (p.status === 'pago') return false;
-        // Incluir: sem preço OU (tem preço mas é atrasado e não tem data agendada)
+        if (p.status === 'pago' || p.status === 'agendado') return false; // Excluir agendados daqui
+        // Incluir: sem preço OU (tem preço mas é atrasado)
         const temPreco = p.valor_total > 0;
         const isAtrasado = p.data_conclusao ? !isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }) : false;
         const naoAgendado = !p.data_pagamento_agendado;
-        return !temPreco || (isAtrasado && naoAgendado && p.status !== 'agendado');
+        return !temPreco || (isAtrasado && naoAgendado);
       })
       .sort((a, b) => {
         const da = a.data_conclusao ? new Date(a.data_conclusao) : new Date(0);
@@ -1062,7 +1065,8 @@ function PagamentosClientesContent() {
     const filtrados = pagsFiltrados
       .filter(p => {
         if (p.status === 'pago') return false;
-        return p.status === 'agendado' || p.data_pagamento_agendado;
+        // Filtrar APENAS por status 'agendado' para garantir que apareça após agendamento
+        return p.status === 'agendado';
       })
       .sort((a, b) => {
         const da = a.data_pagamento_agendado ? new Date(a.data_pagamento_agendado) : new Date(0);
@@ -1139,13 +1143,7 @@ function PagamentosClientesContent() {
     { key: 'relatorio', label: 'Histórico / Relatórios', count: null },
   ];
 
-  // Debug: verificar se agendamento está sendo detectado
-  useEffect(() => {
-    const comAgendamento = pagamentos.filter(p => p.status === 'agendado' || p.data_pagamento_agendado);
-    if (comAgendamento.length > 0) {
-      console.log('Pagamentos com agendamento:', comAgendamento);
-    }
-  }, [pagamentos]);
+
 
   return (
     <div className="space-y-5">
