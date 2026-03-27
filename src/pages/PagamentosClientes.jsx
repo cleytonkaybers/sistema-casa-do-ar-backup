@@ -11,8 +11,8 @@ import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInter
 import { ptBR } from 'date-fns/locale';
 import {
   Search, DollarSign, CheckCircle2, AlertCircle, Calendar,
-  MessageCircle, Filter, X, ChevronDown, ChevronUp, Pencil,
-  Clock, History, TrendingUp
+  MessageCircle, Filter, X, Pencil,
+  Clock, History, Trash2
 } from 'lucide-react';
 
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -155,7 +155,7 @@ function HistoricoModal({ open, onClose, pagamento }) {
 }
 
 // Linha da tabela
-function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico }) {
+function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete }) {
   const saldo = (pag.valor_total || 0) - (pag.valor_pago || 0);
   const isPago = pag.status === 'pago';
   const isParcial = pag.status === 'parcial';
@@ -241,13 +241,16 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico }) {
               Pagar
             </button>
           )}
+          <button onClick={() => onDelete(pag.id)} className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors" title="Excluir">
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </td>
     </tr>
   );
 }
 
-function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, emptyMsg }) {
+function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, emptyMsg }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Desktop table */}
@@ -270,7 +273,7 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, emptyMsg
                 <p className="text-sm">{emptyMsg}</p>
               </td></tr>
             ) : lista.map(p => (
-              <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} />
+              <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} />
             ))}
           </tbody>
         </table>
@@ -321,6 +324,9 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, emptyMsg
                 )}
                 <button onClick={() => onHistorico(p)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 border border-gray-200">
                   <History className="w-4 h-4" />
+                </button>
+                <button onClick={() => onDelete(p.id)} className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 border border-gray-200">
+                  <Trash2 className="w-4 h-4" />
                 </button>
                 {!isPago && (
                   <>
@@ -382,29 +388,27 @@ export default function PagamentosClientes() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pagamentos-clientes'] }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.PagamentoCliente.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pagamentos-clientes'] });
+      toast.success('Registro removido!');
+    },
+  });
+
   const hoje = new Date();
   const inicioSemana = startOfWeek(hoje, { weekStartsOn: 0 });
   const fimSemana = endOfWeek(hoje, { weekStartsOn: 0 });
 
-  // Sincronizar apenas serviços/atendimentos DA SEMANA ATUAL
+  // Sincronizar apenas ATENDIMENTOS (serviços concluídos) DA SEMANA ATUAL
+  // Um registro por atendimento — sem duplicar por usuário/equipe
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !atendimentos.length) return;
     const idsRegistrados = new Set(pagamentos.map(p => p.atendimento_id).filter(Boolean));
-    const servicosIdsRegistrados = new Set(pagamentos.map(p => p.servico_id).filter(Boolean));
 
-    const atendimentosSemana = atendimentos.filter(a => {
+    const novos = atendimentos.filter(a => {
       if (idsRegistrados.has(a.id)) return false;
-      if (!a.data_conclusao && !a.created_date) return false;
-      try {
-        const data = parseISO(a.data_conclusao || a.created_date);
-        return isWithinInterval(data, { start: inicioSemana, end: fimSemana });
-      } catch { return false; }
-    });
-
-    const servicosSemana = servicosConcluidos.filter(s => {
-      if (servicosIdsRegistrados.has(s.id)) return false;
-      if (atendimentos.some(a => a.servico_id === s.id)) return false;
-      const dataRef = s.data_conclusao || s.updated_date || s.created_date;
+      const dataRef = a.data_conclusao || a.created_date;
       if (!dataRef) return false;
       try {
         const data = parseISO(dataRef);
@@ -412,26 +416,22 @@ export default function PagamentosClientes() {
       } catch { return false; }
     });
 
-    atendimentosSemana.forEach(a => {
+    novos.forEach(a => {
       createMutation.mutate({
-        atendimento_id: a.id, servico_id: a.servico_id || '',
-        cliente_nome: a.cliente_nome || '', telefone: a.telefone || '',
-        tipo_servico: a.tipo_servico || '', data_conclusao: a.data_conclusao || a.created_date,
-        valor_total: a.valor || 0, valor_pago: 0, status: 'pendente',
-        equipe_nome: a.equipe_nome || '', historico_pagamentos: [],
+        atendimento_id: a.id,
+        servico_id: a.servico_id || '',
+        cliente_nome: a.cliente_nome || '',
+        telefone: a.telefone || '',
+        tipo_servico: a.tipo_servico || '',
+        data_conclusao: a.data_conclusao || a.created_date,
+        valor_total: a.valor || 0,
+        valor_pago: 0,
+        status: 'pendente',
+        equipe_nome: a.equipe_nome || '',
+        historico_pagamentos: [],
       });
     });
-
-    servicosSemana.forEach(s => {
-      createMutation.mutate({
-        atendimento_id: '', servico_id: s.id,
-        cliente_nome: s.cliente_nome || '', telefone: s.telefone || '',
-        tipo_servico: s.tipo_servico || '', data_conclusao: s.data_conclusao || s.updated_date || s.created_date,
-        valor_total: s.valor || 0, valor_pago: 0, status: 'pendente',
-        equipe_nome: s.equipe_nome || '', historico_pagamentos: [],
-      });
-    });
-  }, [atendimentos, servicosConcluidos, pagamentos, isLoading]);
+  }, [atendimentos, pagamentos, isLoading]);
 
   const handleRegistrarPagamento = async (pag, valor, obs) => {
     const novoPago = (pag.valor_pago || 0) + valor;
@@ -556,6 +556,7 @@ export default function PagamentosClientes() {
           onPagar={setPagarModal}
           onEditarValor={setEditarModal}
           onHistorico={setHistoricoModal}
+          onDelete={(id) => deleteMutation.mutate(id)}
           emptyMsg="Nenhum serviço concluído esta semana"
         />
       )}
@@ -574,6 +575,7 @@ export default function PagamentosClientes() {
             onPagar={setPagarModal}
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
+            onDelete={(id) => deleteMutation.mutate(id)}
             emptyMsg="Nenhum cliente em débito!"
           />
         </div>
@@ -630,6 +632,7 @@ export default function PagamentosClientes() {
             onPagar={setPagarModal}
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
+            onDelete={(id) => deleteMutation.mutate(id)}
             emptyMsg="Nenhum registro no período selecionado"
           />
         </div>
