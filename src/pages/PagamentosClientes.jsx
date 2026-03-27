@@ -235,29 +235,15 @@ function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Registrar Pagamento</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
-          {/* Resumo do cliente e preços salvos (readonly) */}
+          {/* Resumo do cliente */}
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
             <p className="font-bold text-gray-800 text-base mb-3">{pagamento?.cliente_nome}</p>
-            <div className="space-y-1.5 mb-3">
-              {servicosGrupos.map(g => {
-                const preco = parseFloat((precosGrupo[g.tipo] || '').replace(',', '.')) || 0;
-                return (
-                  <div key={g.tipo} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{g.qtd}</span>
-                    <span className="flex-1 text-sm text-gray-700 font-medium">{g.tipo}</span>
-                    <span className={`font-semibold text-sm ${preco === 0 ? 'text-amber-500' : 'text-gray-800'}`}>
-                      {preco === 0 ? <span className="text-xs text-amber-600">⚠️ Sem preço</span> : formatCurrency(preco * g.qtd)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
             {!todosPrecosDefinidos && (
-              <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-1.5 text-xs text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
                 <AlertCircle className="w-3.5 h-3.5" /> Defina os preços usando o botão 🏷️ Preços antes de pagar
               </div>
             )}
-            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200 text-center mt-3">
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200 text-center">
               <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 text-sm">{totalDefinido > 0 ? formatCurrency(totalDefinido) : <span className="text-amber-500 text-xs">A definir</span>}</p></div>
               <div><p className="text-xs text-gray-400">Pago</p><p className="font-bold text-green-600 text-sm">{formatCurrency(totalPago)}</p></div>
               <div><p className="text-xs text-gray-400">Saldo</p><p className="font-bold text-red-600 text-sm">{formatCurrency(Math.max(0, saldo))}</p></div>
