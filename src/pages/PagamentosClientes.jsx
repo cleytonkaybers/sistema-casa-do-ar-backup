@@ -407,9 +407,12 @@ export default function PagamentosClientes() {
     if (isLoading || !atendimentos.length) return;
     const idsRegistrados = new Set(pagamentos.map(p => p.atendimento_id).filter(Boolean));
 
+    const TIPOS_IGNORADOS = ['Ver defeito', 'Outro tipo de serviço'];
+
     const novos = atendimentos.filter(a => {
       if (idsRegistrados.has(a.id)) return false;
-      if (criandoIds.current.has(a.id)) return false; // já está sendo criado
+      if (criandoIds.current.has(a.id)) return false;
+      if (TIPOS_IGNORADOS.includes(a.tipo_servico)) return false; // ignorar tipos sem cobrança
       const dataRef = a.data_conclusao || a.created_date;
       if (!dataRef) return false;
       try {
