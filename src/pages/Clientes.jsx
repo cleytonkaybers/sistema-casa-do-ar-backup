@@ -172,17 +172,20 @@ export default function Clientes() {
     const searchTerms = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const searchNumeros = searchTerm.replace(/\D/g, '');
     
-    return clientes.filter(cliente => {
+    const results = clientes.filter(cliente => {
       const nomeLower = (cliente.nome || '').toLowerCase();
       const telefoneLimpo = (cliente.telefone || '').replace(/\D/g, '');
       
       // Match se contém a busca completa OU se contém qualquer uma das palavras
       const matchNome = nomeLower.includes(searchTerm.toLowerCase()) || 
                         searchTerms.some(term => nomeLower.includes(term));
-      const matchTelefone = telefoneLimpo.includes(searchNumeros);
+      const matchTelefone = searchNumeros && telefoneLimpo.includes(searchNumeros);
       
       return matchNome || matchTelefone;
     });
+    
+    console.log('Busca:', searchTerm, '| Resultados:', results.length, 'clientes');
+    return results;
   }, [clientes, searchTerm]);
 
   const handleSave = (data) => {
