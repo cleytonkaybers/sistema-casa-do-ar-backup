@@ -462,13 +462,24 @@ export default function PagamentosClientes() {
     pagamentos.filter(p => !searchTerm || p.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()))
   , [pagamentos, searchTerm]);
 
+  // Semana atual SEM pagos (saem do card principal)
   const pagsSemana = useMemo(() => pagsFiltrados.filter(p => {
+    if (p.status === 'pago') return false;
     if (!p.data_conclusao) return false;
     try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
     catch { return false; }
   }), [pagsFiltrados, inicioSemana, fimSemana]);
 
-  const pagsDebito = useMemo(() => pagsFiltrados.filter(p => p.status !== 'pago'), [pagsFiltrados]);
+  // Todos os pendentes/parciais, ordenados por data mais próxima primeiro
+  const pagsDebito = useMemo(() =>
+    pagsFiltrados
+      .filter(p => p.status !== 'pago')
+      .sort((a, b) => {
+        const da = a.data_conclusao ? new Date(a.data_conclusao) : new Date(0);
+        const db = b.data_conclusao ? new Date(b.data_conclusao) : new Date(0);
+        return db - da; // mais recente primeiro (mais próximo de hoje)
+      })
+  , [pagsFiltrados]);
 
   const pagsRelatorio = useMemo(() => {
     let inicio, fim;
@@ -496,8 +507,7 @@ export default function PagamentosClientes() {
 
   const abas = [
     { key: 'semana', label: 'Semana Atual', count: pagsSemana.length },
-    { key: 'debitos', label: 'Em Débito', count: pagsDebito.length },
-    { key: 'relatorio', label: 'Relatórios', count: null },
+    { key: 'relatorio', label: 'Histórico / Relatórios', count: null },
   ];
 
   return (
@@ -554,33 +564,35 @@ export default function PagamentosClientes() {
 
       {/* Aba: Semana Atual */}
       {abaAtiva === 'semana' && (
-        <TabelaPagamentos
-          lista={pagsSemana}
-          onPagar={setPagarModal}
-          onEditarValor={setEditarModal}
-          onHistorico={setHistoricoModal}
-          onDelete={(id) => deleteMutation.mutate(id)}
-          emptyMsg="Nenhum serviço concluído esta semana"
-        />
-      )}
-
-      {/* Aba: Em Débito */}
-      {abaAtiva === 'debitos' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <p className="text-sm text-red-600 font-semibold flex items-center gap-1.5">
-              <AlertCircle className="w-4 h-4" /> Todos os clientes com saldo devedor
-            </p>
-            <p className="text-sm font-bold text-red-700">{formatCurrency(totalDebitoGeral)} total</p>
-          </div>
+        <div className="space-y-5">
+          {/* Serviços a receber esta semana */}
           <TabelaPagamentos
-            lista={pagsDebito}
+            lista={pagsSemana}
             onPagar={setPagarModal}
             onEditarValor={setEditarModal}
             onHistorico={setHistoricoModal}
             onDelete={(id) => deleteMutation.mutate(id)}
-            emptyMsg="Nenhum cliente em débito!"
+            emptyMsg="Nenhum serviço pendente esta semana"
           />
+
+          {/* Seção inferior: todos os pendentes ordenados por proximidade */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+                Pagamentos Pendentes (mais recentes primeiro)
+              </h2>
+              <span className="text-sm font-bold text-red-600">{formatCurrency(totalDebitoGeral)} em aberto</span>
+            </div>
+            <TabelaPagamentos
+              lista={pagsDebito}
+              onPagar={setPagarModal}
+              onEditarValor={setEditarModal}
+              onHistorico={setHistoricoModal}
+              onDelete={(id) => deleteMutation.mutate(id)}
+              emptyMsg="Nenhum pagamento pendente!"
+            />
+          </div>
         </div>
       )}
 
