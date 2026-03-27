@@ -28,6 +28,28 @@ const getWhatsApp = (phone) => {
   return `https://wa.me/55${n}`;
 };
 
+// Agrupa pagamentos com mesmo cliente + tipo de serviço
+function groupPagamentos(lista) {
+  const groups = {};
+  lista.forEach(p => {
+    const key = `${(p.cliente_nome || '').trim().toLowerCase()}|${(p.tipo_servico || '').trim().toLowerCase()}`;
+    if (!groups[key]) {
+      groups[key] = { ...p, _records: [p] };
+    } else {
+      groups[key]._records.push(p);
+      groups[key].valor_total = (groups[key].valor_total || 0) + (p.valor_total || 0);
+      groups[key].valor_pago = (groups[key].valor_pago || 0) + (p.valor_pago || 0);
+    }
+  });
+  return Object.values(groups).map(g => {
+    const saldo = (g.valor_total || 0) - (g.valor_pago || 0);
+    let status = 'pendente';
+    if (saldo <= 0.01) status = 'pago';
+    else if ((g.valor_pago || 0) > 0) status = 'parcial';
+    return { ...g, status };
+  });
+}
+
 function PagamentoModal({ open, onClose, pagamento, onSave }) {
   const [valor, setValor] = useState('');
   const [obs, setObs] = useState('');
@@ -122,31 +144,60 @@ function EditarValorModal({ open, onClose, pagamento, onSave }) {
 }
 
 function HistoricoModal({ open, onClose, pagamento }) {
+  const records = pagamento?._records || (pagamento ? [pagamento] : []);
+  // Merge historico de todos os records
+  const todosPagamentos = records.flatMap(r => (r.historico_pagamentos || []).map(h => ({ ...h, _equipe: r.equipe_nome }))).sort((a, b) => new Date(a.data) - new Date(b.data));
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Histórico de Pagamentos</DialogTitle></DialogHeader>
-        <div className="space-y-2 py-2">
-          <p className="text-sm font-semibold text-gray-700">{pagamento?.cliente_nome} — {pagamento?.tipo_servico}</p>
-          {!pagamento?.historico_pagamentos?.length ? (
-            <p className="text-sm text-gray-400 text-center py-6">Nenhum pagamento registrado</p>
-          ) : (
-            <div className="space-y-2 mt-3">
-              {pagamento.historico_pagamentos.map((h, i) => (
-                <div key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
-                  <div>
-                    <p className="text-xs font-medium text-gray-700">{h.data}</p>
-                    {h.observacao && <p className="text-xs text-gray-400">{h.observacao}</p>}
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Histórico — {pagamento?.cliente_nome}</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-gray-500">{pagamento?.tipo_servico}</p>
+
+          {/* Serviços realizados */}
+          {records.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Serviços Realizados ({records.length})</p>
+              <div className="space-y-1.5">
+                {records.map((r, i) => (
+                  <div key={r.id || i} className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-700">
+                        {r.data_conclusao ? format(parseISO(r.data_conclusao), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '—'}
+                      </p>
+                      {r.equipe_nome && <p className="text-xs text-blue-600">👷 {r.equipe_nome}</p>}
+                    </div>
+                    <span className="font-semibold text-gray-700 text-sm">{formatCurrency(r.valor_total)}</span>
                   </div>
-                  <span className="font-bold text-green-600">{formatCurrency(h.valor)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between font-semibold text-sm px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
-                <span>Total pago</span>
-                <span className="text-green-700">{formatCurrency(pagamento?.valor_pago)}</span>
+                ))}
               </div>
             </div>
           )}
+
+          {/* Histórico de pagamentos */}
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Pagamentos Registrados</p>
+            {!todosPagamentos.length ? (
+              <p className="text-sm text-gray-400 text-center py-4">Nenhum pagamento registrado</p>
+            ) : (
+              <div className="space-y-2">
+                {todosPagamentos.map((h, i) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5">
+                    <div>
+                      <p className="text-xs font-medium text-gray-700">{h.data}</p>
+                      {h.observacao && <p className="text-xs text-gray-400">{h.observacao}</p>}
+                    </div>
+                    <span className="font-bold text-green-600">{formatCurrency(h.valor)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between font-semibold text-sm px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <span>Total pago</span>
+                  <span className="text-green-700">{formatCurrency(pagamento?.valor_pago)}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <DialogFooter><Button variant="outline" onClick={onClose}>Fechar</Button></DialogFooter>
       </DialogContent>
@@ -178,7 +229,12 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete }) {
 
       {/* Serviço */}
       <td className="px-4 py-3">
-        <p className="text-sm text-gray-700 leading-tight">{pag.tipo_servico}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-gray-700 leading-tight">{pag.tipo_servico}</p>
+          {pag._records?.length > 1 && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">{pag._records.length}x</span>
+          )}
+        </div>
         <p className="text-xs text-gray-400 mt-0.5">
           {pag.data_conclusao ? format(parseISO(pag.data_conclusao), "dd/MM/yy HH:mm", { locale: ptBR }) : '-'}
         </p>
@@ -440,20 +496,29 @@ export default function PagamentosClientes() {
   }, [atendimentos, pagamentos, isLoading]);
 
   const handleRegistrarPagamento = async (pag, valor, obs) => {
-    const novoPago = (pag.valor_pago || 0) + valor;
-    const novoHistorico = [...(pag.historico_pagamentos || []), {
-      valor, data: format(new Date(), "dd/MM/yyyy HH:mm"), observacao: obs,
-    }];
-    const isQuitado = novoPago >= (pag.valor_total || 0) - 0.01;
-    await updateMutation.mutateAsync({
-      id: pag.id, data: {
-        valor_pago: novoPago,
-        status: isQuitado ? 'pago' : 'parcial',
-        historico_pagamentos: novoHistorico,
-        data_pagamento_completo: isQuitado ? new Date().toISOString() : undefined,
-      },
-    });
-    toast.success(isQuitado ? '✅ Pagamento quitado!' : 'Pagamento parcial registrado!');
+    const records = pag._records?.length > 1 ? pag._records : [pag];
+    let remaining = valor;
+    const dataStr = format(new Date(), "dd/MM/yyyy HH:mm");
+
+    for (const rec of records) {
+      if (remaining <= 0.01) break;
+      const recSaldo = (rec.valor_total || 0) - (rec.valor_pago || 0);
+      if (recSaldo <= 0.01) continue;
+      const toPay = Math.min(remaining, recSaldo);
+      remaining -= toPay;
+      const novoPago = (rec.valor_pago || 0) + toPay;
+      const novoHistorico = [...(rec.historico_pagamentos || []), { valor: toPay, data: dataStr, observacao: obs }];
+      const isQuitado = novoPago >= (rec.valor_total || 0) - 0.01;
+      await updateMutation.mutateAsync({
+        id: rec.id, data: {
+          valor_pago: novoPago,
+          status: isQuitado ? 'pago' : 'parcial',
+          historico_pagamentos: novoHistorico,
+          data_pagamento_completo: isQuitado ? new Date().toISOString() : undefined,
+        },
+      });
+    }
+    toast.success('✅ Pagamento registrado!');
   };
 
   const handleEditarValor = async (pag, novoValor) => {
@@ -466,23 +531,27 @@ export default function PagamentosClientes() {
   , [pagamentos, searchTerm]);
 
   // Semana atual SEM pagos (saem do card principal)
-  const pagsSemana = useMemo(() => pagsFiltrados.filter(p => {
-    if (p.status === 'pago') return false;
-    if (!p.data_conclusao) return false;
-    try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
-    catch { return false; }
-  }), [pagsFiltrados, inicioSemana, fimSemana]);
+  const pagsSemana = useMemo(() => {
+    const filtrados = pagsFiltrados.filter(p => {
+      if (p.status === 'pago') return false;
+      if (!p.data_conclusao) return false;
+      try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
+      catch { return false; }
+    });
+    return groupPagamentos(filtrados);
+  }, [pagsFiltrados, inicioSemana, fimSemana]);
 
   // Todos os pendentes/parciais, ordenados por data mais próxima primeiro
-  const pagsDebito = useMemo(() =>
-    pagsFiltrados
+  const pagsDebito = useMemo(() => {
+    const filtrados = pagsFiltrados
       .filter(p => p.status !== 'pago')
       .sort((a, b) => {
         const da = a.data_conclusao ? new Date(a.data_conclusao) : new Date(0);
         const db = b.data_conclusao ? new Date(b.data_conclusao) : new Date(0);
-        return db - da; // mais recente primeiro (mais próximo de hoje)
-      })
-  , [pagsFiltrados]);
+        return db - da;
+      });
+    return groupPagamentos(filtrados);
+  }, [pagsFiltrados]);
 
   const pagsRelatorio = useMemo(() => {
     let inicio, fim;
