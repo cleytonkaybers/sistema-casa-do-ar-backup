@@ -78,7 +78,11 @@ export default function RelatorioClientesPagamentoModal({ isOpen, onClose, pagam
         doc.setTextColor(0, 0, 0);
         data.forEach((row, idx) => {
           if (y > pageHeight - 20) { doc.addPage(); y = 10; }
-          doc.setFillColor(idx % 2 === 0 ? 255, 255, 255 : 245, 245, 245);
+          if (idx % 2 === 0) {
+            doc.setFillColor(255, 255, 255);
+          } else {
+            doc.setFillColor(245, 245, 245);
+          }
           doc.rect(10, y - rowHeight + 1, pageWidth - 20, rowHeight, 'F');
           row.forEach((cell, i) => doc.text(String(cell), 10 + colWidths.slice(0, i).reduce((a, b) => a + b, 0) + 2, y + 1, { maxWidth: colWidths[i] - 4 }));
           y += rowHeight;
