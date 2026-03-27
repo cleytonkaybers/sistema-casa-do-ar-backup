@@ -1064,9 +1064,9 @@ function PagamentosClientesContent() {
         if (!p.data_conclusao) return false;
         try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
         catch { return false; }
-      })
-      .sort((a, b) => (statusOrder[a.status] || 3) - (statusOrder[b.status] || 3));
-    return groupPagamentos(filtrados);
+      });
+    const agrupados = groupPagamentos(filtrados);
+    return agrupados.sort((a, b) => (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4));
   }, [pagsFiltrados, inicioSemana, fimSemana]);
 
   // 2. Serviços SEM preço ou que ficaram de uma semana para outra (atrasados)
