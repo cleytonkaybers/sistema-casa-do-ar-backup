@@ -63,22 +63,64 @@ function groupPagamentos(lista) {
 }
 
 function PagamentoModal({ open, onClose, pagamento, onSave }) {
-  const [valor, setValor] = useState('');
   const [obs, setObs] = useState('');
   const [loading, setLoading] = useState(false);
   const [parcelas, setParcelas] = useState([]);
   const [novaData, setNovaData] = useState('');
   const [novoValorParcela, setNovoValorParcela] = useState('');
+  const [precosGrupo, setPrecosGrupo] = useState({});
+
+  // Agrupa _records por tipo_servico
+  const servicosGrupos = useMemo(() => {
+    const records = pagamento?._records || (pagamento ? [pagamento] : []);
+    const groups = {};
+    records.forEach(r => {
+      const tipo = r.tipo_servico || 'Sem tipo';
+      if (!groups[tipo]) groups[tipo] = { tipo, qtd: 0, registros: [] };
+      groups[tipo].qtd += 1;
+      groups[tipo].registros.push(r);
+    });
+    return Object.values(groups);
+  }, [pagamento]);
 
   useEffect(() => {
-    if (open) { setValor(''); setObs(''); setParcelas([]); setNovaData(''); setNovoValorParcela(''); }
-  }, [open]);
+    if (open) {
+      setObs('');
+      setParcelas([]);
+      setNovaData('');
+      setNovoValorParcela('');
+      // Inicializa preços com valor existente dividido por qtd (ou 0 se não definido)
+      const inicial = {};
+      const records = pagamento?._records || (pagamento ? [pagamento] : []);
+      const groups = {};
+      records.forEach(r => {
+        const tipo = r.tipo_servico || 'Sem tipo';
+        if (!groups[tipo]) groups[tipo] = { qtd: 0, valorTotal: 0 };
+        groups[tipo].qtd += 1;
+        groups[tipo].valorTotal += r.valor_total || 0;
+      });
+      Object.entries(groups).forEach(([tipo, g]) => {
+        const unitario = g.valorTotal > 0 ? g.valorTotal / g.qtd : 0;
+        inicial[tipo] = String(unitario > 0 ? unitario.toFixed(2) : '');
+      });
+      setPrecosGrupo(inicial);
+    }
+  }, [open, pagamento]);
 
-  const saldo = (pagamento?.valor_total || 0) - (pagamento?.valor_pago || 0);
+  const totalDefinido = servicosGrupos.reduce((s, g) => {
+    const preco = parseFloat((precosGrupo[g.tipo] || '').replace(',', '.')) || 0;
+    return s + preco * g.qtd;
+  }, 0);
+
+  const totalPago = pagamento?._records?.reduce((s, r) => s + (r.valor_pago || 0), 0) || (pagamento?.valor_pago || 0);
+  const saldo = totalDefinido - totalPago;
 
   const totalAgendado = parcelas.reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
-  const valorAtualNum = parseFloat(valor.replace(',', '.')) || 0;
+  const [valorRegistrar, setValorRegistrar] = useState('');
+  const valorAtualNum = parseFloat((valorRegistrar || '').replace(',', '.')) || 0;
   const saldoRestante = saldo - valorAtualNum - totalAgendado;
+
+  useEffect(() => { if (open) setValorRegistrar(''); }, [open]);
 
   const adicionarParcela = () => {
     if (!novaData) return toast.error('Informe a data da parcela');
@@ -92,35 +134,79 @@ function PagamentoModal({ open, onClose, pagamento, onSave }) {
   const removerParcela = (idx) => setParcelas(prev => prev.filter((_, i) => i !== idx));
 
   const handleSave = async () => {
-    const v = parseFloat(valor.replace(',', '.'));
+    const v = parseFloat((valorRegistrar || '').replace(',', '.'));
     if (!v || v <= 0) return toast.error('Informe um valor válido');
+    if (saldo < 0.01 && totalDefinido === 0) return toast.error('Defina os preços dos serviços primeiro');
     if (v > saldo + 0.01) return toast.error(`Valor maior que o saldo (${formatCurrency(saldo)})`);
     setLoading(true);
-    await onSave(pagamento, v, obs, parcelas);
+    // Passa os preços unitários definidos para o onSave processar
+    await onSave(pagamento, v, obs, parcelas, precosGrupo);
     setLoading(false);
     onClose();
   };
 
+  const todosPrecosDefinidos = servicosGrupos.every(g => {
+    const preco = parseFloat((precosGrupo[g.tipo] || '').replace(',', '.')) || 0;
+    return preco > 0;
+  });
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Registrar Pagamento</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
-            <p className="font-semibold text-gray-800">{pagamento?.cliente_nome}</p>
-            <p className="text-sm text-gray-500">{pagamento?.tipo_servico}</p>
-            <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-gray-200 text-center">
-              <div><p className="text-xs text-gray-400">Total</p><p className="font-semibold text-gray-800 text-sm">{formatCurrency(pagamento?.valor_total)}</p></div>
-              <div><p className="text-xs text-gray-400">Pago</p><p className="font-semibold text-green-600 text-sm">{formatCurrency(pagamento?.valor_pago)}</p></div>
-              <div><p className="text-xs text-gray-400">Saldo</p><p className="font-bold text-red-600 text-sm">{formatCurrency(saldo)}</p></div>
+          {/* Cabeçalho do cliente */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <p className="font-bold text-gray-800 text-base mb-3">{pagamento?.cliente_nome}</p>
+
+            {/* Serviços agrupados com preço por tipo */}
+            <div className="space-y-2 mb-3">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Serviços — defina o preço unitário</p>
+              {servicosGrupos.map(g => {
+                const preco = precosGrupo[g.tipo] || '';
+                const precoNum = parseFloat(preco.replace(',', '.')) || 0;
+                const subtotal = precoNum * g.qtd;
+                return (
+                  <div key={g.tipo} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{g.qtd}</span>
+                    <span className="flex-1 text-sm text-gray-700 font-medium leading-tight">{g.tipo}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">R$</span>
+                      <Input
+                        placeholder="0,00"
+                        value={preco}
+                        onChange={e => setPrecosGrupo(prev => ({ ...prev, [g.tipo]: e.target.value }))}
+                        className={`w-24 h-8 text-sm text-right font-semibold ${precoNum === 0 ? 'border-amber-300 bg-amber-50' : ''}`}
+                      />
+                      {g.qtd > 1 && precoNum > 0 && (
+                        <span className="text-xs text-gray-400 min-w-[60px] text-right">{formatCurrency(subtotal)}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {!todosPrecosDefinidos && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-600 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" /> Defina o preço de cada serviço acima
+                </div>
+              )}
+            </div>
+
+            {/* Totais */}
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200 text-center">
+              <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 text-sm">{totalDefinido > 0 ? formatCurrency(totalDefinido) : <span className="text-amber-500 text-xs">A definir</span>}</p></div>
+              <div><p className="text-xs text-gray-400">Pago</p><p className="font-bold text-green-600 text-sm">{formatCurrency(totalPago)}</p></div>
+              <div><p className="text-xs text-gray-400">Saldo</p><p className="font-bold text-red-600 text-sm">{formatCurrency(Math.max(0, saldo))}</p></div>
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Valor a registrar (R$)</label>
-            <Input placeholder="0,00" value={valor} onChange={e => setValor(e.target.value)} className="h-12 text-lg font-semibold" autoFocus />
-            <button onClick={() => setValor(saldo.toFixed(2).replace('.', ','))} className="text-xs text-blue-600 mt-1.5 underline">
-              Preencher valor total restante ({formatCurrency(saldo)})
-            </button>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">Valor a registrar agora (R$)</label>
+            <Input placeholder="0,00" value={valorRegistrar} onChange={e => setValorRegistrar(e.target.value)} className="h-12 text-lg font-semibold" autoFocus />
+            {saldo > 0.01 && (
+              <button onClick={() => setValorRegistrar(saldo.toFixed(2).replace('.', ','))} className="text-xs text-blue-600 mt-1.5 underline">
+                Preencher valor total restante ({formatCurrency(Math.max(0, saldo))})
+              </button>
+            )}
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Observação (opcional)</label>
@@ -671,12 +757,28 @@ export default function PagamentosClientes() {
     });
   }, [atendimentos, pagamentos, isLoading]);
 
-  const handleRegistrarPagamento = async (pag, valor, obs, parcelas = []) => {
+  const handleRegistrarPagamento = async (pag, valor, obs, parcelas = [], precosGrupo = {}) => {
     const records = pag._records?.length > 1 ? pag._records : [pag];
     let remaining = valor;
     const dataStr = format(new Date(), "dd/MM/yyyy HH:mm");
 
+    // Atualiza preços individuais primeiro
     for (const rec of records) {
+      const tipo = rec.tipo_servico || 'Sem tipo';
+      const novoPreco = parseFloat((precosGrupo[tipo] || '').replace(',', '.')) || 0;
+      if (novoPreco > 0 && novoPreco !== rec.valor_total) {
+        await updateMutation.mutateAsync({ id: rec.id, data: { valor_total: novoPreco } });
+      }
+    }
+
+    // Re-calcula saldos com preços atualizados
+    const recordsAtualizados = records.map(rec => {
+      const tipo = rec.tipo_servico || 'Sem tipo';
+      const novoPreco = parseFloat((precosGrupo[tipo] || '').replace(',', '.')) || 0;
+      return { ...rec, valor_total: novoPreco > 0 ? novoPreco : rec.valor_total };
+    });
+
+    for (const rec of recordsAtualizados) {
       if (remaining <= 0.01) break;
       const recSaldo = (rec.valor_total || 0) - (rec.valor_pago || 0);
       if (recSaldo <= 0.01) continue;
