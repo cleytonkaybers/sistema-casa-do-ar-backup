@@ -96,9 +96,15 @@ function PagamentoModal({ open, onClose, pagamento, onSave }) {
         const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
         tipos.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
       });
-      // Preços sempre zerados — admin define manualmente
+      // Pré-preenche com valor salvo se o record tiver apenas 1 tipo de serviço
       const inicial = {};
       Object.keys(counts).forEach(tipo => { inicial[tipo] = ''; });
+      records.forEach(r => {
+        const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
+        if (tipos.length === 1 && r.valor_total > 0) {
+          inicial[tipos[0]] = String(r.valor_total).replace('.', ',');
+        }
+      });
       setPrecosGrupo(inicial);
     }
   }, [open, pagamento]);
