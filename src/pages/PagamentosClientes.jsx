@@ -854,7 +854,7 @@ export default function PagamentosClientes() {
         telefone: a.telefone || '',
         tipo_servico: a.tipo_servico || '',
         data_conclusao: a.data_conclusao || a.created_date,
-        valor_total: debitoTotal > 0 ? debitoTotal : 0,
+        valor_total: debitoTotal > 0 ? debitoTotal : 1.0,
         valor_pago: 0,
         status: 'pendente',
         equipe_nome: a.equipe_nome || '',
