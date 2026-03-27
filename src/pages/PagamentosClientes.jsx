@@ -690,27 +690,30 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
         </div>
 
         {/* Botões ação - scrollable no mobile */}
-        <div className="flex items-center gap-1 flex-shrink-0 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => onDetalhes(pag)} className="p-1.5 rounded text-gray-400 hover:text-purple-600 hover:bg-purple-50 flex-shrink-0" title="Detalhes">
-            <Eye className="w-4 h-4" />
-          </button>
-          <button onClick={() => onHistorico(pag)} className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex-shrink-0" title="Histórico">
-            <History className="w-4 h-4" />
-          </button>
-          {!isPago && (
-            <>
-              <button onClick={() => onDefinirPreco(pag)} className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold whitespace-nowrap">
-                Preço
-              </button>
-              <button onClick={() => onPagar(pag)} className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-semibold whitespace-nowrap">
-                Pagar
-              </button>
-            </>
-          )}
-          <button onClick={() => onDelete(pag.id)} className="p-1.5 rounded text-red-500 hover:bg-red-50 flex-shrink-0" title="Excluir">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+         <div className="flex items-center gap-1 flex-shrink-0 overflow-x-auto" onClick={(e) => e.stopPropagation()}>
+           <button onClick={() => onDetalhes(pag)} className="p-1.5 rounded text-gray-400 hover:text-purple-600 hover:bg-purple-50 flex-shrink-0" title="Detalhes">
+             <Eye className="w-4 h-4" />
+           </button>
+           <button onClick={() => onHistorico(pag)} className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex-shrink-0" title="Histórico">
+             <History className="w-4 h-4" />
+           </button>
+           {!isPago && (
+             <>
+               <button onClick={() => onDefinirPreco(pag)} className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold whitespace-nowrap">
+                 Preço
+               </button>
+               <button onClick={() => onAgendarData(pag)} className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold whitespace-nowrap flex items-center gap-1">
+                 <Calendar className="w-3 h-3" /> Agendar
+               </button>
+               <button onClick={() => onPagar(pag)} className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-semibold whitespace-nowrap">
+                 Pagar
+               </button>
+             </>
+           )}
+           <button onClick={() => onDelete(pag.id)} className="p-1.5 rounded text-red-500 hover:bg-red-50 flex-shrink-0" title="Excluir">
+             <Trash2 className="w-4 h-4" />
+           </button>
+         </div>
       </div>
 
       {/* Painel expandível com detalhes - mobile otimizado */}
@@ -755,14 +758,9 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
             </div>
           )}
           {!isPago && temPrecoDefinido && (
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 bg-red-50 border border-red-200 rounded px-3 py-2">
-                <span className="text-red-700 font-semibold text-xs">Saldo devido:</span>
-                <span className="text-red-700 font-bold">{formatCurrency(saldo)}</span>
-              </div>
-              <button onClick={() => onAgendarData(pag)} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded font-semibold whitespace-nowrap flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" /> Agendar
-              </button>
+            <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-3 py-2">
+              <span className="text-red-700 font-semibold text-xs">Saldo devido:</span>
+              <span className="text-red-700 font-bold">{formatCurrency(saldo)}</span>
             </div>
           )}
           {pag._records?.some(r => r.valor_total === 0) && (
