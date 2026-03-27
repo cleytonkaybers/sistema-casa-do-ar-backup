@@ -60,11 +60,50 @@ export default function RelatorioClientesPagamentoModal({ isOpen, onClose, pagam
         clientesMap = Object.fromEntries(clientes.map(c => [c.nome, c]));
       }
 
+      // Calcular totais financeiros
+      const totalGanho = servicosFiltrados.reduce((sum, s) => sum + (s.valor || 0), 0);
+      const totalRecebido = pagamentosFiltrados.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
+      const totalDebito = pagamentosFiltrados.reduce((sum, p) => sum + Math.max(0, (p.valor_total || 0) - (p.valor_pago || 0)), 0);
+
       // Gerar PDF
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       let yPos = 10;
+
+      // Período em texto
+      const periodoTexto = filtroTipo === 'semana' ? `Semana de ${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}`
+        : filtroTipo === 'mes' ? `${inicio.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`
+        : `${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}`;
+
+      // Resumo Financeiro
+      doc.setFontSize(14);
+      doc.setTextColor(30, 58, 138);
+      doc.text('📊 RESUMO FINANCEIRO', 10, yPos);
+      yPos += 10;
+
+      const summaryData = [
+        ['Período', periodoTexto],
+        ['💰 Total Ganho', formatCurrency(totalGanho)],
+        ['✅ Total Recebido', formatCurrency(totalRecebido)],
+        ['⏳ Total Débito Pendente', formatCurrency(totalDebito)],
+        ['📈 Taxa de Recebimento', `${totalGanho > 0 ? ((totalRecebido / totalGanho) * 100).toFixed(1) : 0}%`]
+      ];
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      summaryData.forEach(([label, value]) => {
+        doc.text(`${label}:`, 10, yPos);
+        doc.setFont(undefined, 'bold');
+        doc.text(value, pageWidth - 50, yPos, { align: 'right' });
+        doc.setFont(undefined, 'normal');
+        yPos += 7;
+      });
+
+      yPos += 5;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(10, yPos, pageWidth - 10, yPos);
+      yPos += 8;
 
       const drawTable = (data, headers, startY) => {
         const colWidths = [45, 35, 30, 30, 35];
@@ -90,35 +129,14 @@ export default function RelatorioClientesPagamentoModal({ isOpen, onClose, pagam
         return y;
       };
 
-      // Cabeçalho
-      doc.setFontSize(16);
-      doc.text('Relatório de Pagamentos e Serviços', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
 
-      doc.setFontSize(10);
-      const dataTexto = `Período: ${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}`;
-      doc.text(dataTexto, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 8;
-
-      // Resumo financeiro
-      doc.setFontSize(12);
-      doc.text('📊 RESUMO FINANCEIRO', 10, yPos);
-      yPos += 7;
-
-      const totalServiços = servicosFiltrados.reduce((sum, s) => sum + (s.valor || 0), 0);
-      const totalPago = pagamentosFiltrados.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
-      const totalDébito = pagamentosFiltrados.reduce((sum, p) => sum + (Math.max(0, p.valor_total - p.valor_pago) || 0), 0);
-
-      doc.setFontSize(10);
-      doc.text(`Total de Serviços: ${formatCurrency(totalServiços)}`, 15, yPos);
-      yPos += 6;
-      doc.text(`Total Pago: ${formatCurrency(totalPago)}`, 15, yPos);
-      yPos += 6;
-      doc.text(`Total em Débito: ${formatCurrency(totalDébito)}`, 15, yPos);
-      yPos += 10;
 
       // Tabela de Serviços
       if (servicosFiltrados.length > 0) {
+        if (yPos > pageHeight - 60) {
+          doc.addPage();
+          yPos = 10;
+        }
         doc.setFontSize(11);
         doc.text('🔧 SERVIÇOS REALIZADOS', 10, yPos);
         yPos += 7;
@@ -141,7 +159,6 @@ export default function RelatorioClientesPagamentoModal({ isOpen, onClose, pagam
           doc.addPage();
           yPos = 10;
         }
-
         doc.setFontSize(11);
         doc.text('💰 REGISTRO DE PAGAMENTOS', 10, yPos);
         yPos += 7;
@@ -164,7 +181,6 @@ export default function RelatorioClientesPagamentoModal({ isOpen, onClose, pagam
           doc.addPage();
           yPos = 10;
         }
-
         doc.setFontSize(11);
         doc.text('👥 DADOS DE CLIENTES', 10, yPos);
         yPos += 7;
