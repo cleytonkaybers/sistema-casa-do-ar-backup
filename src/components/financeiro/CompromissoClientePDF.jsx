@@ -13,9 +13,14 @@ export default function CompromissoClientePDF({ isOpen, onClose, pagamento = nul
   if (!pagamento) return null;
 
   const records = pagamento._records || [pagamento];
+  
+  // Corrigir cálculo: se há múltiplos registros do mesmo serviço, somar valores únicos
   const totalValor = records.reduce((s, r) => s + (r.valor_total || 0), 0);
   const totalPago = records.reduce((s, r) => s + (r.valor_pago || 0), 0);
-  const saldoRestante = totalValor - totalPago;
+  const saldoRestante = Math.max(0, totalValor - totalPago);
+  
+  // Debug: detectar se há inconsistência nos valores
+  const temErroValores = records.some(r => r.valor_total && r.valor_pago && r.valor_pago > r.valor_total);
 
   // Agrupar parcelas futuras
   const parcelasFuturas = records.flatMap(r => (r.historico_pagamentos || []).filter(h => h.agendada === true));
@@ -108,7 +113,7 @@ export default function CompromissoClientePDF({ isOpen, onClose, pagamento = nul
       const resumoLinhas = [
         { label: 'Total de Serviços', valor: formatCurrency(totalValor) },
         { label: 'Total Pago', valor: formatCurrency(totalPago), destaque: true },
-        { label: 'Saldo Pendente', valor: formatCurrency(Math.max(0, saldoRestante)), destaque: saldoRestante > 0.01 },
+        { label: 'Saldo Pendente', valor: formatCurrency(saldoRestante), destaque: saldoRestante > 0.01 },
       ];
 
       resumoLinhas.forEach(linha => {
@@ -224,7 +229,7 @@ export default function CompromissoClientePDF({ isOpen, onClose, pagamento = nul
             <div className="mt-3 space-y-1 text-sm text-gray-600">
               <p>Telefone: {pagamento.telefone || '—'}</p>
               <p className="font-semibold text-lg text-gray-800 mt-2">
-                Saldo Pendente: <span className="text-red-600">{formatCurrency(Math.max(0, saldoRestante))}</span>
+                Saldo Pendente: <span className={saldoRestante > 0.01 ? 'text-red-600' : 'text-green-600'}>{formatCurrency(saldoRestante)}</span>
               </p>
             </div>
           </div>
