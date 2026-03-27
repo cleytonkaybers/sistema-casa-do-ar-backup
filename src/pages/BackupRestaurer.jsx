@@ -129,77 +129,96 @@ export default function BackupRestaurerPage() {
         dataObj[e.key] = records;
       }
 
-      // Gerar HTML estruturado com formatação otimizada para Word
-      let html = `
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            @page { size: A4 landscape; margin: 10mm; }
-            body { font-family: 'Calibri', Arial, sans-serif; font-size: 10pt; margin: 10px; }
-            h1 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; font-size: 18pt; margin-bottom: 5px; }
-            h2 { color: #1e3a8a; margin-top: 15px; margin-bottom: 10px; border-left: 3px solid #1e3a8a; padding-left: 8px; font-size: 12pt; }
-            table { width: 100%; border-collapse: collapse; margin: 10px 0; page-break-inside: avoid; font-size: 9pt; }
-            th { background-color: #1e3a8a; color: white; padding: 6px; text-align: left; font-weight: bold; word-wrap: break-word; }
-            td { border: 1px solid #999; padding: 4px; word-wrap: break-word; overflow-wrap: break-word; }
-            tr:nth-child(even) { background-color: #f0f0f0; }
-            .summary { background-color: #dbeafe; padding: 10px; margin-bottom: 15px; font-size: 11pt; }
-            .summary-item { display: inline-block; margin-right: 20px; font-weight: bold; margin-bottom: 5px; }
-            .timestamp { color: #666; font-size: 9pt; margin-bottom: 10px; }
-          </style>
-        </head>
-        <body>
-          <h1>📊 Backup Completo - Casa do Ar</h1>
-          <div class="timestamp">Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}</div>
-          <div class="summary">
-      `;
-
-      // Resumo
+      // Gerar XML estruturado compatível com Word (.doc)
       let totalRecs = 0;
-      const summaryItems = [];
       ENTIDADES.forEach(e => {
         const count = dataObj[e.key]?.length || 0;
         totalRecs += count;
-        summaryItems.push(`<div class="summary-item">${e.label}: ${count}</div>`);
       });
-      html += summaryItems.join('');
-      html += `<div class="summary-item" style="font-size: 12pt; color: #d97706;">TOTAL: ${totalRecs}</div></div>`;
+
+      const doc = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Word.Document"?>
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta name="ProgId" content="Word.Document">
+<meta name="Generator" content="Casa do Ar Backup">
+<meta charset="utf-8">
+<title>Backup Completo - Casa do Ar</title>
+<style>
+* { margin: 0; padding: 0; }
+body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.4; padding: 0.5in; }
+h1 { font-size: 20pt; font-weight: bold; color: #1e3a8a; margin: 10pt 0; border-bottom: 2pt solid #1e3a8a; padding-bottom: 10pt; }
+h2 { font-size: 13pt; font-weight: bold; color: #1e3a8a; margin: 15pt 0 8pt 0; }
+p { font-size: 10pt; margin: 5pt 0; }
+table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
+th { background-color: #1e3a8a; color: white; padding: 5pt; text-align: left; font-weight: bold; border: 1pt solid #333; font-size: 9pt; }
+td { border: 1pt solid #ccc; padding: 4pt; font-size: 8.5pt; }
+tbody tr:nth-child(odd) { background-color: #f5f5f5; }
+.summary { background-color: #e3f2fd; padding: 10pt; margin: 10pt 0; border-left: 4pt solid #1e3a8a; }
+.summary-item { display: block; margin: 3pt 0; font-size: 10pt; }
+.summary-item strong { color: #059669; }
+</style>
+</head>
+<body>
+<h1>Backup Completo - Casa do Ar</h1>
+<p><strong>Gerado em:</strong> ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}</p>
+
+<div class="summary">
+<h3 style="color: #1e3a8a; margin: 0 0 8pt 0; font-size: 12pt;">Resumo do Backup</h3>
+`;
+
+      // Resumo com contagem
+      ENTIDADES.forEach(e => {
+        const count = dataObj[e.key]?.length || 0;
+        if (count > 0) {
+          doc += `<div class="summary-item"><strong>${e.label}:</strong> ${count} registros</div>`;
+        }
+      });
+      doc += `<div class="summary-item" style="margin-top: 8pt; border-top: 1pt solid #1e3a8a; padding-top: 5pt;"><strong style="font-size: 11pt; color: #d97706;">TOTAL: ${totalRecs} registros</strong></div>
+</div>
+`;
 
       // Dados por entidade
       ENTIDADES.forEach(e => {
         const records = dataObj[e.key] || [];
         if (records.length === 0) return;
 
-        html += `<h2>${e.label}</h2>`;
+        doc += `<h2>${e.label} (${records.length} registros)</h2>`;
         
         if (records.length > 0) {
-          const keys = Object.keys(records[0]).filter(k => !['id', 'created_by', 'created_date', 'updated_date'].includes(k)).slice(0, 10);
-          html += `<table><thead><tr>`;
-          keys.forEach(k => {
-            const displayName = k.replace(/_/g, ' ').substring(0, 15);
-            html += `<th>${displayName}</th>`;
-          });
-          html += `</tr></thead><tbody>`;
+          const allKeys = Object.keys(records[0]).filter(k => !['id', 'created_by', 'created_date', 'updated_date'].includes(k));
+          const keys = allKeys.slice(0, 8); // Limita a 8 colunas
           
-          records.slice(0, 100).forEach(rec => {
-            html += `<tr>`;
+          doc += `<table><thead><tr>`;
+          keys.forEach(k => {
+            const displayName = k.replace(/_/g, ' ').trim().substring(0, 12);
+            doc += `<th>${displayName}</th>`;
+          });
+          doc += `</tr></thead><tbody>`;
+          
+          // Limita a 50 registros por entidade para não ficar muito grande
+          records.slice(0, 50).forEach(rec => {
+            doc += `<tr>`;
             keys.forEach(k => {
               let val = rec[k];
-              if (typeof val === 'object') val = JSON.stringify(val).substring(0, 30);
+              if (typeof val === 'object' && val !== null) {
+                val = JSON.stringify(val).substring(0, 20);
+              }
               if (val === null || val === undefined) val = '-';
-              const displayVal = String(val).substring(0, 50);
-              html += `<td>${displayVal}</td>`;
+              const displayVal = String(val).substring(0, 40);
+              doc += `<td>${displayVal.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
             });
-            html += `</tr>`;
+            doc += `</tr>`;
           });
-          html += `</tbody></table>`;
+          doc += `</tbody></table>
+`;
         }
       });
 
-      html += `</body></html>`;
+      doc += `</body></html>`;
 
-      // Exportar como HTML (Word pode abrir)
-      const blob = new Blob([html], { type: 'application/msword' });
+      // Exportar com MIME type correto para Word
+      const blob = new Blob([doc], { type: 'application/vnd.ms-word' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
