@@ -62,7 +62,7 @@ function groupPagamentos(lista) {
   });
 }
 
-function PagamentoModal({ open, onClose, pagamento, onSave }) {
+function PagamentoModal({ open, onClose, pagamento, onSave, pagamentosAtuais = [] }) {
   const [obs, setObs] = useState('');
   const [metodoPagamento, setMetodoPagamento] = useState('');
   const [loading, setLoading] = useState(false);
@@ -96,11 +96,18 @@ function PagamentoModal({ open, onClose, pagamento, onSave }) {
         const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
         tipos.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
       });
+      // Busca registros frescos do banco para este cliente (pelo atendimento_id)
+      const idsAtendimento = new Set(records.map(r => r.atendimento_id || r.id).filter(Boolean));
+      const recordsFrescos = pagamentosAtuais.filter(p =>
+        idsAtendimento.has(p.atendimento_id) || idsAtendimento.has(p.id)
+      );
+      const fonteRecords = recordsFrescos.length > 0 ? recordsFrescos : records;
+
       // Pré-preenche com valor salvo: para cada tipo, busca o primeiro record com valor_total > 0
       const inicial = {};
       Object.keys(counts).forEach(tipo => { inicial[tipo] = ''; });
       Object.keys(counts).forEach(tipo => {
-        const recComValor = records.find(r => {
+        const recComValor = fonteRecords.find(r => {
           const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
           return tipos.length === 1 && tipos[0] === tipo && (r.valor_total || 0) > 0;
         });
@@ -1115,7 +1122,7 @@ export default function PagamentosClientes() {
         </div>
       )}
 
-      <PagamentoModal open={!!pagarModal} onClose={() => setPagarModal(null)} pagamento={pagarModal} onSave={handleRegistrarPagamento} />
+      <PagamentoModal open={!!pagarModal} onClose={() => setPagarModal(null)} pagamento={pagarModal} onSave={handleRegistrarPagamento} pagamentosAtuais={pagamentos} />
       <EditarValorModal open={!!editarModal} onClose={() => setEditarModal(null)} pagamento={editarModal} onSave={handleEditarValor} />
       <HistoricoModal open={!!historicoModal} onClose={() => setHistoricoModal(null)} pagamento={historicoModal} />
       <DetalhesClienteModal open={!!detalhesModal} onClose={() => setDetalhesModal(null)} pagamento={detalhesModal} />
