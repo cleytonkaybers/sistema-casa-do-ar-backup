@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import CompromissoClientePDF from '@/components/financeiro/CompromissoClientePDF';
 import {
   Search, DollarSign, CheckCircle2, AlertCircle, Calendar,
   MessageCircle, Filter, X, Pencil, Tag,
@@ -779,6 +780,7 @@ export default function PagamentosClientes() {
   const [abaAtiva, setAbaAtiva] = useState('semana');
   const [precosSyncKey, setPrecosSyncKey] = useState(0);
   const [abrirRelatorio, setAbrirRelatorio] = useState(false);
+  const [compartilharModal, setCompartilharModal] = useState(null);
 
   // Relatórios
   const [relFiltro, setRelFiltro] = useState('semana');
@@ -952,6 +954,7 @@ export default function PagamentosClientes() {
       });
     }
     toast.success('✅ Pagamento registrado!');
+    setCompartilharModal(pag);
   };
 
   const handleEditarValor = async (pag, novoValor) => {
@@ -1210,6 +1213,7 @@ export default function PagamentosClientes() {
       <HistoricoModal open={!!historicoModal} onClose={() => setHistoricoModal(null)} pagamento={historicoModal} />
       <DetalhesClienteModal open={!!detalhesModal} onClose={() => setDetalhesModal(null)} pagamento={detalhesModal} />
       <RelatorioClientesPagamentoModal isOpen={abrirRelatorio} onClose={() => setAbrirRelatorio(false)} pagamentos={pagamentos} servicos={servicosConcluidos} />
+      <CompromissoClientePDF isOpen={!!compartilharModal} onClose={() => setCompartilharModal(null)} pagamento={compartilharModal} />
     </div>
   );
 }
