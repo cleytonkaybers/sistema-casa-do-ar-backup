@@ -492,6 +492,11 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                 id="telefone"
                 value={formData.telefone}
                 onChange={handlePhoneChange}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pasted = e.clipboardData.getData('text');
+                  setFormData({ ...formData, telefone: stripAndFormatPhone(pasted) });
+                }}
                 placeholder="92 99999-1234"
                 required
                 maxLength={14}
