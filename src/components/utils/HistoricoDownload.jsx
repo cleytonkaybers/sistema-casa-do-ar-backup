@@ -57,34 +57,40 @@ const desenharTabela = (doc, colunas, larguras, linhas) => {
   desenharCabecalho();
 
   linhas.forEach((linha, rowIndex) => {
-    // Calcular altura necessária para esta linha (pode ter texto longo)
-    const maxLinhas = Math.max(...linha.map((celula, i) => {
-      const linhasTexto = doc.splitTextToSize(celula, larguras[i] - 4);
-      return linhasTexto.length;
-    }));
-    const alturaAtual = Math.max(alturaLinha, maxLinhas * 5 + 3);
+  // Calcular altura necessária para esta linha
+  const maxLinhas = Math.max(...linha.map((celula, i) => {
+    const linhasTexto = doc.splitTextToSize(celula, larguras[i] - 4);
+    return linhasTexto.length;
+  }));
+  const alturaAtual = Math.max(alturaLinha, maxLinhas * 5 + 3);
 
-    if (y + alturaAtual > pageHeight - 20) {
-      doc.addPage();
-      y = 15;
-      desenharCabecalho();
-    }
+  if (y + alturaAtual > pageHeight - 20) {
+    doc.addPage();
+    y = 15;
+    desenharCabecalho();
+  }
 
-    doc.setFillColor(rowIndex % 2 === 0 ? 240 : 255, rowIndex % 2 === 0 ? 245 : 255, 255);
+  // Alternar cor de fundo das linhas (explícito para evitar bug do jsPDF)
+  if (rowIndex % 2 === 0) {
+    doc.setFillColor(240, 245, 255);
+  } else {
+    doc.setFillColor(255, 255, 255);
+  }
 
-    let x = margemEsq;
-    linha.forEach((celula, i) => {
-      doc.rect(x, y, larguras[i], alturaAtual, 'FD');
-      const linhasTexto = doc.splitTextToSize(celula, larguras[i] - 4);
-      doc.text(linhasTexto, x + 2, y + 5);
-      x += larguras[i];
-    });
+  let x = margemEsq;
+  linha.forEach((celula, i) => {
+    doc.rect(x, y, larguras[i], alturaAtual, 'FD');
+    doc.setTextColor(0, 0, 0);
+    const linhasTexto = doc.splitTextToSize(celula, larguras[i] - 4);
+    doc.text(linhasTexto, x + 2, y + 5);
+    x += larguras[i];
+  });
 
-    y += alturaAtual;
+  y += alturaAtual;
   });
 
   return y;
-};
+  };
 
 export const gerarPDFCliente = (cliente, servicos, atendimentos) => {
   const doc = new jsPDF();
