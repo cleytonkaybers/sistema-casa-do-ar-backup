@@ -70,16 +70,10 @@ const desenharTabela = (doc, colunas, larguras, linhas) => {
     desenharCabecalho();
   }
 
-  // Alternar cor de fundo das linhas (explícito para evitar bug do jsPDF)
-  if (rowIndex % 2 === 0) {
-    doc.setFillColor(240, 245, 255);
-  } else {
-    doc.setFillColor(255, 255, 255);
-  }
-
   let x = margemEsq;
   linha.forEach((celula, i) => {
-    doc.rect(x, y, larguras[i], alturaAtual, 'FD');
+    // Usar apenas borda (sem fill) para garantir fundo branco
+    doc.rect(x, y, larguras[i], alturaAtual, 'S');
     doc.setTextColor(0, 0, 0);
     const linhasTexto = doc.splitTextToSize(celula, larguras[i] - 4);
     doc.text(linhasTexto, x + 2, y + 5);
