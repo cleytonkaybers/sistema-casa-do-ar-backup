@@ -477,20 +477,29 @@ function DetalhesClienteModal({ open, onClose, pagamento }) {
   const servicosAgrupados = useMemo(() => {
     const groups = {};
     records.forEach(r => {
-      // Cada record pode ter tipo_servico composto (ex: "Limpeza 9k + Limpeza 12k")
-      const tipos = (r.tipo_servico || 'Sem tipo').split('+').map(s => s.trim()).filter(Boolean);
-      const valorPorTipo = tipos.length > 0 ? (r.valor_total || 0) / tipos.length : 0;
-      tipos.forEach(tipo => {
-        if (!groups[tipo]) groups[tipo] = { tipo, ocorrencias: [] };
+      // Contar quantas vezes cada tipo aparece dentro deste record
+      const tiposRaw = (r.tipo_servico || 'Sem tipo').split('+').map(s => s.trim()).filter(Boolean);
+      const contagem = {};
+      tiposRaw.forEach(t => { contagem[t] = (contagem[t] || 0) + 1; });
+      const tiposUnicos = Object.keys(contagem);
+      const totalTipos = tiposRaw.length;
+      const valorPorUnitario = totalTipos > 0 ? (r.valor_total || 0) / totalTipos : 0;
+
+      tiposUnicos.forEach(tipo => {
+        const qtdNesteRecord = contagem[tipo];
+        if (!groups[tipo]) groups[tipo] = { tipo, totalQtd: 0, ocorrencias: [] };
+        groups[tipo].totalQtd += qtdNesteRecord;
         groups[tipo].ocorrencias.push({
           data: r.data_conclusao,
           equipe: r.equipe_nome,
-          valorUnitario: valorPorTipo,
+          qtd: qtdNesteRecord,
+          valorTotal: valorPorUnitario * qtdNesteRecord,
+          valorUnitario: valorPorUnitario,
           id: r.id,
         });
       });
     });
-    return Object.values(groups).sort((a, b) => b.ocorrencias.length - a.ocorrencias.length);
+    return Object.values(groups).sort((a, b) => b.totalQtd - a.totalQtd);
   }, [records]);
 
   const totalGeral = records.reduce((s, r) => s + (r.valor_total || 0), 0);
@@ -528,8 +537,8 @@ function DetalhesClienteModal({ open, onClose, pagamento }) {
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Serviços Realizados</p>
             <div className="space-y-3">
               {servicosAgrupados.map((g) => {
-                const qtd = g.ocorrencias.length;
-                const totalTipo = g.ocorrencias.reduce((s, o) => s + (o.valorUnitario || 0), 0);
+                const qtd = g.totalQtd;
+                const totalTipo = g.ocorrencias.reduce((s, o) => s + (o.valorTotal || 0), 0);
                 const valorUnitario = qtd > 0 ? totalTipo / qtd : 0;
                 return (
                   <div key={g.tipo} className="border border-gray-200 rounded-xl overflow-hidden">
@@ -548,7 +557,7 @@ function DetalhesClienteModal({ open, onClose, pagamento }) {
                         )}
                       </div>
                     </div>
-                    {/* Ocorrências individuais */}
+                    {/* Ocorrências individuais por data */}
                     <div className="divide-y divide-gray-50">
                       {g.ocorrencias.map((o, i) => (
                         <div key={i} className="flex items-center justify-between px-4 py-2.5 bg-white text-xs">
@@ -557,12 +566,13 @@ function DetalhesClienteModal({ open, onClose, pagamento }) {
                             <span className="font-medium text-gray-700">
                               {o.data ? format(parseISO(o.data), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                             </span>
+                            {o.qtd > 1 && <span className="bg-blue-100 text-blue-600 px-1.5 rounded font-semibold">x{o.qtd}</span>}
                             {o.equipe && (
                               <span className="text-blue-500 font-medium">· 👷 {o.equipe}</span>
                             )}
                           </div>
-                          {o.valorUnitario > 0 && (
-                            <span className="font-semibold text-gray-700">{formatCurrency(o.valorUnitario)}</span>
+                          {o.valorTotal > 0 && (
+                            <span className="font-semibold text-gray-700">{formatCurrency(o.valorTotal)}</span>
                           )}
                         </div>
                       ))}
