@@ -1267,9 +1267,14 @@ function PagamentosClientesContent() {
             <p className="text-red-700 text-sm mb-2">Os seguintes clientes possuem serviços com preço de R$ 1,00 que precisam ajuste:</p>
             <div className="flex flex-wrap gap-2">
               {pagsComPrecoDefault.slice(0, 5).map(p => (
-                <span key={p.id} className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
+                <button
+                  key={p.id}
+                  onClick={() => setPrecosModal(p)}
+                  className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold hover:bg-red-200 hover:text-red-900 transition-colors cursor-pointer underline underline-offset-2"
+                  title={`Clique para definir o preço de ${p.cliente_nome}`}
+                >
                   {p.cliente_nome}
-                </span>
+                </button>
               ))}
               {pagsComPrecoDefault.length > 5 && (
                 <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
