@@ -255,7 +255,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Card: Serviços sem preço */}
           {semPrecificacao.length > 0 && (
-            <Link to={createPageUrl('PagamentosClientes')}>
+            <Link to={createPageUrl('PagamentosClientes') + '?highlight=sempreco'}>
               <div className="rounded-2xl p-4 border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 transition-all cursor-pointer">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
@@ -282,7 +282,7 @@ export default function Dashboard() {
 
           {/* Card: Cobrar hoje */}
           {cobrarHoje.length > 0 && (
-            <Link to={createPageUrl('PagamentosClientes')}>
+            <Link to={createPageUrl('PagamentosClientes') + '?highlight=cobrar'}>
               <div className="rounded-2xl p-4 border-2 border-orange-400 bg-orange-50 hover:bg-orange-100 transition-all cursor-pointer animate-pulse">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">

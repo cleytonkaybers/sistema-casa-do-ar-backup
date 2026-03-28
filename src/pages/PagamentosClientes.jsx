@@ -884,8 +884,26 @@ function PagamentosClientesContent() {
   }
 
   const criandoIds = useRef(new Set());
+  const secaoSemPrecoRef = useRef(null);
+  const secaoCobrarRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [highlightSecao, setHighlightSecao] = useState('');
+
+  // Ler parâmetro de URL e fazer scroll
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const h = params.get('highlight');
+    if (h) {
+      setHighlightSecao(h);
+      const timer = setTimeout(() => {
+        const ref = h === 'sempreco' ? secaoSemPrecoRef : h === 'cobrar' ? secaoCobrarRef : null;
+        if (ref?.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   const [pagarModal, setPagarModal] = useState(null);
   const [precosModal, setPrecosModal] = useState(null);
   const [editarModal, setEditarModal] = useState(null);
@@ -1366,7 +1384,7 @@ function PagamentosClientesContent() {
 
           {/* SEÇÃO 2: Sem preço ou atrasados */}
           {pagsSemPreco.length > 0 && (
-            <div className="space-y-3">
+            <div ref={secaoSemPrecoRef} className={`space-y-3 rounded-2xl p-3 transition-all ${highlightSecao === 'sempreco' ? 'bg-amber-50 border-2 border-amber-400' : ''}`}>
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                   <Tag className="w-4 h-4 text-amber-600" />
@@ -1390,7 +1408,7 @@ function PagamentosClientesContent() {
 
           {/* SEÇÃO 3: Pagamentos agendados e atrasados */}
           {pagsAgendadosAtrasados.length > 0 && (
-            <div className="space-y-3">
+            <div ref={secaoCobrarRef} className={`space-y-3 rounded-2xl p-3 transition-all ${highlightSecao === 'cobrar' ? 'bg-orange-50 border-2 border-orange-400' : ''}`}>
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-purple-600" />
