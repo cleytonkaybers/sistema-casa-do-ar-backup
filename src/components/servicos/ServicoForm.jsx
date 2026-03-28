@@ -71,7 +71,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
   };
 
   const handleSelectCliente = (cliente) => {
-    const telefoneNormalizado = cliente.telefone ? normalizePhone(cliente.telefone) : '+55 ';
+    const telefoneNormalizado = stripAndFormatPhone(cliente.telefone || '');
     setFormData(prev => ({
       ...prev,
       cliente_nome: cliente.nome || '',
@@ -90,7 +90,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
   const [formData, setFormData] = useState({
     cliente_nome: '',
     cpf: '',
-    telefone: '+55 ',
+    telefone: '',
     endereco: '',
     latitude: null,
     longitude: null,
@@ -115,7 +115,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
       setFormData({
         cliente_nome: servico.cliente_nome || '',
         cpf: servico.cpf || '',
-        telefone: servico.telefone || '+55 ',
+        telefone: stripAndFormatPhone(servico.telefone || ''),
         endereco: servico.endereco || '',
         latitude: servico.latitude || null,
         longitude: servico.longitude || null,
@@ -133,7 +133,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
       const novoFormData = {
         cliente_nome: prefilledData.cliente_nome || '',
         cpf: prefilledData.cpf || '',
-        telefone: prefilledData.telefone ? normalizePhone(prefilledData.telefone) : '+55 ',
+        telefone: stripAndFormatPhone(prefilledData.telefone || ''),
         endereco: prefilledData.endereco || '',
         latitude: prefilledData.latitude || null,
         longitude: prefilledData.longitude || null,
@@ -152,7 +152,7 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
       const novoFormData = {
         cliente_nome: '',
         cpf: '',
-        telefone: '+55 ',
+        telefone: '',
         endereco: '',
         latitude: null,
         longitude: null,
@@ -178,51 +178,25 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
     }
   }, [formData.tipos_servico, tiposServicoValores]);
 
+  // Formata DDD + número sem +55
   const formatPhoneInput = (value) => {
     const cleaned = value.replace(/\D/g, '');
-    let formatted = cleaned;
-    if (cleaned.length > 0) {
-      if (cleaned.length <= 2) {
-        formatted = `+${cleaned}`;
-      } else if (cleaned.length <= 4) {
-        formatted = `+${cleaned.slice(0, 2)} ${cleaned.slice(2)}`;
-      } else if (cleaned.length <= 9) {
-        formatted = `+${cleaned.slice(0, 2)} ${cleaned.slice(2, 4)} ${cleaned.slice(4)}`;
-      } else {
-        formatted = `+${cleaned.slice(0, 2)} ${cleaned.slice(2, 4)} ${cleaned.slice(4, 9)}-${cleaned.slice(9, 13)}`;
-      }
-    }
-    return formatted;
+    if (!cleaned) return '';
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 6) return `${cleaned.slice(0, 2)} ${cleaned.slice(2)}`;
+    if (cleaned.length <= 10) return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+    return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
   };
 
-  const parseTiposServico = (tipoServicoStr) => {
-    if (!tipoServicoStr) return [{ tipo: 'Limpeza de 9k', quantidade: 1 }];
-    const partes = tipoServicoStr.split(' + ');
-    // Agrupar duplicados em quantidade
-    const contagem = {};
-    partes.forEach(t => {
-      const tipo = t.trim();
-      contagem[tipo] = (contagem[tipo] || 0) + 1;
-    });
-    return Object.entries(contagem).map(([tipo, quantidade]) => ({ tipo, quantidade }));
-  };
-
-  const normalizePhone = (value) => {
-    const cleaned = value.replace(/\D/g, '');
-    if (!cleaned) return '+55 ';
-    const withPrefix = cleaned.startsWith('55') ? cleaned : '55' + cleaned;
-    return formatPhoneInput(withPrefix);
+  // Remove +55 e formata para exibição
+  const stripAndFormatPhone = (value) => {
+    let cleaned = (value || '').replace(/\D/g, '');
+    if (cleaned.startsWith('55') && cleaned.length > 11) cleaned = cleaned.slice(2);
+    return formatPhoneInput(cleaned);
   };
 
   const handlePhoneChange = (e) => {
-    const cleaned = e.target.value.replace(/\D/g, '');
-    if (!cleaned) {
-      setFormData({ ...formData, telefone: '+55 ' });
-      return;
-    }
-    const withPrefix = cleaned.startsWith('55') ? cleaned : '55' + cleaned;
-    const formatted = formatPhoneInput(withPrefix);
-    setFormData({ ...formData, telefone: formatted });
+    setFormData({ ...formData, telefone: formatPhoneInput(e.target.value) });
   };
 
   const formatCPF = (value) => {
