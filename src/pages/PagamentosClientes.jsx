@@ -473,21 +473,29 @@ function EditarValorModal({ open, onClose, pagamento, onSave }) {
 function DetalhesClienteModal({ open, onClose, pagamento }) {
   const records = pagamento?._records || (pagamento ? [pagamento] : []);
 
-  // Agrupar serviços por tipo
+  // Agrupar cada tipo de serviço com suas ocorrências individuais
   const servicosAgrupados = useMemo(() => {
     const groups = {};
     records.forEach(r => {
-      const tipo = r.tipo_servico || 'Sem tipo';
-      if (!groups[tipo]) groups[tipo] = { tipo, qtd: 0, valorTotal: 0, registros: [] };
-      groups[tipo].qtd += 1;
-      groups[tipo].valorTotal += r.valor_total || 0;
-      groups[tipo].registros.push(r);
+      // Cada record pode ter tipo_servico composto (ex: "Limpeza 9k + Limpeza 12k")
+      const tipos = (r.tipo_servico || 'Sem tipo').split('+').map(s => s.trim()).filter(Boolean);
+      const valorPorTipo = tipos.length > 0 ? (r.valor_total || 0) / tipos.length : 0;
+      tipos.forEach(tipo => {
+        if (!groups[tipo]) groups[tipo] = { tipo, ocorrencias: [] };
+        groups[tipo].ocorrencias.push({
+          data: r.data_conclusao,
+          equipe: r.equipe_nome,
+          valorUnitario: valorPorTipo,
+          id: r.id,
+        });
+      });
     });
-    return Object.values(groups).sort((a, b) => b.qtd - a.qtd);
+    return Object.values(groups).sort((a, b) => b.ocorrencias.length - a.ocorrencias.length);
   }, [records]);
 
   const totalGeral = records.reduce((s, r) => s + (r.valor_total || 0), 0);
   const totalPago = records.reduce((s, r) => s + (r.valor_pago || 0), 0);
+  const saldo = totalGeral - totalPago;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -502,50 +510,85 @@ function DetalhesClienteModal({ open, onClose, pagamento }) {
           {/* Resumo financeiro */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
-              <p className="text-xs text-gray-400 mb-0.5">Total serviços</p>
+              <p className="text-xs text-gray-400 mb-0.5">Serviços</p>
               <p className="font-bold text-gray-800 text-lg">{records.length}</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
               <p className="text-xs text-gray-400 mb-0.5">Faturado</p>
               <p className="font-bold text-blue-700 text-sm">{formatCurrency(totalGeral)}</p>
             </div>
-            <div className="bg-red-50 rounded-xl p-3 text-center border border-red-100">
-              <p className="text-xs text-gray-400 mb-0.5">Em débito</p>
-              <p className="font-bold text-red-600 text-sm">{formatCurrency(totalGeral - totalPago)}</p>
+            <div className={`rounded-xl p-3 text-center border ${saldo > 0.01 ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+              <p className="text-xs text-gray-400 mb-0.5">{saldo > 0.01 ? 'Em débito' : 'Quitado'}</p>
+              <p className={`font-bold text-sm ${saldo > 0.01 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(saldo)}</p>
             </div>
           </div>
 
           {/* Serviços agrupados por tipo */}
           <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Serviços por Tipo</p>
-            <div className="space-y-2">
-              {servicosAgrupados.map((g) => (
-                <div key={g.tipo} className="border border-gray-100 rounded-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                        {g.qtd}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-700">{g.tipo}</span>
-                    </div>
-                    <span className="font-bold text-gray-800 text-sm">{formatCurrency(g.valorTotal)}</span>
-                  </div>
-                  {/* Datas de cada execução */}
-                  <div className="divide-y divide-gray-50">
-                    {g.registros.map((r, i) => (
-                      <div key={r.id || i} className="flex items-center justify-between px-4 py-2 text-xs text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-300">└</span>
-                          <span>{r.data_conclusao ? format(parseISO(r.data_conclusao), "dd/MM/yyyy", { locale: ptBR }) : '—'}</span>
-                          {r.equipe_nome && <span className="text-blue-500">· {r.equipe_nome}</span>}
-                        </div>
-                        <span className="font-medium text-gray-600">{formatCurrency(r.valor_total)}</span>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Serviços Realizados</p>
+            <div className="space-y-3">
+              {servicosAgrupados.map((g) => {
+                const qtd = g.ocorrencias.length;
+                const totalTipo = g.ocorrencias.reduce((s, o) => s + (o.valorUnitario || 0), 0);
+                const valorUnitario = qtd > 0 ? totalTipo / qtd : 0;
+                return (
+                  <div key={g.tipo} className="border border-gray-200 rounded-xl overflow-hidden">
+                    {/* Cabeçalho do tipo */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-100">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {qtd > 1 ? `x${qtd}` : '1'}
+                        </span>
+                        <span className="text-sm font-semibold text-gray-800">{g.tipo}</span>
                       </div>
-                    ))}
+                      <div className="text-right">
+                        <p className="font-bold text-blue-700 text-sm">{formatCurrency(totalTipo)}</p>
+                        {qtd > 1 && valorUnitario > 0 && (
+                          <p className="text-xs text-gray-400">{formatCurrency(valorUnitario)} / un.</p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Ocorrências individuais */}
+                    <div className="divide-y divide-gray-50">
+                      {g.ocorrencias.map((o, i) => (
+                        <div key={i} className="flex items-center justify-between px-4 py-2.5 bg-white text-xs">
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <Calendar className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                            <span className="font-medium text-gray-700">
+                              {o.data ? format(parseISO(o.data), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                            </span>
+                            {o.equipe && (
+                              <span className="text-blue-500 font-medium">· 👷 {o.equipe}</span>
+                            )}
+                          </div>
+                          {o.valorUnitario > 0 && (
+                            <span className="font-semibold text-gray-700">{formatCurrency(o.valorUnitario)}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+          </div>
+
+          {/* Total final */}
+          <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-xs text-gray-500">Total faturado</p>
+              <p className="font-bold text-gray-800">{formatCurrency(totalGeral)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Já pago</p>
+              <p className="font-bold text-green-600">{formatCurrency(totalPago)}</p>
+            </div>
+            {saldo > 0.01 && (
+              <div className="text-right">
+                <p className="text-xs text-gray-500">Saldo</p>
+                <p className="font-bold text-red-600">{formatCurrency(saldo)}</p>
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter><Button variant="outline" onClick={onClose}>Fechar</Button></DialogFooter>
