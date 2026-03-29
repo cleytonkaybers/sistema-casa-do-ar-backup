@@ -2,32 +2,27 @@ import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Agrupa serviços por data+equipe e resume com multiplicadores
+// Agrupa serviços por data+equipe, conta serviços iguais do mesmo dia
 function agruparPorData(historico) {
   const grupos = {};
   historico.forEach(item => {
-    const dataKey = item.data ? format(new Date(item.data), 'dd/MM/yyyy', { locale: ptBR }) : 'Sem data';
+    const dataKey = item.data ? format(new Date(item.data + (item.data.length === 10 ? 'T12:00:00' : '')), 'dd/MM/yyyy', { locale: ptBR }) : 'Sem data';
     const equipe = item.equipe_nome || 'Sem equipe';
     const chave = `${dataKey}||${equipe}`;
     if (!grupos[chave]) {
-      grupos[chave] = { data: dataKey, equipe, servicos: [], valor: 0 };
+      grupos[chave] = { data: dataKey, equipe, servicos: {}, valorTotal: 0 };
     }
-    // Conta ocorrências de cada tipo de serviço
-    const tipos = (item.descricao || '').split('+').map(s => s.trim()).filter(Boolean);
-    tipos.forEach(t => {
-      const ex = grupos[chave].servicos.find(s => s.tipo === t);
-      if (ex) ex.qtd++;
-      else grupos[chave].servicos.push({ tipo: t, qtd: 1 });
-    });
-    grupos[chave].valor += item.valor || 0;
+    const tipo = (item.descricao || '').trim();
+    if (!grupos[chave].servicos[tipo]) {
+      grupos[chave].servicos[tipo] = { tipo, qtd: 0, valorUnit: item.valor || 0, totalValor: 0 };
+    }
+    grupos[chave].servicos[tipo].qtd += 1;
+    grupos[chave].servicos[tipo].totalValor += item.valor || 0;
+    grupos[chave].valorTotal += item.valor || 0;
   });
 
   return Object.values(grupos)
-    .sort((a, b) => new Date(b.data.split('/').reverse().join('-')) - new Date(a.data.split('/').reverse().join('-')));
-}
-
-function resumirServicos(servicos) {
-  return servicos.map(s => s.qtd > 1 ? `${s.tipo} x${s.qtd}` : s.tipo).join(' + ');
+    .sort((a, b) => new Date(a.data.split('/').reverse().join('-')) - new Date(b.data.split('/').reverse().join('-')));
 }
 
 // Desenha tabela com larguras customizadas por coluna
@@ -128,15 +123,23 @@ export const gerarPDFCliente = (cliente, servicos, atendimentos) => {
   doc.text(`Total de Serviços: ${grupos.length} visitas`, 15, 52);
   doc.text(`Valor Total Investido: R$ ${totalValor.toLocaleString('pt-BR')}`, 15, 60);
 
-  const colunas = ['Data', 'Equipe', 'Serviços Realizados', 'Valor'];
-  const larguras = [28, 45, 90, 27];
+  const colunas = ['Data', 'Equipe', 'Qtd', 'Serviço', 'Valor Unit.', 'Total'];
+  const larguras = [25, 40, 12, 65, 25, 23];
 
-  const linhas = grupos.map(g => [
-    g.data,
-    g.equipe || 'Sem equipe',
-    resumirServicos(g.servicos),
-    `R$ ${g.valor.toLocaleString('pt-BR')}`
-  ]);
+  const linhas = [];
+  grupos.forEach(g => {
+    const servicoRows = Object.values(g.servicos);
+    servicoRows.forEach((s, idx) => {
+      linhas.push([
+        idx === 0 ? g.data : '',
+        idx === 0 ? (g.equipe || 'Sem equipe') : '',
+        `${s.qtd}x`,
+        s.tipo,
+        s.valorUnit ? `R$ ${s.valorUnit.toLocaleString('pt-BR')}` : '-',
+        `R$ ${s.totalValor.toLocaleString('pt-BR')}`
+      ]);
+    });
+  });
 
   doc._lastY = 72;
   desenharTabela(doc, colunas, larguras, linhas);
@@ -166,8 +169,8 @@ export const gerarPDFTodos = (clientesAgrupados) => {
 
   let y = 52;
   const pageHeight = doc.internal.pageSize.getHeight();
-  const colunas = ['Data', 'Equipe', 'Serviços Realizados', 'Valor'];
-  const larguras = [28, 45, 90, 27];
+  const colunas = ['Data', 'Equipe', 'Qtd', 'Serviço', 'Valor Unit.', 'Total'];
+  const larguras = [25, 40, 12, 65, 25, 23];
 
   Object.entries(clientesAgrupados).forEach(([cliente, itens]) => {
     if (y > pageHeight - 50) {
@@ -195,12 +198,20 @@ export const gerarPDFTodos = (clientesAgrupados) => {
     }));
 
     const grupos = agruparPorData(historicoItens);
-    const linhas = grupos.map(g => [
-      g.data,
-      g.equipe || 'Sem equipe',
-      resumirServicos(g.servicos),
-      `R$ ${g.valor.toLocaleString('pt-BR')}`
-    ]);
+    const linhas = [];
+    grupos.forEach(g => {
+      const servicoRows = Object.values(g.servicos);
+      servicoRows.forEach((s, idx) => {
+        linhas.push([
+          idx === 0 ? g.data : '',
+          idx === 0 ? (g.equipe || 'Sem equipe') : '',
+          `${s.qtd}x`,
+          s.tipo,
+          s.valorUnit ? `R$ ${s.valorUnit.toLocaleString('pt-BR')}` : '-',
+          `R$ ${s.totalValor.toLocaleString('pt-BR')}`
+        ]);
+      });
+    });
 
     doc._lastY = y;
     y = desenharTabela(doc, colunas, larguras, linhas);
