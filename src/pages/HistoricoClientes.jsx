@@ -356,52 +356,69 @@ export default function HistoricoClientes() {
                 </CardHeader>
 
                 <CardContent className="p-0 bg-white">
-                  {/* Tabela agrupada por tipo de serviço */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-100 border-b border-gray-200">
-                          <th className="text-left px-4 py-3 text-gray-600 font-semibold w-16">Qtd</th>
+                          <th className="text-left px-4 py-3 text-gray-600 font-semibold">Data / Equipe</th>
+                          <th className="text-left px-4 py-3 text-gray-600 font-semibold w-14 text-center">Qtd</th>
                           <th className="text-left px-4 py-3 text-gray-600 font-semibold">Serviço</th>
-                          <th className="text-left px-4 py-3 text-gray-600 font-semibold hidden sm:table-cell">Data</th>
                           <th className="text-right px-4 py-3 text-gray-600 font-semibold">Valor Unit.</th>
                           <th className="text-right px-4 py-3 text-gray-600 font-semibold">Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(() => {
-                          // Agrupa apenas por tipo de serviço
-                          const grouped = {};
+                          // Agrupa por data + equipe
+                          const byDate = {};
                           itens.forEach(item => {
-                            const key = item.descricao;
-                            if (!grouped[key]) {
-                              grouped[key] = { ...item, qty: 0, totalValor: 0 };
+                            const dateKey = item.data || '';
+                            const equipeKey = item.equipe_nome || '';
+                            const groupKey = `${dateKey}||${equipeKey}`;
+                            if (!byDate[groupKey]) {
+                              byDate[groupKey] = { data: dateKey, equipe: equipeKey, servicos: {} };
                             }
-                            grouped[key].qty += 1;
-                            grouped[key].totalValor += (item.valor || 0);
+                            const sKey = item.descricao;
+                            if (!byDate[groupKey].servicos[sKey]) {
+                              byDate[groupKey].servicos[sKey] = { descricao: item.descricao, qty: 0, valorUnit: item.valor || 0, totalValor: 0 };
+                            }
+                            byDate[groupKey].servicos[sKey].qty += 1;
+                            byDate[groupKey].servicos[sKey].totalValor += (item.valor || 0);
                           });
-                          return Object.values(grouped).map((g, idx) => (
-                            <tr key={idx} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                              <td className="px-4 py-3">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
-                                  {g.qty}x
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="font-medium text-gray-800">{g.descricao}</span>
-                                <Badge className="ml-2 text-xs bg-green-100 text-green-700 border border-green-200">concluído</Badge>
-                              </td>
-                              <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
-                                {g.data ? format(new Date(g.data), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
-                              </td>
-                              <td className="px-4 py-3 text-right text-gray-700">
-                                {g.valor ? `R$ ${g.valor.toLocaleString('pt-BR')}` : '—'}
-                              </td>
-                              <td className="px-4 py-3 text-right font-bold text-green-700">
-                                {g.totalValor ? `R$ ${g.totalValor.toLocaleString('pt-BR')}` : '—'}
-                              </td>
-                            </tr>
-                          ));
+
+                          const sortedGroups = Object.values(byDate).sort((a, b) => new Date(a.data) - new Date(b.data));
+                          let rowBg = false;
+
+                          return sortedGroups.map((group, gIdx) => {
+                            const servicoRows = Object.values(group.servicos);
+                            return servicoRows.map((s, sIdx) => {
+                              rowBg = !rowBg;
+                              return (
+                                <tr key={`${gIdx}-${sIdx}`} className={`border-b border-gray-100 ${rowBg ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                                  {sIdx === 0 ? (
+                                    <td className="px-4 py-3 align-top" rowSpan={servicoRows.length}>
+                                      <div className="font-semibold text-gray-800">
+                                        {group.data ? format(new Date(group.data), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                                      </div>
+                                      {group.equipe && (
+                                        <div className="text-xs text-blue-600 font-medium mt-0.5">{group.equipe}</div>
+                                      )}
+                                    </td>
+                                  ) : null}
+                                  <td className="px-4 py-3 text-center">
+                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">{s.qty}x</span>
+                                  </td>
+                                  <td className="px-4 py-3 font-medium text-gray-800">{s.descricao}</td>
+                                  <td className="px-4 py-3 text-right text-gray-600">
+                                    {s.valorUnit ? `R$ ${s.valorUnit.toLocaleString('pt-BR')}` : '—'}
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-bold text-green-700">
+                                    {s.totalValor ? `R$ ${s.totalValor.toLocaleString('pt-BR')}` : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          });
                         })()}
                       </tbody>
                       <tfoot>
