@@ -1152,7 +1152,15 @@ function PagamentosClientesContent() {
   }, [atendimentos, pagamentos, isLoading]);
 
   const handleSalvarPrecos = async (pag, precosGrupo) => {
-    const records = pag._records?.length > 1 ? pag._records : [pag];
+    // Busca registros frescos direto do pagamentos (evita dados desatualizados de _records)
+    const nomeKey = (pag.cliente_nome || '').trim().toLowerCase();
+    const recordsFrescos = pagamentos.filter(p =>
+      (p.cliente_nome || '').trim().toLowerCase() === nomeKey &&
+      p.status !== 'pago'
+    );
+    const records = recordsFrescos.length > 0 ? recordsFrescos : (pag._records || [pag]);
+
+    let atualizados = 0;
     for (const rec of records) {
       const tipos = (rec.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
       const novoPreco = tipos.reduce((sum, t) => {
@@ -1162,9 +1170,10 @@ function PagamentosClientesContent() {
       if (novoPreco > 0) {
         const novoStatus = rec.data_pagamento_agendado ? 'agendado' : 'pendente';
         await updateMutation.mutateAsync({ id: rec.id, data: { valor_total: novoPreco, status: novoStatus } });
+        atualizados++;
       }
     }
-    toast.success('💾 Preços salvos com sucesso!');
+    toast.success(`💾 Preços salvos em ${atualizados} registro(s)!`);
     setPrecosSyncKey(k => k + 1);
   };
 
