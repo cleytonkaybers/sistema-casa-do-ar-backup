@@ -218,12 +218,18 @@ function DefinirPrecoModal({ open, onClose, pagamento, pagamentosAtuais = [], on
 
     const inicial = {};
     servicosGrupos.forEach(({ tipo }) => {
-      // Só pre-preenche se encontrar um record com EXATAMENTE esse tipo único e valor > 1
+      // Busca um record onde TODOS os tipos são iguais a este tipo (mesmo tipo repetido N vezes)
       const rec = records.find(r => {
         const tipos = (r.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
-        return tipos.length === 1 && tipos[0] === tipo && (r.valor_total || 0) > 1;
+        return tipos.length > 0 && tipos.every(t => t === tipo) && (r.valor_total || 0) > 1;
       });
-      inicial[tipo] = rec ? Number(rec.valor_total).toFixed(2).replace('.', ',') : '';
+      if (rec) {
+        const tipos = (rec.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
+        const precoUnitario = (rec.valor_total || 0) / tipos.length;
+        inicial[tipo] = Number(precoUnitario).toFixed(2).replace('.', ',');
+      } else {
+        inicial[tipo] = '';
+      }
     });
     setPrecosGrupo(inicial);
   }, [open, pagamento?.id]);
