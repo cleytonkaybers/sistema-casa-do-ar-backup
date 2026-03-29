@@ -355,82 +355,63 @@ export default function HistoricoClientes() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-6 bg-white">
-                  <div className="space-y-4">
-                    {itens.map((item, index) => (
-                      <div key={item.id} className="relative">
-                        {index !== itens.length - 1 && (
-                          <div className="absolute left-6 top-16 w-0.5 h-8 bg-gradient-to-b from-blue-200 to-transparent" />
-                        )}
-
-                        <div className="flex gap-4">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            item.status === 'concluido' || item.status === 'Concluído'
-                              ? 'bg-green-100'
-                              : item.status === 'andamento' || item.status === 'Em Andamento'
-                              ? 'bg-blue-100'
-                              : 'bg-gray-100'
-                          }`}>
-                            <CheckCircle2 className={`w-6 h-6 ${
-                              item.status === 'concluido' || item.status === 'Concluído'
-                                ? 'text-green-600'
-                                : item.status === 'andamento' || item.status === 'Em Andamento'
-                                ? 'text-blue-600'
-                                : 'text-gray-500'
-                            }`} />
-                          </div>
-
-                          <div className="flex-1 rounded-lg p-4 border border-gray-200 bg-gray-50">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h4 className="font-semibold text-gray-800">{item.descricao}</h4>
-                                <Badge className={`${statusCores[item.status] || 'bg-gray-100 text-gray-700 border-gray-300'} border text-xs mt-2`}>
-                                  {item.status}
-                                </Badge>
-                              </div>
-                              {item.valor && (
-                                <span className="font-bold text-green-700">R$ {item.valor.toLocaleString('pt-BR')}</span>
-                              )}
-                            </div>
-
-                            <div className="space-y-1.5 text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-blue-500" />
-                                <span><strong className="text-gray-700">Data do Serviço:</strong> {format(new Date(item.data), 'dd/MM/yyyy', { locale: ptBR })}</span>
-                              </div>
-                              {item.data_atualizacao && (
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4 text-purple-500" />
-                                  <span><strong className="text-gray-700">Última Atualização:</strong> {format(new Date(item.data_atualizacao), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}</span>
-                                </div>
-                              )}
-                              {item.usuario && (
-                                <div className="flex items-center gap-2">
-                                  <User className="w-4 h-4 text-amber-500" />
-                                  <span><strong className="text-gray-700">Técnico:</strong> {item.usuario}</span>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
-                              <Badge className="text-xs bg-blue-100 text-blue-700 border border-blue-200">
-                                {item.tipo}
-                              </Badge>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(item)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 px-2"
-                                disabled={deleteMutation.isPending}
-                              >
-                                <Trash2 className="w-3.5 h-3.5 mr-1" />
-                                Excluir
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <CardContent className="p-0 bg-white">
+                  {/* Tabela agrupada por tipo de serviço */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-100 border-b border-gray-200">
+                          <th className="text-left px-4 py-3 text-gray-600 font-semibold w-16">Qtd</th>
+                          <th className="text-left px-4 py-3 text-gray-600 font-semibold">Serviço</th>
+                          <th className="text-left px-4 py-3 text-gray-600 font-semibold hidden sm:table-cell">Data</th>
+                          <th className="text-right px-4 py-3 text-gray-600 font-semibold">Valor Unit.</th>
+                          <th className="text-right px-4 py-3 text-gray-600 font-semibold">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          // Agrupa por tipo de serviço + valor
+                          const grouped = {};
+                          itens.forEach(item => {
+                            const key = `${item.descricao}||${item.valor}`;
+                            if (!grouped[key]) {
+                              grouped[key] = { ...item, qty: 0 };
+                            }
+                            grouped[key].qty += 1;
+                          });
+                          return Object.values(grouped).map((g, idx) => (
+                            <tr key={idx} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                                  {g.qty}x
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="font-medium text-gray-800">{g.descricao}</span>
+                                <Badge className="ml-2 text-xs bg-green-100 text-green-700 border border-green-200">concluído</Badge>
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
+                                {g.data ? format(new Date(g.data), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-right text-gray-700">
+                                {g.valor ? `R$ ${g.valor.toLocaleString('pt-BR')}` : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-right font-bold text-green-700">
+                                {g.valor ? `R$ ${(g.valor * g.qty).toLocaleString('pt-BR')}` : '—'}
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-gray-300 bg-gray-50">
+                          <td colSpan={4} className="px-4 py-3 text-right font-semibold text-gray-700">Total Geral:</td>
+                          <td className="px-4 py-3 text-right font-bold text-green-700 text-base">
+                            R$ {itens.reduce((sum, item) => sum + (item.valor || 0), 0).toLocaleString('pt-BR')}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </CardContent>
               </Card>
