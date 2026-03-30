@@ -201,8 +201,11 @@ export default function ServicosPage() {
       queryClient.invalidateQueries({ queryKey: ['servicos'] });
       toast.success(servicoSnapshot.sem_registro_cliente ? 'Serviço avulso concluído! 🎉' : 'Serviço concluído! 🎉');
 
+      // "Ver defeito" não gera atendimento, comissões nem preventiva
+      const isVerDefeito = servicoSnapshot.tipo_servico === 'Ver defeito';
+
       // 3. Operações secundárias em background (não bloqueiam a UI)
-      Promise.all([
+      if (!isVerDefeito) Promise.all([
         base44.entities.AlteracaoStatus.create({
           servico_id: servicoSnapshot.id,
           status_anterior: statusAnterior,
@@ -311,7 +314,7 @@ export default function ServicosPage() {
       }).catch(() => {});
 
       // Atualizar preventiva do cliente em background
-      if (!servicoSnapshot.sem_registro_cliente) {
+      if (!isVerDefeito && !servicoSnapshot.sem_registro_cliente) {
         base44.entities.Cliente.filter({ telefone: servicoSnapshot.telefone })
           .then(clientesMatch => {
             if (clientesMatch.length > 0) {
