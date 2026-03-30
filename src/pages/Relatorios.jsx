@@ -5,12 +5,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, TrendingUp, DollarSign, CheckCircle, Clock, Filter, BarChart2, List, BookOpen, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import NotionExportModal from '../components/relatorios/NotionExportModal';
-import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval, parseISO, startOfWeek, endOfWeek, startOfYear, endOfYear, subWeeks } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import NoPermission from '../components/NoPermission';
 import { usePermissions } from '../components/auth/PermissionGuard';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316'];
+
+const CATEGORIAS = [
+  { label: 'Limpeza', color: '#3b82f6', keywords: ['Limpeza'] },
+  { label: 'Instalação', color: '#10b981', keywords: ['Instalação'] },
+  { label: 'Manutenção', color: '#f59e0b', keywords: ['Troca', 'Recarga', 'Carga', 'Conserto', 'Serviço', 'Ver defeito', 'Mudança'] },
+  { label: 'Outros', color: '#8b5cf6', keywords: [] },
+];
+
+const getCategoria = (tipo) => {
+  if (!tipo) return 'Outros';
+  for (const cat of CATEGORIAS) {
+    if (cat.keywords.some(k => tipo.includes(k))) return cat.label;
+  }
+  return 'Outros';
+};
+
+const hoje = new Date();
+const PERIODOS = [
+  { label: 'Esta semana', range: () => ({ start: startOfWeek(hoje, { weekStartsOn: 1 }), end: endOfWeek(hoje, { weekStartsOn: 1 }) }) },
+  { label: 'Semana passada', range: () => ({ start: startOfWeek(subWeeks(hoje, 1), { weekStartsOn: 1 }), end: endOfWeek(subWeeks(hoje, 1), { weekStartsOn: 1 }) }) },
+  { label: 'Este mês', range: () => ({ start: startOfMonth(hoje), end: endOfMonth(hoje) }) },
+  { label: 'Mês passado', range: () => ({ start: startOfMonth(subMonths(hoje, 1)), end: endOfMonth(subMonths(hoje, 1)) }) },
+  { label: 'Este ano', range: () => ({ start: startOfYear(hoje), end: endOfYear(hoje) }) },
+  { label: 'Personalizado', range: () => ({ start: startOfMonth(hoje), end: endOfMonth(hoje) }) },
+];
 
 export default function RelatóriosPage() {
   const { isAdmin } = usePermissions();
@@ -39,6 +66,14 @@ export default function RelatóriosPage() {
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [viewMode, setViewMode] = useState('resumo'); // 'resumo' | 'detalhado'
   const [notionModal, setNotionModal] = useState(false);
+
+  const dateRange = useMemo(() => {
+    if (periodoSelecionado === 5 && customStart && customEnd) {
+      return { start: new Date(customStart), end: new Date(customEnd + 'T23:59:59') };
+    }
+    const p = PERIODOS[periodoSelecionado];
+    return p ? p.range() : { start: startOfMonth(today), end: endOfMonth(today) };
+  }, [periodoSelecionado, customStart, customEnd]);
 
   const exportarExcel = () => {
     const wb = XLSX.utils.book_new();
