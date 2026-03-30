@@ -1333,12 +1333,11 @@ function PagamentosClientesContent() {
     )
   , [pagamentos, searchTerm]);
 
-  // 1. Serviços da semana atual NÃO pagos (pagos somem da view principal)
+  // 1. Serviços da semana atual (todos, incluindo pagos — somem na virada)
   const pagsSemana = useMemo(() => {
     const statusOrder = { 'pendente': 0, 'agendado': 1, 'parcial': 2, 'pago': 3 };
     const filtrados = pagsFiltrados
       .filter(p => {
-        if (p.status === 'pago') return false; // pagos somem da view
         if (!p.data_conclusao) return false;
         try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
         catch { return false; }
