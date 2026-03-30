@@ -833,6 +833,23 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
   const hoje = new Date();
   const chegoDataAgendada = dataAgendada && isAfter(hoje, dataAgendada) && !isPago;
 
+  // Próxima parcela agendada no histórico (para exibir em serviços parciais)
+  const proximaParcelaAgendada = useMemo(() => {
+    if (!isParcial) return null;
+    const todasParcelas = records.flatMap(r => (r.historico_pagamentos || []).filter(h => h.agendada));
+    if (!todasParcelas.length) return null;
+    const parseData = (d) => {
+      if (!d) return null;
+      const parte = d.split(' ')[0].split('/');
+      if (parte.length === 3) return new Date(`${parte[2]}-${parte[1]}-${parte[0]}T12:00:00`);
+      return null;
+    };
+    const comDatas = todasParcelas.map(p => ({ ...p, _date: parseData(p.data) })).filter(p => p._date);
+    const futuras = comDatas.filter(p => p._date >= hoje);
+    if (futuras.length) return futuras.sort((a, b) => a._date - b._date)[0];
+    return comDatas.sort((a, b) => b._date - a._date)[0] || null;
+  }, [isParcial, records]);
+
   return (
     <div className={`border rounded-lg transition-all ${
       chegoDataAgendada
@@ -857,9 +874,9 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
                   📅 {format(new Date(pag.data_pagamento_agendado + 'T12:00:00'), 'dd/MM')}
                 </span>
               )}
-              {isParcial && !pag.data_pagamento_agendado && pag.data_conclusao && (
+              {isParcial && proximaParcelaAgendada && (
                 <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-semibold flex-shrink-0">
-                  {format(parseISO(pag.data_conclusao), 'dd/MM')}
+                  📅 {proximaParcelaAgendada.data.split(' ')[0]}
                 </span>
               )}
             </div>
