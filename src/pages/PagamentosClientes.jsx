@@ -836,19 +836,28 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
   // Próxima parcela agendada no histórico (para exibir em serviços parciais)
   const proximaParcelaAgendada = useMemo(() => {
     if (!isParcial) return null;
-    const todasParcelas = records.flatMap(r => (r.historico_pagamentos || []).filter(h => h.agendada));
-    if (!todasParcelas.length) return null;
+    // Busca em _records E no próprio pag (caso agrupado com um único registro)
+    const fontes = records.length > 0 ? records : [pag];
+    const todasParcelas = [
+      ...(pag.historico_pagamentos || []).filter(h => h.agendada),
+      ...fontes.flatMap(r => (r.historico_pagamentos || []).filter(h => h.agendada)),
+    ];
+    // Deduplica por data+valor
+    const unicas = todasParcelas.filter((p, i, arr) =>
+      arr.findIndex(x => x.data === p.data && x.valor === p.valor) === i
+    );
+    if (!unicas.length) return null;
     const parseData = (d) => {
       if (!d) return null;
       const parte = d.split(' ')[0].split('/');
       if (parte.length === 3) return new Date(`${parte[2]}-${parte[1]}-${parte[0]}T12:00:00`);
       return null;
     };
-    const comDatas = todasParcelas.map(p => ({ ...p, _date: parseData(p.data) })).filter(p => p._date);
+    const comDatas = unicas.map(p => ({ ...p, _date: parseData(p.data) })).filter(p => p._date);
     const futuras = comDatas.filter(p => p._date >= hoje);
     if (futuras.length) return futuras.sort((a, b) => a._date - b._date)[0];
     return comDatas.sort((a, b) => b._date - a._date)[0] || null;
-  }, [isParcial, records]);
+  }, [isParcial, records, pag]);
 
   return (
     <div className={`border rounded-lg transition-all ${
