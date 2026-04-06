@@ -386,11 +386,13 @@ export default function Atendimentos() {
                           <Share2 className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleVerDetalhes(atendimento)} className="text-gray-400 hover:text-blue-600" title="Ver Detalhes">
-                          <Info className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(atendimento)} className="text-gray-400 hover:text-red-500" title="Excluir">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                           <Info className="w-4 h-4" />
+                         </Button>
+                         {isAdmin && (
+                           <Button variant="ghost" size="icon" onClick={() => handleDelete(atendimento)} className="text-gray-400 hover:text-red-500" title="Excluir">
+                             <Trash2 className="w-4 h-4" />
+                           </Button>
+                         )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -437,9 +439,11 @@ export default function Atendimentos() {
                     <Button variant="outline" size="sm" onClick={() => handleVerDetalhes(atendimento)} className="flex-1 border-gray-200 text-gray-600 hover:text-blue-600">
                       <Info className="w-4 h-4 mr-1.5" /> Ver Detalhes
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(atendimento)} className="border-gray-200 text-gray-500 hover:text-red-500">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {isAdmin && (
+                      <Button variant="outline" size="sm" onClick={() => handleDelete(atendimento)} className="border-gray-200 text-gray-500 hover:text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
