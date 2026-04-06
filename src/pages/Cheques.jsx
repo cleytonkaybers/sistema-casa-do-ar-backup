@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import EmprestimosTable from '@/components/cheques/EmprestimosTable';
+import { isValid } from 'date-fns';
+
+function calcDebitoEmprestimo(e) {
+  if (!e.valor_principal || !e.percentual_mes || !e.data_emprestimo) return e.valor_principal || 0;
+  const inicio = parseISO(e.data_emprestimo);
+  if (!isValid(inicio)) return e.valor_principal;
+  const dias = differenceInDays(new Date(), inicio);
+  const taxaDiaria = e.percentual_mes / 100 / 30;
+  return Math.max(0, e.valor_principal * Math.pow(1 + taxaDiaria, dias) - (e.total_abatido || 0));
+}
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +33,7 @@ const STATUS_CONFIG = {
 
 export default function Cheques() {
   const [cheques, setCheques] = useState([]);
+  const [emprestimos, setEmprestimos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ nome: '', quem_passou: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
@@ -60,7 +71,10 @@ export default function Cheques() {
     });
   };
 
-  useEffect(() => { loadCheques(); }, []);
+  useEffect(() => {
+    loadCheques();
+    base44.entities.Emprestimo.list().then(setEmprestimos).catch(() => {});
+  }, []);
 
   const handleSave = async () => {
     if (!form.nome || !form.data_compensacao || !form.valor) {
@@ -103,9 +117,31 @@ export default function Cheques() {
   const pendentes = cheques.filter(c => c.status === 'pendente');
   const outros = cheques.filter(c => c.status !== 'pendente');
   const totalPendente = pendentes.reduce((acc, c) => acc + (c.valor || 0), 0);
+  const totalEmprestimosAtivos = emprestimos
+    .filter(e => e.status === 'ativo')
+    .reduce((acc, e) => acc + calcDebitoEmprestimo(e), 0);
+  const totalAplicado = totalPendente + totalEmprestimosAtivos;
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
+      {/* Banner Total Aplicado */}
+      <div className="rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #6d28d9 100%)' }}>
+        <div>
+          <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider">Total em Circulação</p>
+          <p className="text-white text-3xl font-bold mt-0.5">R$ {totalAplicado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+        <div className="flex gap-4 text-center">
+          <div className="bg-white/10 rounded-lg px-4 py-2">
+            <p className="text-blue-200 text-xs">Cheques Pendentes</p>
+            <p className="text-white font-bold">R$ {totalPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <div className="bg-white/10 rounded-lg px-4 py-2">
+            <p className="text-purple-200 text-xs">Empréstimos Ativos</p>
+            <p className="text-white font-bold">R$ {totalEmprestimosAtivos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
