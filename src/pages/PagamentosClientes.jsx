@@ -1178,15 +1178,14 @@ function PagamentosClientesContent() {
 
   // Sincronizar apenas ATENDIMENTOS DA SEMANA ATUAL — 1 registro por atendimento
   useEffect(() => {
-    if (isLoading || !atendimentos.length) return;
+    if (isLoading || !atendimentos.length || !pagamentos) return;
+    // Aguarda pagamentos estarem carregados (evita criar duplicatas na montagem)
     const idsRegistrados = new Set(pagamentos.map(p => p.atendimento_id).filter(Boolean));
-
-    // TIPOS_IGNORADOS moved to top-level const
 
     const novos = atendimentos.filter(a => {
       if (idsRegistrados.has(a.id)) return false;
       if (criandoIds.current.has(a.id)) return false;
-      if (TIPOS_IGNORADOS.includes(a.tipo_servico)) return false; // ignorar tipos sem cobrança
+      if (TIPOS_IGNORADOS.includes(a.tipo_servico)) return false;
       const dataRef = a.data_conclusao || a.created_date;
       if (!dataRef) return false;
       try {
@@ -1196,9 +1195,8 @@ function PagamentosClientesContent() {
     });
 
     novos.forEach(a => {
-      criandoIds.current.add(a.id); // marca como em criação
+      criandoIds.current.add(a.id);
       
-      // Procurar débitos atrasados do mesmo cliente (fora da semana atual)
       const nomeNormalizado = (a.cliente_nome || '').trim().toLowerCase();
       const telefoneLimpo = (a.telefone || '').replace(/\D/g, '');
       
@@ -1206,13 +1204,9 @@ function PagamentosClientesContent() {
         const pNomeNormalizado = (p.cliente_nome || '').trim().toLowerCase();
         const pTelefoneLimpo = (p.telefone || '').replace(/\D/g, '');
         const debitoPendente = calcularSaldo(p.valor_total, p.valor_pago);
-        
-        // Verificar se é mesmo cliente e tem débito pendente
         if (pNomeNormalizado !== nomeNormalizado) return false;
         if (telefoneLimpo && pTelefoneLimpo && telefoneLimpo !== pTelefoneLimpo) return false;
         if (debitoPendente <= 0.01) return false;
-        
-        // Ignorar serviços da semana atual
         if (p.data_conclusao) {
           try {
             if (isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana })) return false;
@@ -1223,7 +1217,6 @@ function PagamentosClientesContent() {
       
       const debitoTotal = debitosAtrasados.reduce((sum, p) => sum + ((p.valor_total || 0) - (p.valor_pago || 0)), 0);
 
-      // Novo cliente sempre inicia com R$ 1.00 e status pendente para ADM editar
       createMutation.mutate({
         atendimento_id: a.id,
         servico_id: a.servico_id || '',
@@ -1243,7 +1236,7 @@ function PagamentosClientesContent() {
         }] : [],
       });
     });
-  }, [atendimentos, pagamentos, isLoading]);
+  }, [atendimentos, isLoading, pagamentos.length]);
 
   const handleSalvarPrecos = async (pag, precosGrupo) => {
     // Busca registros frescos direto do pagamentos (evita dados desatualizados de _records)
