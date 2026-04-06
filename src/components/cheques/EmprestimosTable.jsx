@@ -121,6 +121,30 @@ export default function EmprestimosTable() {
     },
   });
 
+  const reativarMutation = useMutation({
+    mutationFn: ({ id, historico }) =>
+      base44.entities.Emprestimo.update(id, { status: 'ativo', historico_pagamentos: historico }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emprestimos'] });
+      toast.success('Empréstimo reativado!');
+    },
+  });
+
+  const handleReativar = (e) => {
+    const historico = [
+      ...(e.historico_pagamentos || []),
+      {
+        data: new Date().toISOString(),
+        tipo: 'criacao',
+        valor: 0,
+        debito_antes: 0,
+        debito_depois: 0,
+        observacao: 'Empréstimo reativado (quitado por engano)',
+      }
+    ];
+    reativarMutation.mutate({ id: e.id, historico });
+  };
+
   const openEdit = (e) => {
     setEditingEmprestimo(e);
     setForm({
@@ -283,7 +307,16 @@ export default function EmprestimosTable() {
           )}
           {isQuitado && (
             <td className="px-3 py-3">
-              <Badge className="bg-green-100 text-green-700">Quitado</Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-100 text-green-700">Quitado</Badge>
+                <button
+                  onClick={() => handleReativar(e)}
+                  title="Reativar empréstimo"
+                  className="text-xs text-orange-500 hover:text-orange-700 underline whitespace-nowrap"
+                >
+                  Reativar
+                </button>
+              </div>
             </td>
           )}
         </tr>
