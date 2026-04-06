@@ -24,6 +24,7 @@ function parseDateSafe(str) {
 
 export default function MeuFinanceiro() {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [periodoFiltro, setPeriodoFiltro] = useState('atual');
 
   const hoje = new Date();
@@ -106,8 +107,8 @@ export default function MeuFinanceiro() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className={`grid grid-cols-1 gap-4 ${isAdmin ? 'md:grid-cols-3' : ''}`}>
+        {isAdmin && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Clock className="w-4 h-4 text-orange-500" /> Comissões Pendentes
@@ -117,7 +118,7 @@ export default function MeuFinanceiro() {
             <div className="text-2xl font-bold text-orange-600">{formatMoney(totalPendente)}</div>
             <p className="text-xs text-gray-500 mt-1">{comissoesPeriodo.filter(c => c.status === 'pendente').length} serviço(s)</p>
           </CardContent>
-        </Card>
+        </Card>}
 
         <Card>
           <CardHeader className="pb-3">
@@ -131,7 +132,7 @@ export default function MeuFinanceiro() {
           </CardContent>
         </Card>
 
-        <Card>
+        {isAdmin && <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-blue-500" /> Total Ganho no Período
@@ -141,11 +142,11 @@ export default function MeuFinanceiro() {
             <div className="text-2xl font-bold text-blue-600">{formatMoney(totalGanho)}</div>
             <p className="text-xs text-gray-500 mt-1">{comissoesPeriodo.length} serviço(s) concluído(s)</p>
           </CardContent>
-        </Card>
+        </Card>}
       </div>
 
       {/* Comissões por Serviço */}
-      <Card>
+      {isAdmin && <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-4 h-4" /> Comissões por Serviço
@@ -197,9 +198,9 @@ export default function MeuFinanceiro() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>}
 
-      {/* Pagamentos Recebidos */}
+        {/* Pagamentos Recebidos */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -211,6 +212,8 @@ export default function MeuFinanceiro() {
             <p className="text-center text-gray-500 py-4">Carregando...</p>
           ) : meusPagamentos.length === 0 ? (
             <p className="text-center text-gray-500 text-sm py-4">Nenhum pagamento registrado ainda</p>
+          ) : pagamentosPeriodo.length === 0 ? (
+            <p className="text-center text-gray-500 text-sm py-4">Nenhum pagamento neste período</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -223,7 +226,7 @@ export default function MeuFinanceiro() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {meusPagamentos.map(p => {
+                  {pagamentosPeriodo.map(p => {
                     const data = parseDateSafe(p.data_pagamento) || parseDateSafe(p.created_date);
                     return (
                       <TableRow key={p.id}>
