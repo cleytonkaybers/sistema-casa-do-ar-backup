@@ -24,7 +24,7 @@ export default function Cheques() {
   const [cheques, setCheques] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
+  const [form, setForm] = useState({ nome: '', quem_passou: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
   const [saving, setSaving] = useState(false);
   const [alertas, setAlertas] = useState([]);
 
@@ -69,7 +69,7 @@ export default function Cheques() {
     setSaving(true);
     await base44.entities.Cheque.create({ ...form, valor: parseFloat(form.valor), status: 'pendente' });
     toast.success('Cheque cadastrado!');
-    setForm({ nome: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
+    setForm({ nome: '', quem_passou: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
     setShowForm(false);
     setSaving(false);
     loadCheques();
@@ -159,7 +159,8 @@ export default function Cheques() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Nome</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Emitente</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Quem Passou</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Data</th>
                   <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Valor</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Banco</th>
@@ -174,6 +175,7 @@ export default function Cheques() {
                   return (
                     <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-gray-800">{c.nome}</td>
+                      <td className="px-4 py-2.5 text-gray-600">{c.quem_passou || '—'}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5">
                           <span className="text-gray-700">{format(parseISO(c.data_compensacao), 'dd/MM/yyyy')}</span>
@@ -220,7 +222,8 @@ export default function Cheques() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Nome</th>
+                  <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Emitente</th>
+                  <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Quem Passou</th>
                   <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Data</th>
                   <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Valor</th>
                   <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Status</th>
@@ -231,6 +234,7 @@ export default function Cheques() {
                 {outros.map(c => (
                   <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors opacity-70">
                     <td className="px-4 py-2 text-gray-700">{c.nome}</td>
+                    <td className="px-4 py-2 text-gray-500">{c.quem_passou || '—'}</td>
                     <td className="px-4 py-2 text-gray-500">{format(parseISO(c.data_compensacao), 'dd/MM/yyyy')}</td>
                     <td className="px-4 py-2 text-right text-gray-600">R$ {c.valor?.toFixed(2)}</td>
                     <td className="px-4 py-2">
@@ -267,8 +271,12 @@ export default function Cheques() {
           </DialogHeader>
           <div className="space-y-3 pt-2">
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Nome do Emitente *</label>
-              <Input placeholder="Nome" value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} />
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Nome do Emitente (dono da folha) *</label>
+              <Input placeholder="Ex: Paulo" value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Quem Passou o Cheque</label>
+              <Input placeholder="Ex: João" value={form.quem_passou} onChange={e => setForm({...form, quem_passou: e.target.value})} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

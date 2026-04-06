@@ -4,7 +4,11 @@
   "properties": {
     "nome": {
       "type": "string",
-      "description": "Nome do emitente do cheque"
+      "description": "Nome do emitente do cheque (dono da folha)"
+    },
+    "quem_passou": {
+      "type": "string",
+      "description": "Nome de quem passou/entregou o cheque"
     },
     "data_compensacao": {
       "type": "string",
