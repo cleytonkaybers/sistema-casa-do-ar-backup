@@ -270,182 +270,149 @@ export default function EmprestimosTable() {
     aporte:     { label: 'Novo Aporte',  color: 'bg-orange-100 text-orange-700' },
   };
 
-  const renderRow = (e, isQuitado = false) => {
+  const renderCard = (e, isQuitado = false) => {
     const debitoAtual = calcularDebitoAtual(e);
     const juros = calcularJurosAcumulados(e);
     const isExpanded = expandedId === e.id;
     const historico = e.historico_pagamentos || [];
     const diasDecorridos = e.data_emprestimo && isValid(parseISO(e.data_emprestimo))
       ? differenceInDays(new Date(), parseISO(e.data_emprestimo)) : 0;
+    const ganho = (e.total_abatido || 0) - e.valor_principal;
 
     return (
-      <React.Fragment key={e.id}>
-        {/* Linha principal */}
-        <tr className={`border-b border-gray-100 transition-colors ${isQuitado ? 'opacity-60' : 'hover:bg-purple-50'}`}>
-          <td className="px-3 py-3">
-            <button
-              onClick={() => setExpandedId(isExpanded ? null : e.id)}
-              className="flex items-center gap-1.5 font-semibold text-gray-800 hover:text-purple-700 transition-colors"
-            >
-              {isExpanded
-                ? <ChevronDown className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                : <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-              {e.cliente_nome}
-            </button>
-          </td>
-          <td className="px-3 py-3">
-            {(() => {
-              const ganho = (e.total_abatido || 0) - e.valor_principal;
-              return ganho > 0
-                ? <span className="font-bold text-emerald-600">{formatMoney(ganho)}</span>
-                : <span className="text-xs text-gray-400">—</span>;
-            })()}
-          </td>
-          <td className="px-3 py-3 text-gray-600">{formatMoney(e.valor_principal)}</td>
-          <td className="px-3 py-3 text-sm text-gray-500">{formatDate(e.data_emprestimo)}</td>
-          <td className="px-3 py-3">
-            <Badge className="bg-purple-100 text-purple-700 font-medium">{e.percentual_mes}% a.m.</Badge>
-          </td>
-          <td className="px-3 py-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="font-bold text-red-600 text-sm">{formatMoney(debitoAtual)}</span>
-              <span className="text-xs text-orange-500 font-medium">↑ {formatMoney(juros)} em juros</span>
-            </div>
-          </td>
-          <td className="px-3 py-3 text-green-600 font-medium text-sm">{formatMoney(e.total_abatido || 0)}</td>
-          <td className="px-3 py-3 text-sm text-gray-400">{e.data_estimada_recebimento ? formatDate(e.data_estimada_recebimento) : '—'}</td>
-          {!isQuitado && (
-            <td className="px-3 py-3">
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" title="Registrar pagamento/abatimento"
-                  onClick={() => { setAbatimentoModal(e); setValorAbatimento(''); setObsAbatimento(''); }}
-                  className="text-green-600 hover:text-green-800 hover:bg-green-50">
-                  <MinusCircle className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" title="Adicionar crédito ao cliente"
-                  onClick={() => { setAporteModal(e); setValorAporte(''); setObsAporte(''); }}
-                  className="text-orange-500 hover:text-orange-700 hover:bg-orange-50">
-                  <PlusCircle className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm"
-                  onClick={() => handleQuitar(e)}
-                  className="text-blue-600 hover:text-blue-800 text-xs px-2">
-                  Quitar
-                </Button>
-                <Button variant="ghost" size="icon" title="Editar"
-                  onClick={() => openEdit(e)}
-                  className="text-blue-400 hover:text-blue-600 hover:bg-blue-50">
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon"
-                  onClick={() => { if (confirm('Excluir este empréstimo?')) deleteMutation.mutate(e.id); }}
-                  className="text-red-400 hover:text-red-600">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </td>
-          )}
-          {isQuitado && (
-            <td className="px-3 py-3">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-100 text-green-700">Quitado</Badge>
-                <button
-                  onClick={() => handleReativar(e)}
-                  title="Reativar empréstimo"
-                  className="text-xs text-orange-500 hover:text-orange-700 underline whitespace-nowrap"
-                >
-                  Reativar
-                </button>
-              </div>
-            </td>
-          )}
-        </tr>
+      <div key={e.id} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${isQuitado ? 'opacity-70 border-gray-200' : 'border-purple-100'}`}>
+        {/* Cabeçalho do card */}
+        <button
+          onClick={() => setExpandedId(isExpanded ? null : e.id)}
+          className={`w-full text-left px-4 py-3 flex items-center justify-between gap-2 transition-colors ${isQuitado ? 'bg-gray-50 hover:bg-gray-100' : 'bg-purple-50 hover:bg-purple-100'}`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {isExpanded
+              ? <ChevronDown className="w-4 h-4 text-purple-500 flex-shrink-0" />
+              : <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+            <span className="font-bold text-gray-800 truncate">{e.cliente_nome}</span>
+            <Badge className="bg-purple-100 text-purple-700 text-xs flex-shrink-0">{e.percentual_mes}% a.m.</Badge>
+            {isQuitado && <Badge className="bg-green-100 text-green-700 text-xs flex-shrink-0">Quitado</Badge>}
+          </div>
+          <span className="font-bold text-red-600 text-sm flex-shrink-0">{formatMoney(debitoAtual)}</span>
+        </button>
 
-        {/* Linha expandida - detalhes */}
-        {isExpanded && (
-          <tr>
-            <td colSpan={9} className="bg-gray-50 border-b border-gray-200 px-6 py-4">
-              <div className="space-y-4">
-                {/* Resumo do empréstimo */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <p className="text-xs text-gray-400 mb-1">Principal emprestado</p>
-                    <p className="font-bold text-gray-800">{formatMoney(e.valor_principal)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <p className="text-xs text-gray-400 mb-1">Juros acumulados</p>
-                    <p className="font-bold text-orange-600">{formatMoney(juros)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <p className="text-xs text-gray-400 mb-1">Total abatido</p>
-                    <p className="font-bold text-green-600">{formatMoney(e.total_abatido || 0)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <p className="text-xs text-gray-400 mb-1">Dias decorridos</p>
-                    <p className="font-bold text-purple-700">{diasDecorridos} dias</p>
-                  </div>
-                </div>
+        {/* Resumo sempre visível */}
+        <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-gray-100">
+          <div>
+            <p className="text-xs text-gray-400">Emprestado</p>
+            <p className="font-semibold text-gray-700 text-sm">{formatMoney(e.valor_principal)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-orange-400">Juros acumulados</p>
+            <p className="font-semibold text-orange-600 text-sm">{formatMoney(juros)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-green-500">Total abatido</p>
+            <p className="font-semibold text-green-600 text-sm">{formatMoney(e.total_abatido || 0)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400">Data / Dias</p>
+            <p className="font-semibold text-gray-600 text-sm">{formatDate(e.data_emprestimo)}</p>
+            <p className="text-xs text-gray-400">{diasDecorridos} dias</p>
+          </div>
+        </div>
 
-                {e.observacoes && (
-                  <div className="bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-2 text-sm text-yellow-800">
-                    📝 {e.observacoes}
-                  </div>
-                )}
-
-                {/* Histórico de eventos */}
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" /> Histórico de eventos
-                  </h4>
-                  {historico.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">Nenhum evento registrado.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {[...historico].reverse().map((h, i) => {
-                        const cfg = TIPO_CONFIG[h.tipo] || { label: h.tipo, color: 'bg-gray-100 text-gray-600' };
-                        return (
-                          <div key={i} className="flex items-start gap-3 bg-white border border-gray-100 rounded-lg px-3 py-2.5 shadow-sm">
-                            <div className="mt-0.5 flex-shrink-0">
-                              {h.tipo === 'quitacao'
-                                ? <CheckCircle2 className="w-4 h-4 text-purple-500" />
-                                : h.tipo === 'abatimento'
-                                ? <MinusCircle className="w-4 h-4 text-green-500" />
-                                : h.tipo === 'aporte'
-                                ? <PlusCircle className="w-4 h-4 text-orange-500" />
-                                : <Plus className="w-4 h-4 text-blue-400" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <Badge className={`text-xs ${cfg.color}`}>{cfg.label}</Badge>
-                                <span className="text-xs text-gray-400">{formatDateTime(h.data)}</span>
-                                {h.valor > 0 && (
-                                  <span className={`text-xs font-semibold ${
-                                    h.tipo === 'criacao' ? 'text-blue-600'
-                                    : h.tipo === 'aporte' ? 'text-orange-600'
-                                    : h.tipo === 'abatimento' || h.tipo === 'quitacao' ? 'text-green-700'
-                                    : 'text-gray-700'
-                                  }`}>
-                                    {h.tipo === 'abatimento' || h.tipo === 'quitacao' ? '−' : '+'}{formatMoney(h.valor)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-3 text-xs text-gray-500">
-                                {h.debito_antes > 0 && <span>Débito antes: <strong>{formatMoney(h.debito_antes)}</strong></span>}
-                                {h.debito_depois !== undefined && h.tipo !== 'criacao' && <span>Débito depois: <strong>{formatMoney(h.debito_depois)}</strong></span>}
-                                {h.observacao && <span className="text-gray-600 italic">"{h.observacao}"</span>}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </td>
-          </tr>
+        {/* Ações */}
+        {!isQuitado && (
+          <div className="px-4 py-2 flex flex-wrap items-center gap-2 border-b border-gray-100 bg-gray-50">
+            <Button size="sm" variant="outline"
+              onClick={() => { setAbatimentoModal(e); setValorAbatimento(''); setObsAbatimento(''); }}
+              className="text-green-600 border-green-200 hover:bg-green-50 gap-1 text-xs">
+              <MinusCircle className="w-3.5 h-3.5" /> Registrar Pagamento
+            </Button>
+            <Button size="sm" variant="outline"
+              onClick={() => { setAporteModal(e); setValorAporte(''); setObsAporte(''); }}
+              className="text-orange-500 border-orange-200 hover:bg-orange-50 gap-1 text-xs">
+              <PlusCircle className="w-3.5 h-3.5" /> Adicionar Crédito
+            </Button>
+            <Button size="sm" variant="outline"
+              onClick={() => handleQuitar(e)}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs">
+              Quitar
+            </Button>
+            <Button size="sm" variant="ghost"
+              onClick={() => openEdit(e)}
+              className="text-gray-500 hover:text-gray-700 gap-1 text-xs">
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </Button>
+            <Button size="sm" variant="ghost"
+              onClick={() => { if (confirm('Excluir este empréstimo?')) deleteMutation.mutate(e.id); }}
+              className="text-red-400 hover:text-red-600 gap-1 text-xs ml-auto">
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         )}
-      </React.Fragment>
+        {isQuitado && (
+          <div className="px-4 py-2 flex items-center gap-3 bg-gray-50 border-b border-gray-100">
+            {ganho > 0 && <span className="text-xs font-semibold text-emerald-600">💰 Lucro: {formatMoney(ganho)}</span>}
+            <span className="text-xs text-gray-400">Encerrado em {formatDate(e.data_estimada_recebimento)}</span>
+            <button onClick={() => handleReativar(e)} className="ml-auto text-xs text-orange-500 hover:text-orange-700 underline">Reativar</button>
+          </div>
+        )}
+
+        {/* Histórico expandido */}
+        {isExpanded && (
+          <div className="px-4 py-4 space-y-3 bg-gray-50">
+            {e.observacoes && (
+              <div className="bg-yellow-50 border border-yellow-100 rounded-lg px-3 py-2 text-sm text-yellow-800">
+                📝 {e.observacoes}
+              </div>
+            )}
+            <h4 className="text-sm font-semibold text-gray-600 flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> Histórico de eventos
+            </h4>
+            {historico.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">Nenhum evento registrado.</p>
+            ) : (
+              <div className="space-y-2">
+                {[...historico].reverse().map((h, i) => {
+                  const cfg = TIPO_CONFIG[h.tipo] || { label: h.tipo, color: 'bg-gray-100 text-gray-600' };
+                  return (
+                    <div key={i} className="flex items-start gap-3 bg-white border border-gray-100 rounded-lg px-3 py-2.5 shadow-sm">
+                      <div className="mt-0.5 flex-shrink-0">
+                        {h.tipo === 'quitacao'
+                          ? <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                          : h.tipo === 'abatimento'
+                          ? <MinusCircle className="w-4 h-4 text-green-500" />
+                          : h.tipo === 'aporte'
+                          ? <PlusCircle className="w-4 h-4 text-orange-500" />
+                          : <Plus className="w-4 h-4 text-blue-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <Badge className={`text-xs ${cfg.color}`}>{cfg.label}</Badge>
+                          <span className="text-xs text-gray-400">{formatDateTime(h.data)}</span>
+                          {h.valor > 0 && (
+                            <span className={`text-xs font-semibold ${
+                              h.tipo === 'criacao' ? 'text-blue-600'
+                              : h.tipo === 'aporte' ? 'text-orange-600'
+                              : h.tipo === 'abatimento' || h.tipo === 'quitacao' ? 'text-green-700'
+                              : 'text-gray-700'
+                            }`}>
+                              {h.tipo === 'abatimento' || h.tipo === 'quitacao' ? '−' : '+'}{formatMoney(h.valor)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                          {h.debito_antes > 0 && <span>Antes: <strong>{formatMoney(h.debito_antes)}</strong></span>}
+                          {h.debito_depois !== undefined && h.tipo !== 'criacao' && <span>Depois: <strong>{formatMoney(h.debito_depois)}</strong></span>}
+                          {h.observacao && <span className="text-gray-600 italic">"{h.observacao}"</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -471,38 +438,16 @@ export default function EmprestimosTable() {
           Nenhum empréstimo ativo
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ backgroundColor: '#6d28d9' }}>
-                {['Cliente', 'Total Ganho', 'Valor Emprestado', 'Data', '% a.m.', 'Débito Atual + Juros', 'Total Abatido', 'Venc. Estimado', 'Ações'].map(h => (
-                  <th key={h} className="text-left px-3 py-2.5 text-white text-xs font-semibold uppercase">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ativos.map(e => renderRow(e, false))}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {ativos.map(e => renderCard(e, false))}
         </div>
       )}
 
       {quitados.length > 0 && (
         <details className="mt-2">
           <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 select-none">Ver quitados ({quitados.length})</summary>
-          <div className="overflow-x-auto mt-2 rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  {['Cliente', 'Total Ganho', 'Valor Emprestado', 'Data', '% a.m.', 'Débito Final', 'Total Pago', 'Venc. Estimado', 'Status'].map(h => (
-                  <th key={h} className="text-left px-3 py-2 text-gray-500 text-xs font-semibold uppercase">{h}</th>
-                ))}
-              </tr>
-            </thead>
-              <tbody>
-                {quitados.map(e => renderRow(e, true))}
-              </tbody>
-            </table>
+          <div className="mt-2 space-y-3">
+            {quitados.map(e => renderCard(e, true))}
           </div>
         </details>
       )}
