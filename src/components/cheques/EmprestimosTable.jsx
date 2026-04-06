@@ -139,22 +139,21 @@ export default function EmprestimosTable() {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
+    const baseData = {
+      cliente_nome: form.cliente_nome,
+      valor_principal: parseFloat(form.valor_principal),
+      percentual_mes: parseFloat(form.percentual_mes),
+      data_emprestimo: form.data_emprestimo,
+      observacoes: form.observacoes,
+      ...(form.data_estimada_recebimento ? { data_estimada_recebimento: form.data_estimada_recebimento } : {}),
+    };
     if (editingEmprestimo) {
-      updateMutation.mutate({
-        id: editingEmprestimo.id,
-        data: {
-          ...form,
-          valor_principal: parseFloat(form.valor_principal),
-          percentual_mes: parseFloat(form.percentual_mes),
-        },
-      });
+      updateMutation.mutate({ id: editingEmprestimo.id, data: baseData });
       return;
     }
     const agora = new Date().toISOString();
     createMutation.mutate({
-      ...form,
-      valor_principal: parseFloat(form.valor_principal),
-      percentual_mes: parseFloat(form.percentual_mes),
+      ...baseData,
       total_abatido: 0,
       status: 'ativo',
       historico_pagamentos: [{
