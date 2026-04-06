@@ -31,6 +31,7 @@ export default function FinanceiroAdmin() {
   const [loadingPagamento, setLoadingPagamento] = useState(false);
   const [editandoLancamento, setEditandoLancamento] = useState(null);
   const [editValor, setEditValor] = useState('');
+  const [editPercentual, setEditPercentual] = useState('');
   const [confirmCancelPagamento, setConfirmCancelPagamento] = useState(null);
   const [estornando, setEstornando] = useState(false);
   const [showPDFModal, setShowPDFModal] = useState(false);
@@ -55,25 +56,25 @@ export default function FinanceiroAdmin() {
     queryFn: () => base44.entities.PagamentoTecnico.list()
   });
 
-  const updateLancamento = async (id, novoValor) => {
+  const updateLancamento = async (id, novoValor, novoPercentual) => {
     try {
-      // 1. Buscar lançamento atual
       const lancamentosAtuais = await base44.entities.LancamentoFinanceiro.filter({ id });
       const lancAtual = lancamentosAtuais[0];
       if (!lancAtual) throw new Error('Lançamento não encontrado');
 
+      const pct = parseFloat(novoPercentual) / 100;
       const valorAntigo = lancAtual.valor_comissao_tecnico;
-      const valorNovo = parseFloat(novoValor) * 0.15;
+      const valorServico = parseFloat(novoValor);
+      const valorNovo = valorServico * pct;
       const diferenca = valorNovo - valorAntigo;
 
-      // 2. Atualizar lançamento
       await base44.entities.LancamentoFinanceiro.update(id, {
-        valor_total_servico: parseFloat(novoValor),
-        valor_comissao_equipe: parseFloat(novoValor) * 0.30,
+        valor_total_servico: valorServico,
+        percentual_tecnico: parseFloat(novoPercentual),
+        valor_comissao_equipe: valorServico * 0.30,
         valor_comissao_tecnico: valorNovo
       });
 
-      // 3. Atualizar ganhos do técnico
       const tecnicosFinanceiros = await base44.entities.TecnicoFinanceiro.filter({ 
         tecnico_id: lancAtual.tecnico_id 
       });
@@ -500,28 +501,45 @@ export default function FinanceiroAdmin() {
                        <TableCell className="text-sm">{lanc.cliente_nome}</TableCell>
                        <TableCell className="text-sm">{lanc.tipo_servico}</TableCell>
                        <TableCell className="font-semibold">
+                          {editandoLancamento === lanc.id ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={editValor}
+                              onChange={(e) => setEditValor(e.target.value)}
+                              className="w-24"
+                              autoFocus
+                            />
+                          ) : (
+                            `R$ ${lanc.valor_total_servico.toFixed(2)}`
+                          )}
+                        </TableCell>
+                       <TableCell className="font-bold text-green-600">R$ {lanc.valor_comissao_tecnico.toFixed(2)}</TableCell>
+                       <TableCell className="font-semibold text-blue-600">
                          {editandoLancamento === lanc.id ? (
-                           <Input
-                             type="number"
-                             step="0.01"
-                             value={editValor}
-                             onChange={(e) => setEditValor(e.target.value)}
-                             className="w-24"
-                             autoFocus
-                           />
+                           <div className="flex items-center gap-1">
+                             <Input
+                               type="number"
+                               step="0.1"
+                               min="0"
+                               max="100"
+                               value={editPercentual}
+                               onChange={(e) => setEditPercentual(e.target.value)}
+                               className="w-16"
+                             />
+                             <span className="text-xs">%</span>
+                           </div>
                          ) : (
-                           `R$ ${lanc.valor_total_servico.toFixed(2)}`
+                           `${percentualGanho}%`
                          )}
                        </TableCell>
-                       <TableCell className="font-bold text-green-600">R$ {lanc.valor_comissao_tecnico.toFixed(2)}</TableCell>
-                       <TableCell className="font-semibold text-blue-600">{percentualGanho}%</TableCell>
                        <TableCell className="space-x-1">
                          {editandoLancamento === lanc.id ? (
                            <>
                              <Button
                                size="sm"
                                variant="ghost"
-                               onClick={() => updateLancamento(lanc.id, editValor)}
+                               onClick={() => updateLancamento(lanc.id, editValor, editPercentual)}
                              >
                                <Save className="w-4 h-4 text-green-600" />
                              </Button>
@@ -541,6 +559,7 @@ export default function FinanceiroAdmin() {
                                onClick={() => {
                                  setEditandoLancamento(lanc.id);
                                  setEditValor(lanc.valor_total_servico.toString());
+                                 setEditPercentual((lanc.percentual_tecnico ?? parseFloat(percentualGanho)).toString());
                                }}
                              >
                                <Edit2 className="w-4 h-4 text-blue-600" />
