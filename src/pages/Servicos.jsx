@@ -434,8 +434,8 @@ export default function ServicosPage() {
   }, {});
 
   const parseHorario = (h) => {
-    if (!h) return Infinity;
-    const [hh, mm] = h.split(':').map(Number);
+    if (!h || !h.trim() || !h.includes(':')) return Infinity;
+    const [hh, mm] = h.trim().split(':').map(Number);
     return (hh || 0) * 60 + (mm || 0);
   };
 
