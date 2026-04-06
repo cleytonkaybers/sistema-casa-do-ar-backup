@@ -41,6 +41,33 @@
     "observacoes": {
       "type": "string",
       "description": "Observa\u00e7\u00f5es"
+    },
+    "historico_pagamentos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "number"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "debito_antes": {
+            "type": "number"
+          },
+          "debito_depois": {
+            "type": "number"
+          },
+          "observacao": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Hist\u00f3rico de todas as altera\u00e7\u00f5es e pagamentos"
     }
   },
   "required": [
