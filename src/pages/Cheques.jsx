@@ -6,7 +6,23 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, CheckCircle, XCircle, Bell, AlertTriangle, Clock, DollarSign } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, XCircle, Bell, AlertTriangle, Clock, DollarSign, Pencil } from 'lucide-react';
+
+function parseBRL(str) {
+  if (!str) return '';
+  // Remove tudo exceto dígitos e vírgula/ponto
+  const clean = String(str).replace(/[^\d,.]/g, '');
+  // Troca ponto de milhar e vírgula decimal
+  const normalized = clean.replace(/\./g, '').replace(',', '.');
+  return normalized;
+}
+
+function formatBRL(value) {
+  if (value === '' || value === null || value === undefined) return '';
+  const num = parseFloat(String(value).replace(',', '.'));
+  if (isNaN(num)) return String(value);
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 function calcDebitoEmprestimo(e) {
   if (!e.valor_principal || !e.percentual_mes || !e.data_emprestimo) return e.valor_principal || 0;
@@ -35,7 +51,9 @@ export default function Cheques() {
   const [emprestimos, setEmprestimos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: '', quem_passou: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
+  const [editingCheque, setEditingCheque] = useState(null);
+  const emptyForm = { nome: '', quem_passou: '', data_compensacao: '', valor: '', banco: '', observacoes: '' };
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [alertas, setAlertas] = useState([]);
 
@@ -75,16 +93,43 @@ export default function Cheques() {
     base44.entities.Emprestimo.list().then(setEmprestimos).catch(() => {});
   }, []);
 
+  const openEdit = (cheque) => {
+    setEditingCheque(cheque);
+    setForm({
+      nome: cheque.nome || '',
+      quem_passou: cheque.quem_passou || '',
+      data_compensacao: cheque.data_compensacao || '',
+      valor: formatBRL(cheque.valor),
+      banco: cheque.banco || '',
+      observacoes: cheque.observacoes || '',
+    });
+    setShowForm(true);
+  };
+
+  const openNew = () => {
+    setEditingCheque(null);
+    setForm(emptyForm);
+    setShowForm(true);
+  };
+
   const handleSave = async () => {
     if (!form.nome || !form.data_compensacao || !form.valor) {
       toast.error('Preencha nome, data e valor');
       return;
     }
+    const valorNum = parseFloat(parseBRL(form.valor));
+    if (isNaN(valorNum)) { toast.error('Valor inválido'); return; }
     setSaving(true);
-    await base44.entities.Cheque.create({ ...form, valor: parseFloat(form.valor), status: 'pendente' });
-    toast.success('Cheque cadastrado!');
-    setForm({ nome: '', quem_passou: '', data_compensacao: '', valor: '', banco: '', observacoes: '' });
+    if (editingCheque) {
+      await base44.entities.Cheque.update(editingCheque.id, { ...form, valor: valorNum });
+      toast.success('Cheque atualizado!');
+    } else {
+      await base44.entities.Cheque.create({ ...form, valor: valorNum, status: 'pendente' });
+      toast.success('Cheque cadastrado!');
+    }
+    setForm(emptyForm);
     setShowForm(false);
+    setEditingCheque(null);
     setSaving(false);
     loadCheques();
   };
@@ -147,7 +192,7 @@ export default function Cheques() {
           <h1 className="text-2xl font-bold text-gray-800">Cheques Pré-datados</h1>
           <p className="text-sm text-gray-500">Controle de cheques para compensação</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+        <Button onClick={openNew} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
           <Plus className="w-4 h-4" />
           Novo Cheque
         </Button>
@@ -234,6 +279,9 @@ export default function Cheques() {
                           <button onClick={() => handleStatus(c, 'devolvido')} title="Devolvido" className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors">
                             <XCircle className="w-4 h-4" />
                           </button>
+                          <button onClick={() => openEdit(c)} title="Editar" className="p-1.5 rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
                           <button onClick={() => handleDelete(c.id)} title="Excluir" className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -305,10 +353,10 @@ export default function Cheques() {
       </div>
 
       {/* Modal Form */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingCheque(null); setForm(emptyForm); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo Cheque Pré-datado</DialogTitle>
+            <DialogTitle>{editingCheque ? 'Editar Cheque' : 'Novo Cheque Pré-datado'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
             <div>
@@ -326,7 +374,15 @@ export default function Cheques() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">Valor (R$) *</label>
-                <Input type="number" step="0.01" placeholder="0,00" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} />
+                <Input
+                  placeholder="Ex: 2.700,00"
+                  value={form.valor}
+                  onChange={e => setForm({...form, valor: e.target.value})}
+                  onBlur={e => {
+                    const num = parseFloat(parseBRL(e.target.value));
+                    if (!isNaN(num)) setForm(f => ({...f, valor: formatBRL(num)}));
+                  }}
+                />
               </div>
             </div>
             <div>
