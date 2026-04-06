@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, MinusCircle, TrendingUp, ChevronDown, ChevronRight, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, MinusCircle, TrendingUp, ChevronDown, ChevronRight, Clock, CheckCircle2, Pencil } from 'lucide-react';
 import { differenceInDays, parseISO, isValid, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -58,6 +58,7 @@ const emptyForm = {
 export default function EmprestimosTable() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editingEmprestimo, setEditingEmprestimo] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [abatimentoModal, setAbatimentoModal] = useState(null);
   const [valorAbatimento, setValorAbatimento] = useState('');
@@ -77,6 +78,17 @@ export default function EmprestimosTable() {
       setShowForm(false);
       setForm(emptyForm);
       toast.success('Empréstimo lançado!');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Emprestimo.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emprestimos'] });
+      setShowForm(false);
+      setEditingEmprestimo(null);
+      setForm(emptyForm);
+      toast.success('Empréstimo atualizado!');
     },
   });
 
@@ -109,9 +121,33 @@ export default function EmprestimosTable() {
     },
   });
 
+  const openEdit = (e) => {
+    setEditingEmprestimo(e);
+    setForm({
+      cliente_nome: e.cliente_nome || '',
+      valor_principal: String(e.valor_principal || ''),
+      data_emprestimo: e.data_emprestimo || '',
+      percentual_mes: String(e.percentual_mes || ''),
+      data_estimada_recebimento: e.data_estimada_recebimento || '',
+      observacoes: e.observacoes || '',
+    });
+    setShowForm(true);
+  };
+
   const handleSave = () => {
     if (!form.cliente_nome || !form.valor_principal || !form.data_emprestimo || !form.percentual_mes) {
       toast.error('Preencha os campos obrigatórios');
+      return;
+    }
+    if (editingEmprestimo) {
+      updateMutation.mutate({
+        id: editingEmprestimo.id,
+        data: {
+          ...form,
+          valor_principal: parseFloat(form.valor_principal),
+          percentual_mes: parseFloat(form.percentual_mes),
+        },
+      });
       return;
     }
     const agora = new Date().toISOString();
@@ -232,6 +268,11 @@ export default function EmprestimosTable() {
                   onClick={() => handleQuitar(e)}
                   className="text-blue-600 hover:text-blue-800 text-xs px-2">
                   Quitar
+                </Button>
+                <Button variant="ghost" size="icon" title="Editar"
+                  onClick={() => openEdit(e)}
+                  className="text-blue-400 hover:text-blue-600 hover:bg-blue-50">
+                  <Pencil className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon"
                   onClick={() => { if (confirm('Excluir este empréstimo?')) deleteMutation.mutate(e.id); }}
@@ -388,10 +429,10 @@ export default function EmprestimosTable() {
       )}
 
       {/* Modal Novo Empréstimo */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingEmprestimo(null); setForm(emptyForm); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo Empréstimo</DialogTitle>
+            <DialogTitle>{editingEmprestimo ? 'Editar Empréstimo' : 'Novo Empréstimo'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -424,8 +465,8 @@ export default function EmprestimosTable() {
             </div>
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowForm(false)} className="flex-1">Cancelar</Button>
-              <Button onClick={handleSave} disabled={createMutation.isPending} className="flex-1 bg-purple-600 hover:bg-purple-700">
-                {createMutation.isPending ? 'Salvando...' : 'Salvar'}
+              <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-purple-600 hover:bg-purple-700">
+                {(createMutation.isPending || updateMutation.isPending) ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
           </div>
