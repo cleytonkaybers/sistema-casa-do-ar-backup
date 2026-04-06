@@ -146,7 +146,7 @@ function LayoutContent({ children }) {
                 className="flex items-center gap-3 hover:opacity-90 transition-opacity">
 
                 {/* Logo box */}
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg flex-shrink-0"
+                <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg flex-shrink-0"
                 style={{ backgroundColor: '#F5C800' }}>
                   {companySettings.company_logo_url ?
                   <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" /> :
