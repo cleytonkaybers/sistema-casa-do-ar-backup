@@ -14,6 +14,7 @@ import TabelaServicos from '@/pages/TabelaServicos';
 import RelatorioComissoes from '@/pages/RelatorioComissoes';
 import LogsAuditoria from '@/pages/LogsAuditoria';
 import GerenciarBackups from '@/pages/GerenciarBackups';
+import Cheques from '@/pages/Cheques';
 import PagamentosClientes from '@/pages/PagamentosClientes';
 
 const LoadingFallback = () => (
@@ -100,6 +101,11 @@ const AuthenticatedApp = () => {
         <Route path="/GerenciarBackups" element={
           <LayoutWrapper currentPageName="GerenciarBackups">
             <GerenciarBackups />
+          </LayoutWrapper>
+        } />
+        <Route path="/Cheques" element={
+          <LayoutWrapper currentPageName="Cheques">
+            <Cheques />
           </LayoutWrapper>
         } />
         <Route path="*" element={<PageNotFound />} />

@@ -78,6 +78,7 @@ function LayoutContent({ children }) {
       { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
       { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
       { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },
+      { name: 'Cheques', href: createPageUrl('Cheques'), icon: DollarSign },
       { name: 'Sair', href: '#', icon: LogOut, action: () => base44.auth.logout() },
     ];
   } else if (currentUser?.tipo_usuario === 'tecnico' || user?.role === 'user') {
@@ -108,6 +109,7 @@ function LayoutContent({ children }) {
       { name: 'Gerenciar Backups', href: createPageUrl('GerenciarBackups'), icon: Database },
       { name: 'Backup e Restaurar', href: createPageUrl('BackupRestaurer'), icon: Database },
       { name: 'Usuários', href: createPageUrl('Usuarios'), icon: Users },
+      { name: 'Cheques', href: createPageUrl('Cheques'), icon: DollarSign },
       { name: 'Configurações', href: createPageUrl('Configuracoes'), icon: Settings },
       { name: 'Suporte', href: createPageUrl('Suporte'), icon: MessageCircle },
       { name: 'Preferências de Notificação', href: createPageUrl('PreferencesNotificacao'), icon: Bell },

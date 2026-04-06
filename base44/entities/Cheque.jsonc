@@ -1,0 +1,47 @@
+{
+  "name": "Cheque",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do emitente do cheque"
+    },
+    "data_compensacao": {
+      "type": "string",
+      "format": "date",
+      "description": "Data para compensar o cheque no banco"
+    },
+    "valor": {
+      "type": "number",
+      "description": "Valor do cheque"
+    },
+    "banco": {
+      "type": "string",
+      "description": "Banco do cheque (opcional)"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es adicionais"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "compensado",
+        "devolvido"
+      ],
+      "default": "pendente",
+      "description": "Status do cheque"
+    },
+    "notificacao_enviada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a notifica\u00e7\u00e3o foi enviada"
+    }
+  },
+  "required": [
+    "nome",
+    "data_compensacao",
+    "valor"
+  ]
+}
