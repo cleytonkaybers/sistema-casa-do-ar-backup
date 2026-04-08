@@ -201,15 +201,8 @@ export default function ServicosPage() {
       queryClient.invalidateQueries({ queryKey: ['servicos'] });
       toast.success(servicoSnapshot.sem_registro_cliente ? 'Serviço avulso concluído! 🎉' : 'Serviço concluído! 🎉');
 
-      // Notificar ADMs se cliente pagou em dinheiro
-      if (pagouDinheiro) {
-        try {
-          await base44.functions.invoke('notificarPagamentoDinheiro', {
-            cliente_nome: servicoSnapshot.cliente_nome,
-            tipo_servico: servicoSnapshot.tipo_servico,
-            valor: servicoSnapshot.valor,
-            servico_id: servicoSnapshot.id,
-          });
+      // Notificar ADMs se cliente pagou em dinheiro (não para serviços de verificação de defeito)
+      if (pagouDinheiro && !isVerDefeito) {
           toast.success('💵 ADM notificado sobre pagamento em dinheiro!');
           queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
         } catch (e) {
@@ -217,8 +210,8 @@ export default function ServicosPage() {
         }
       }
 
-      // "Ver defeito" não gera atendimento, comissões nem preventiva
-      const isVerDefeito = servicoSnapshot.tipo_servico === 'Ver defeito';
+      // "Ver defeito" / "Verificar defeito" não gera atendimento, comissões, histórico nem preventiva
+      const isVerDefeito = servicoSnapshot.tipo_servico === 'Ver defeito' || servicoSnapshot.tipo_servico === 'Verificar defeito';
 
       // 3. Operações secundárias em background (não bloqueiam a UI)
       if (!isVerDefeito) Promise.all([
