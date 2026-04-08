@@ -204,19 +204,14 @@ export default function ServicosPage() {
       // Notificar ADMs se cliente pagou em dinheiro
       if (pagouDinheiro) {
         try {
-          const admins = await base44.entities.User.filter({ role: 'admin' });
-          await Promise.all(admins.map(admin =>
-            base44.entities.Notificacao.create({
-              usuario_email: admin.email,
-              tipo: 'pagamento_agendado',
-              titulo: '💵 Pagamento em Dinheiro',
-              mensagem: `Cliente ${servicoSnapshot.cliente_nome} pagou em dinheiro o serviço "${servicoSnapshot.tipo_servico}"${servicoSnapshot.valor ? ` (R$ ${servicoSnapshot.valor.toFixed(2)})` : ''}. Atualize em Pagamentos dos Clientes.`,
-              atendimento_id: servicoSnapshot.id,
-              cliente_nome: servicoSnapshot.cliente_nome,
-              lida: false,
-            })
-          ));
+          await base44.functions.invoke('notificarPagamentoDinheiro', {
+            cliente_nome: servicoSnapshot.cliente_nome,
+            tipo_servico: servicoSnapshot.tipo_servico,
+            valor: servicoSnapshot.valor,
+            servico_id: servicoSnapshot.id,
+          });
           toast.success('💵 ADM notificado sobre pagamento em dinheiro!');
+          queryClient.invalidateQueries({ queryKey: ['notificacoes'] });
         } catch (e) {
           console.error('Erro ao notificar ADM:', e);
         }
