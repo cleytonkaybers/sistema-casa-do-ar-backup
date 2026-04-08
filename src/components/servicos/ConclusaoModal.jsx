@@ -19,9 +19,10 @@ export default function ConclusaoModal({ open, onClose, onConfirm, servico, isLo
   }, [open]);
 
   const handleConfirm = () => {
-    onConfirm(observacoes, pagouDinheiro);
-    setPagouDinheiro(false);
-    setObservacoes('');
+    // Capturar os valores atuais antes de qualquer reset
+    const obs = observacoes;
+    const pag = pagouDinheiro;
+    onConfirm(obs, pag);
   };
 
   return (
@@ -61,15 +62,14 @@ export default function ConclusaoModal({ open, onClose, onConfirm, servico, isLo
             </p>
           </div>
 
+          {/* Checkbox sem htmlFor para evitar duplo disparo */}
           <div
-            className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3 cursor-pointer"
-            onClick={() => setPagouDinheiro(v => !v)}
+            className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3 cursor-pointer select-none"
+            onClick={() => setPagouDinheiro(prev => !prev)}
           >
             <Checkbox
               checked={pagouDinheiro}
-              onCheckedChange={(v) => setPagouDinheiro(v === true)}
-              className="border-green-500 data-[state=checked]:bg-green-600"
-              onClick={(e) => e.stopPropagation()}
+              className="border-green-500 data-[state=checked]:bg-green-600 pointer-events-none"
             />
             <span className="flex items-center gap-2 text-sm font-semibold text-green-800">
               <DollarSign className="w-4 h-4 text-green-600" />
