@@ -19,24 +19,37 @@ export default function RegistrarPagamentoModal({ open, onClose, onSuccess }) {
   const [metodoPagamento, setMetodoPagamento] = useState('PIX');
   const [observacao, setObservacao] = useState('');
 
-  const { data: tecnicos = [] } = useQuery({
+  const { data: tecnicosRaw = [] } = useQuery({
     queryKey: ['tecnicos-financeiro'],
-    queryFn: async () => {
-      const result = await base44.entities.TecnicoFinanceiro.list();
-      return result;
-    }
+    queryFn: () => base44.entities.TecnicoFinanceiro.list()
   });
 
-  const { data: minhosLancamentos = [] } = useQuery({
-    queryKey: ['lancamentos-tecnico', tecnicoSelecionado?.tecnico_id],
-    queryFn: async () => {
-      if (!tecnicoSelecionado?.tecnico_id) return [];
-      return base44.entities.LancamentoFinanceiro.filter({
-        tecnico_id: tecnicoSelecionado.tecnico_id,
-        status: 'pendente'
-      });
-    },
-    enabled: false
+  const { data: todosLancamentos = [] } = useQuery({
+    queryKey: ['lancamentos-financeiro-modal'],
+    queryFn: () => base44.entities.LancamentoFinanceiro.list()
+  });
+
+  const { data: todosPagamentos = [] } = useQuery({
+    queryKey: ['pagamentos-financeiro-modal'],
+    queryFn: () => base44.entities.PagamentoTecnico.list()
+  });
+
+  // Recalcular credito_pendente, credito_pago e total_ganho dinamicamente
+  const tecnicos = tecnicosRaw.map(t => {
+    const totalComissoes = todosLancamentos
+      .filter(l => l.tecnico_id === t.tecnico_id)
+      .reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
+
+    const totalPago = todosPagamentos
+      .filter(p => p.tecnico_id === t.tecnico_id && p.status === 'Confirmado')
+      .reduce((sum, p) => sum + (p.valor_pago || 0), 0);
+
+    return {
+      ...t,
+      credito_pendente: Math.max(0, totalComissoes - totalPago),
+      credito_pago: totalPago,
+      total_ganho: totalComissoes
+    };
   });
 
   const handleRegistrarPagamento = async () => {
