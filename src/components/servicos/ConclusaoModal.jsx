@@ -61,17 +61,20 @@ export default function ConclusaoModal({ open, onClose, onConfirm, servico, isLo
             </p>
           </div>
 
-          <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3">
+          <div
+            className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg p-3 cursor-pointer"
+            onClick={() => setPagouDinheiro(v => !v)}
+          >
             <Checkbox
-              id="pagou-dinheiro"
               checked={pagouDinheiro}
               onCheckedChange={(v) => setPagouDinheiro(v === true)}
               className="border-green-500 data-[state=checked]:bg-green-600"
+              onClick={(e) => e.stopPropagation()}
             />
-            <label htmlFor="pagou-dinheiro" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-green-800">
+            <span className="flex items-center gap-2 text-sm font-semibold text-green-800">
               <DollarSign className="w-4 h-4 text-green-600" />
               Cliente pagou em dinheiro
-            </label>
+            </span>
           </div>
         </div>
 
