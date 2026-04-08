@@ -673,7 +673,7 @@ export default function FinanceiroAdmin() {
       <ConfirmDialog
         open={!!confirmDeleteLanc}
         onClose={() => setConfirmDeleteLanc(null)}
-        onConfirm={() => deleteLancamento(confirmDeleteLanc.id)}
+        onConfirm={() => confirmDeleteLanc && deleteLancamento(confirmDeleteLanc.id)}
         title="Excluir Lançamento Financeiro"
         description={`Tem certeza que deseja excluir o lançamento de R$ ${confirmDeleteLanc?.valor_comissao_tecnico?.toFixed(2)} para ${confirmDeleteLanc?.tecnico_nome}? Esta ação irá recalcular automaticamente os créditos do técnico.`}
         confirmText="Excluir Lançamento"
@@ -683,7 +683,7 @@ export default function FinanceiroAdmin() {
       <ConfirmDialog
         open={!!confirmCancelPagamento}
         onClose={() => setConfirmCancelPagamento(null)}
-        onConfirm={() => handleCancelarPagamento(confirmCancelPagamento)}
+        onConfirm={() => confirmCancelPagamento && handleCancelarPagamento(confirmCancelPagamento)}
         title="Cancelar Pagamento"
         description={`Tem certeza que deseja cancelar o pagamento de R$ ${confirmCancelPagamento?.valor_pago?.toFixed(2)} para ${confirmCancelPagamento?.tecnico_nome}? O crédito será devolvido como pendente.`}
         confirmText={estornando ? "Cancelando..." : "Sim, Cancelar Pagamento"}
