@@ -35,6 +35,7 @@ export default function FinanceiroAdmin() {
   const [confirmCancelPagamento, setConfirmCancelPagamento] = useState(null);
   const [estornando, setEstornando] = useState(false);
   const [showPDFModal, setShowPDFModal] = useState(false);
+  const [filtroTecnicoRelatorio, setFiltroTecnicoRelatorio] = useState('all');
   
   const { data: lancamentos = [], refetch: refetchLancamentos } = useQuery({
     queryKey: ['lancamentos'],
@@ -241,12 +242,13 @@ export default function FinanceiroAdmin() {
 
   const lancamentosFiltrados = lancamentos.filter(l => {
     const dataLancamento = new Date(l.data_geracao);
-    if (filtroSemana === 'atual') {
-      return dataLancamento >= inicioSemanaAtual && dataLancamento <= fimSemanaAtual;
-    } else if (filtroSemana === 'passada') {
-      return dataLancamento >= inicioSemanaPassada && dataLancamento <= fimSemanaPassada;
-    }
-    return true;
+    const matchSemana = filtroSemana === 'atual'
+      ? dataLancamento >= inicioSemanaAtual && dataLancamento <= fimSemanaAtual
+      : filtroSemana === 'passada'
+      ? dataLancamento >= inicioSemanaPassada && dataLancamento <= fimSemanaPassada
+      : true;
+    const matchTecnico = !filtroTecnicoRelatorio || filtroTecnicoRelatorio === 'all' || l.tecnico_id === filtroTecnicoRelatorio;
+    return matchSemana && matchTecnico;
   });
 
   // Débitos de semanas anteriores por técnico
@@ -466,6 +468,20 @@ export default function FinanceiroAdmin() {
            <CardTitle className="flex items-center gap-2"><FileText className="w-4 h-4" /> Relatório de Comissões por Serviço</CardTitle>
          </CardHeader>
          <CardContent>
+           <div className="mb-4 flex items-center gap-3">
+             <Label className="text-sm whitespace-nowrap">Filtrar por Técnico:</Label>
+             <Select value={filtroTecnicoRelatorio} onValueChange={setFiltroTecnicoRelatorio}>
+               <SelectTrigger className="w-64">
+                 <SelectValue placeholder="Todos os técnicos" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Todos os técnicos</SelectItem>
+                 {tecnicos.map(t => (
+                   <SelectItem key={t.tecnico_id} value={t.tecnico_id}>{t.tecnico_nome}</SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
            <div className="overflow-x-auto">
              <Table>
                <TableHeader>
