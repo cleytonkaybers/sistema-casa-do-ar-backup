@@ -18,7 +18,7 @@ export default function ConclusaoModal({ open, onClose, onConfirm, servico, isLo
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <CheckCircle className="w-6 h-6 text-green-600" />
