@@ -157,14 +157,25 @@ export default function RegistrarPagamentoModal({ open, onClose, onSuccess }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Valor Pago (R$) *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={valorPago}
-                    onChange={(e) => setValorPago(e.target.value)}
-                    placeholder="0.00"
-                    min="0"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={valorPago}
+                      onChange={(e) => setValorPago(e.target.value)}
+                      placeholder="0.00"
+                      min="0"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="whitespace-nowrap text-green-700 border-green-300 hover:bg-green-50"
+                      onClick={() => setValorPago(tecnicoSelecionado.credito_pendente.toFixed(2))}
+                      title="Usar valor total pendente"
+                    >
+                      R$ {tecnicoSelecionado.credito_pendente.toFixed(2)}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Data do Pagamento *</Label>
