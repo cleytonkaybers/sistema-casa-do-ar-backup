@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,14 @@ import { CheckCircle, Loader2, DollarSign } from 'lucide-react';
 export default function ConclusaoModal({ open, onClose, onConfirm, servico, isLoading }) {
   const [observacoes, setObservacoes] = useState('');
   const [pagouDinheiro, setPagouDinheiro] = useState(false);
+
+  // Resetar estado sempre que o modal abrir
+  useEffect(() => {
+    if (open) {
+      setObservacoes('');
+      setPagouDinheiro(false);
+    }
+  }, [open]);
 
   const handleConfirm = () => {
     onConfirm(observacoes, pagouDinheiro);
@@ -57,7 +65,7 @@ export default function ConclusaoModal({ open, onClose, onConfirm, servico, isLo
             <Checkbox
               id="pagou-dinheiro"
               checked={pagouDinheiro}
-              onCheckedChange={setPagouDinheiro}
+              onCheckedChange={(v) => setPagouDinheiro(v === true)}
               className="border-green-500 data-[state=checked]:bg-green-600"
             />
             <label htmlFor="pagou-dinheiro" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-green-800">
