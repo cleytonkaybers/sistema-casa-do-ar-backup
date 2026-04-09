@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import * as XLSX from 'xlsx';
@@ -1395,14 +1395,35 @@ function PagamentosClientesContent() {
     )
   , [pagamentos, searchTerm]);
 
+  // Helper: verifica se algum pagamento real foi feito nesta semana
+  const temPagamentoNaSemana = useCallback((p) => {
+    const parseHistData = (d) => {
+      if (!d) return null;
+      const parte = d.split(' ')[0].split('/');
+      if (parte.length === 3) return new Date(`${parte[2]}-${parte[1]}-${parte[0]}T12:00:00`);
+      return null;
+    };
+    return (p.historico_pagamentos || [])
+      .filter(h => !h.agendada && !h.consolidado)
+      .some(h => {
+        try { return isWithinInterval(parseHistData(h.data), { start: inicioSemana, end: fimSemana }); }
+        catch { return false; }
+      });
+  }, [inicioSemana, fimSemana]);
+
   // 1. Serviços da semana atual (todos, incluindo pagos — somem na virada)
   const pagsSemana = useMemo(() => {
     const statusOrder = { 'pendente': 0, 'agendado': 1, 'parcial': 2, 'pago': 3 };
     const filtrados = pagsFiltrados
       .filter(p => {
-        if (!p.data_conclusao) return false;
-        try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
-        catch { return false; }
+        // Serviço concluído esta semana
+        if (p.data_conclusao) {
+          try {
+            if (isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana })) return true;
+          } catch {}
+        }
+        // Ou: pagamento atrasado que foi recebido esta semana
+        return temPagamentoNaSemana(p);
       });
     const agrupados = groupPagamentos(filtrados);
     return agrupados.sort((a, b) => {
@@ -1411,13 +1432,16 @@ function PagamentosClientesContent() {
       if (aTemPreco !== bTemPreco) return aTemPreco ? 1 : -1;
       return (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
     });
-  }, [pagsFiltrados, inicioSemana, fimSemana]);
+  }, [pagsFiltrados, inicioSemana, fimSemana, temPagamentoNaSemana]);
 
   // 2. PENDÊNCIAS: apenas itens de semanas ANTERIORES com saldo em aberto
+  //    Exclui os que receberam pagamento esta semana
   const pagsPendencias = useMemo(() => {
     const filtrados = pagsFiltrados
       .filter(p => {
         if (p.status === 'pago') return false;
+        // Se recebeu pagamento esta semana → aparece na aba semana, não aqui
+        if (temPagamentoNaSemana(p)) return false;
         if (p.data_conclusao) {
           try {
             if (isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana })) return false;
@@ -1436,7 +1460,7 @@ function PagamentosClientesContent() {
         return da - db;
       });
     return groupPagamentos(filtrados);
-  }, [pagsFiltrados, inicioSemana, fimSemana]);
+  }, [pagsFiltrados, inicioSemana, fimSemana, temPagamentoNaSemana]);
 
   const pagsRelatorio = useMemo(() => {
     let inicio, fim;
