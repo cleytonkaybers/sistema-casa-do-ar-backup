@@ -1,0 +1,55 @@
+{
+  "name": "Agendamento",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "telefone": {
+      "type": "string",
+      "description": "N\u00famero de telefone/WhatsApp do cliente"
+    },
+    "localizacao": {
+      "type": "string",
+      "description": "Endere\u00e7o ou localiza\u00e7\u00e3o do cliente"
+    },
+    "local": {
+      "type": "string",
+      "description": "Local espec\u00edfico do servi\u00e7o (ex: sala, quarto, escrit\u00f3rio)"
+    },
+    "data_agendamento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do agendamento"
+    },
+    "horario": {
+      "type": "string",
+      "description": "Hor\u00e1rio do agendamento"
+    },
+    "tipo_servico": {
+      "type": "string",
+      "description": "Tipo de servi\u00e7o a realizar"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es adicionais"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "agendado",
+        "confirmado",
+        "concluido",
+        "cancelado"
+      ],
+      "default": "agendado",
+      "description": "Status do agendamento"
+    }
+  },
+  "required": [
+    "nome",
+    "telefone",
+    "data_agendamento"
+  ]
+}
