@@ -153,10 +153,15 @@ function LayoutContent({ children }) {
                 <div className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg flex-shrink-0"
                 style={{ backgroundColor: '#F5C800' }}>
                   {companySettings.company_logo_url ?
-                  <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" /> :
+                  <img
+                    src={companySettings.company_logo_url}
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                  />
+                  : null}
+                  <LogoIcon className={`w-8 h-8 text-white ${companySettings.company_logo_url ? 'hidden' : ''}`} />
 
-                  <LogoIcon className="w-8 h-8 text-white" />
-                  }
                 </div>
                 <div>
                   <p className="font-bold text-white text-lg leading-tight">
@@ -238,10 +243,15 @@ function LayoutContent({ children }) {
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow"
                   style={{ backgroundColor: '#F5C800' }}>
                     {companySettings.company_logo_url ?
-                    <img src={companySettings.company_logo_url} alt="Logo" className="w-full h-full object-cover" /> :
+                    <img
+                      src={companySettings.company_logo_url}
+                      alt="Logo"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                    />
+                    : null}
+                    <LogoIcon className={`w-4 h-4 text-white ${companySettings.company_logo_url ? 'hidden' : ''}`} />
 
-                    <LogoIcon className="w-4 h-4 text-white" />
-                    }
                   </div>
                   <span className="font-bold text-gray-800">{currentEmpresa?.nome || companySettings.company_name}</span>
                 </div>

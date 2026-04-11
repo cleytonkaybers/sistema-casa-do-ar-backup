@@ -49,7 +49,7 @@ export default function ChatWindow({ isOpen }) {
     queryKey: ['chat_messages', conversation?.id],
     queryFn: () => conversation ? base44.entities.ChatMessage.filter({ conversation_id: conversation.id }) : [],
     enabled: !!conversation,
-    refetchInterval: 2000
+    refetchInterval: 8000
   });
 
   // Enviar mensagem

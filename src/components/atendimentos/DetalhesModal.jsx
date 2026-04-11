@@ -196,7 +196,7 @@ export default function DetalhesModal({ open, onClose, atendimento }) {
                 </p>
                 <div className="space-y-2">
                   {historico.map((h, i) => (
-                    <div key={i} className="flex flex-wrap items-center gap-2 text-sm bg-white border border-gray-100 rounded-lg p-3">
+                    <div key={h.data_alteracao ? `${h.data_alteracao}-${h.status_novo}` : i} className="flex flex-wrap items-center gap-2 text-sm bg-white border border-gray-100 rounded-lg p-3">
                       <Badge className={`${sColors[h.status_anterior] || 'bg-gray-100 text-gray-700'} text-xs border-0`}>
                         {statusLabels[h.status_anterior] || h.status_anterior}
                       </Badge>

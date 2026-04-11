@@ -73,11 +73,7 @@ export default function Clientes() {
     queryKey: ['clientes'],
     queryFn: async () => {
       const allClientes = await base44.entities.Cliente.list('-created_date');
-      // Temporariamente retornando todos os clientes para debug
-      console.log('Total de clientes no banco:', allClientes.length);
-      console.log('Empresa atual:', currentEmpresa);
       const filtered = filterByEmpresa(allClientes);
-      console.log('Clientes após filtro de empresa:', filtered.length);
       return filtered;
     },
   });
@@ -104,8 +100,10 @@ export default function Clientes() {
           observacao: `Cliente ${data.nome} cadastrado`,
           sucesso: true
         });
-      } catch {}
-      
+      } catch (auditError) {
+        console.error('Erro ao registrar log de auditoria (criar cliente):', auditError);
+      }
+
       return cliente;
     },
     onSuccess: () => {
@@ -145,7 +143,9 @@ export default function Clientes() {
           observacao: `Cliente ${cliente?.nome} excluído`,
           sucesso: true
         });
-      } catch {}
+      } catch (auditError) {
+        console.error('Erro ao registrar log de auditoria (excluir cliente):', auditError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
@@ -184,7 +184,6 @@ export default function Clientes() {
       return matchNome || matchTelefone;
     });
     
-    console.log('Busca:', searchTerm, '| Resultados:', results.length, 'clientes');
     return results;
   }, [clientes, searchTerm]);
 

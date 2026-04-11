@@ -10,7 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import NoPermission from '../components/NoPermission';
 import { usePermissions } from '../components/auth/PermissionGuard';
 import { useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
+import { exportarExcel } from '@/lib/excelUtils';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316'];
 
@@ -75,21 +75,14 @@ export default function RelatóriosPage() {
     return p ? p.range() : { start: startOfMonth(today), end: endOfMonth(today) };
   }, [periodoSelecionado, customStart, customEnd]);
 
-  const exportarExcel = () => {
-    const wb = XLSX.utils.book_new();
-
-    // Aba 1: Resumo por Categoria
+  const handleExportarExcel = async () => {
     const resumoCat = dadosPorCategoria.map(d => ({
       'Categoria': d.name,
       'Quantidade': d.quantidade,
       'Valor Total (R$)': d.valor.toFixed(2),
       '% do Total': metrics.total > 0 ? Math.round((d.quantidade / metrics.total) * 100) + '%' : '0%',
     }));
-    const ws1 = XLSX.utils.json_to_sheet(resumoCat);
-    ws1['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 18 }, { wch: 12 }];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Resumo por Categoria');
 
-    // Aba 2: Resumo por Tipo
     const resumoTipo = dadosPorTipo.map(d => ({
       'Tipo de Serviço': d.name,
       'Categoria': getCategoria(d.name),
@@ -97,11 +90,7 @@ export default function RelatóriosPage() {
       'Valor Total (R$)': d.valor.toFixed(2),
       '% do Total': metrics.total > 0 ? Math.round((d.quantidade / metrics.total) * 100) + '%' : '0%',
     }));
-    const ws2 = XLSX.utils.json_to_sheet(resumoTipo);
-    ws2['!cols'] = [{ wch: 35 }, { wch: 22 }, { wch: 12 }, { wch: 18 }, { wch: 12 }];
-    XLSX.utils.book_append_sheet(wb, ws2, 'Resumo por Tipo');
 
-    // Aba 3: Serviços Detalhados
     const detalhes = servicosFiltrados.map(s => ({
       'Cliente': s.cliente_nome,
       'Tipo de Serviço': s.tipo_servico,
@@ -111,12 +100,17 @@ export default function RelatóriosPage() {
       'Status': s.status,
       'Valor (R$)': s.valor ? s.valor.toFixed(2) : '0.00',
     }));
-    const ws3 = XLSX.utils.json_to_sheet(detalhes);
-    ws3['!cols'] = [{ wch: 28 }, { wch: 35 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, ws3, 'Serviços Detalhados');
 
     const periodo = `${format(dateRange.start, 'dd-MM-yyyy')}_${format(dateRange.end, 'dd-MM-yyyy')}`;
-    XLSX.writeFile(wb, `relatorio_servicos_${periodo}.xlsx`);
+
+    await exportarExcel(
+      [
+        { name: 'Resumo por Categoria', data: resumoCat, colWidths: [22, 12, 18, 12] },
+        { name: 'Resumo por Tipo', data: resumoTipo, colWidths: [35, 22, 12, 18, 12] },
+        { name: 'Serviços Detalhados', data: detalhes, colWidths: [28, 35, 22, 18, 14, 12, 14] },
+      ],
+      `relatorio_servicos_${periodo}.xlsx`
+    );
   };
 
   const { data: servicos = [], isLoading } = useQuery({
@@ -196,7 +190,7 @@ export default function RelatóriosPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={exportarExcel} className="h-9 text-sm font-semibold rounded-xl gap-2" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
+            <Button onClick={handleExportarExcel} className="h-9 text-sm font-semibold rounded-xl gap-2" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </Button>
             <Button onClick={() => setNotionModal(true)} variant="outline" className="h-9 text-sm rounded-xl gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
@@ -364,7 +358,7 @@ export default function RelatóriosPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-gray-800 text-base font-semibold">📊 Quantidade por Tipo de Serviço</CardTitle>
-                    <Button onClick={exportarExcel} size="sm" className="h-8 text-xs gap-1.5 rounded-lg" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
+                    <Button onClick={handleExportarExcel} size="sm" className="h-8 text-xs gap-1.5 rounded-lg" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
                       <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar Excel
                     </Button>
                   </div>
@@ -425,7 +419,7 @@ export default function RelatóriosPage() {
                   <CardTitle className="text-gray-800 text-base font-semibold">📋 Serviços Detalhados</CardTitle>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{servicosFiltrados.length} registros</span>
-                    <Button onClick={exportarExcel} size="sm" className="h-8 text-xs gap-1.5 rounded-lg" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
+                    <Button onClick={handleExportarExcel} size="sm" className="h-8 text-xs gap-1.5 rounded-lg" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
                       <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar Excel
                     </Button>
                   </div>

@@ -102,7 +102,6 @@ export default function UsuariosPage() {
     queryFn: async () => {
       try {
         const users = await base44.entities.User.list();
-        console.log('Usuários obtidos:', users);
         return users || [];
       } catch (error) {
         console.error('Erro ao buscar usuários:', error);
@@ -168,8 +167,8 @@ export default function UsuariosPage() {
             perfil: perfil
           });
         }
-      } catch (error) {
-        console.log('Usuário ainda não criado, será atualizado manualmente');
+      } catch {
+        // Usuário ainda não criado no sistema — será associado manualmente
       }
       
       return { email, perfil, empresaId: currentEmpresa?.id };

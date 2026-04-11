@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import * as XLSX from 'xlsx';
+import { exportarExcel } from '@/lib/excelUtils';
 import TechnicianAccessBlock from '@/components/TechnicianAccessBlock';
 import jsPDF from 'jspdf';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1111,7 +1111,7 @@ function PagamentosClientesContent() {
     );
   };
 
-  const exportarExcel = () => {
+  const handleExportarExcel = async () => {
     const statusFiltros = exportFiltros.length === 0 ? ['pendente', 'parcial', 'agendado'] : exportFiltros;
 
     const lista = pagamentos.filter(p =>
@@ -1153,12 +1153,11 @@ function PagamentosClientesContent() {
 
     rows.sort((a, b) => b['Pendente (R$)'] - a['Pendente (R$)']);
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{ wch: 28 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 22 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Pagamentos Clientes');
     const label = statusFiltros.join('_');
-    XLSX.writeFile(wb, `pagamentos_clientes_${label}_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
+    await exportarExcel(
+      [{ name: 'Pagamentos Clientes', data: rows, colWidths: [28, 18, 14, 14, 14, 12, 22] }],
+      `pagamentos_clientes_${label}_${format(new Date(), 'dd-MM-yyyy')}.xlsx`
+    );
   };
 
   // Relatórios
@@ -1626,7 +1625,7 @@ function PagamentosClientesContent() {
                 </button>
               );
             })}
-            <Button onClick={exportarExcel} disabled={exportFiltros.length === 0} className="gap-1.5 h-9 text-sm rounded-xl" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
+            <Button onClick={handleExportarExcel} disabled={exportFiltros.length === 0} className="gap-1.5 h-9 text-sm rounded-xl" style={{ backgroundColor: '#22c55e', color: '#fff' }}>
               📅 Excel
             </Button>
           </div>
