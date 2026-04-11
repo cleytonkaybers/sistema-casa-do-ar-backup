@@ -34,6 +34,16 @@
       <img src="https://media.base44.com/images/public/698ea42a04e403662faedcb4/20ff2fc9c_logocasadoar.jpg" alt="Casa do Ar Climatização" />
     </div>
     <div id="root"></div>
+    <!-- Recupera rota após redirect do 404.html (GitHub Pages SPA fix) -->
+    <script>
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
     <script>
       window.__hideSplash = function() {
         var splash = document.getElementById('splash-screen');
