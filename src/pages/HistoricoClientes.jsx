@@ -30,6 +30,22 @@ const formatPhone = (phone) => {
   return phone;
 };
 
+// MULTIPLIER PARSER: Converts "Item A + Item A" to "2x Item A"
+const formatServiceText = (text) => {
+  if (!text) return '-';
+  const parts = text.split('+').map(p => p.trim()).filter(Boolean);
+  if (parts.length <= 1) return text;
+  
+  const counts = {};
+  parts.forEach(p => {
+    counts[p] = (counts[p] || 0) + 1;
+  });
+  
+  return Object.entries(counts)
+    .map(([name, count]) => count > 1 ? `${count}x ${name}` : name)
+    .join(' + ');
+};
+
 export default function HistoricoClientes() {
   const { isAdmin } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
@@ -421,70 +437,82 @@ export default function HistoricoClientes() {
                       </Link>
                     </div>
 
-                    <div className="overflow-x-auto pb-4">
-                      <div className="min-w-[850px]">
-                        <div className="grid grid-cols-12 gap-2 pb-3 mb-2 border-b border-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                          <div className="col-span-1 pl-2">OS #</div>
-                          <div className="col-span-2">Data do Serviço</div>
-                          <div className="col-span-3">Tipo de Serviço</div>
-                          <div className="col-span-1">Equipe</div>
-                          <div className="col-span-1">Valor</div>
-                          <div className="col-span-2">Pagamento</div>
-                          <div className="col-span-1">Status</div>
-                          <div className="col-span-1 text-center">Admin Ações</div>
-                        </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead>
+                          <tr className="bg-[#0b1420] border-b border-white/5">
+                            <th className="px-4 py-3 text-gray-400 font-semibold w-40">Data / Equipe</th>
+                            <th className="px-4 py-3 text-gray-400 font-semibold w-16 text-center">Qtd</th>
+                            <th className="px-4 py-3 text-gray-400 font-semibold">Serviço</th>
+                            <th className="px-4 py-3 text-gray-400 font-semibold text-right w-32">Valor Unit.</th>
+                            <th className="px-4 py-3 text-gray-400 font-semibold text-right w-32">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const byDate = {};
+                            cliente.itens.forEach(item => {
+                              const dateKey = item.data || '';
+                              const equipeKey = item.equipe_nome || '';
+                              const groupKey = `${dateKey}||${equipeKey}`;
+                              
+                              if (!byDate[groupKey]) {
+                                byDate[groupKey] = { data: dateKey, equipe: equipeKey, servicos: {} };
+                              }
+                              
+                              const sKey = formatServiceText(item.tipo_servico || item.descricao || 'Serviço');
+                              
+                              if (!byDate[groupKey].servicos[sKey]) {
+                                byDate[groupKey].servicos[sKey] = { descricao: sKey, qty: 0, valorUnit: item.valor || 0, totalValor: 0 };
+                              }
+                              byDate[groupKey].servicos[sKey].qty += 1;
+                              byDate[groupKey].servicos[sKey].totalValor += (item.valor || 0);
+                            });
 
-                        <div className="space-y-1">
-                          {cliente.itens.map(item => {
-                            const pagStats = getPagamentoStatus(item);
-                            
-                            return (
-                              <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-2.5 hover:bg-white/5 rounded-lg transition-colors border-b border-white/[0.02]">
-                                <div className="col-span-1 pl-2 font-bold text-blue-400 text-xs text-center w-max">#{item.originalId}</div>
-                                <div className="col-span-2 text-xs text-gray-300">
-                                  <div className="font-semibold">{item.data ? format(new Date(item.data), "dd/MM/yyyy") : '-'}</div>
-                                  <div className="text-gray-500 text-[10px] uppercase font-bold mt-0.5">{item.horario || 'S/H'}</div>
-                                </div>
-                                <div className="col-span-3">
-                                  <div className="font-medium text-gray-200 text-xs truncate pr-2">{item.tipo_servico || '-'}</div>
-                                  <div className="text-gray-500 text-[10px] truncate pr-2 w-max max-w-full">{item.descricao ? `"${item.descricao}"` : ''}</div>
-                                </div>
-                                <div className="col-span-1 text-xs text-gray-400">
-                                  {item.equipe_nome ? <span className="bg-[#0d1826] px-1.5 py-0.5 rounded border border-white/5 font-semibold">#{item.equipe_nome}</span> : <span className="opacity-30">—</span>}
-                                </div>
-                                <div className="col-span-1 font-bold text-emerald-400 text-xs">
-                                  {item.status === 'concluido' ? formatCurrency(item.valor) : <span className="text-orange-400 text-[10px] uppercase block tracking-wider">Aguardando</span>}
-                                </div>
-                                <div className="col-span-2 flex items-center pr-2">
-                                  {pagStats ? (
-                                    <div className={`px-2 text-[10px] py-1 rounded-md font-bold uppercase tracking-wider ${pagStats.style}`}>{pagStats.label}</div>
-                                  ) : (
-                                    <span className="w-16 h-1.5 rounded bg-white/5 block" />
-                                  )}
-                                </div>
-                                <div className="col-span-1 flex items-center">
-                                  {getStatusBadge(item.status)}
-                                </div>
-                                <div className="col-span-1 flex justify-center">
-                                  <Button variant="ghost" size="icon" onClick={() => handleDelete(item)} disabled={deleteMutation.isPending} className="h-6 w-6 text-red-500 hover:text-white hover:bg-red-500/80 rounded-full bg-red-500/10 border border-red-500/20" title="Apagar Registro Permanentemente">
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        <div className="grid grid-cols-12 gap-2 mt-2 pt-3 pb-1 border-t border-white/5 bg-[#0d1826] rounded-lg px-2">
-                          <div className="col-span-8 text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center">
-                            Total Movimentado ({cliente.stats.concluidas} concluída(s))
-                          </div>
-                          <div className="col-span-4 font-bold text-emerald-400 text-sm">
-                            {formatCurrency(cliente.stats.concluidasValor)}
-                          </div>
-                        </div>
+                            const sortedGroups = Object.values(byDate).sort((a, b) => new Date(b.data) - new Date(a.data));
+                            let rowBg = false;
 
-                      </div>
+                            return sortedGroups.map((group, gIdx) => {
+                              const servicoRows = Object.values(group.servicos);
+                              return servicoRows.map((s, sIdx) => {
+                                rowBg = !rowBg;
+                                return (
+                                  <tr key={`${gIdx}-${sIdx}`} className={`border-b border-white/5 ${rowBg ? 'bg-[#152236]' : 'bg-[#121d2f]'} hover:bg-white/5 transition-colors`}>
+                                    {sIdx === 0 ? (
+                                      <td className="px-4 py-4 align-top" rowSpan={servicoRows.length}>
+                                        <div className="font-semibold text-gray-200">
+                                          {group.data ? format(new Date(group.data), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                                        </div>
+                                        {group.equipe && (
+                                          <div className="text-[11px] text-blue-400 font-medium mt-1">{group.equipe}</div>
+                                        )}
+                                      </td>
+                                    ) : null}
+                                    <td className="px-4 py-3 text-center align-middle">
+                                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 font-bold text-xs shadow-inner border border-blue-500/30">{s.qty}x</span>
+                                    </td>
+                                    <td className="px-4 py-3 align-middle text-gray-300 pr-4">{s.descricao}</td>
+                                    <td className="px-4 py-3 align-middle text-right text-gray-400 font-medium">
+                                      {s.valorUnit ? `R$ ${s.valorUnit.toLocaleString('pt-BR')}` : '—'}
+                                    </td>
+                                    <td className="px-4 py-3 align-middle text-right font-bold text-emerald-400">
+                                      {s.totalValor ? `R$ ${s.totalValor.toLocaleString('pt-BR')}` : '—'}
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            });
+                          })()}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-[#0b1420] border-t border-white/10 shadow-lg">
+                            <td colSpan={4} className="px-4 py-4 text-right font-bold text-gray-400 tracking-wider">Total Movimentado:</td>
+                            <td className="px-4 py-4 text-right font-bold text-emerald-400 text-[15px]">
+                              R$ {cliente.stats.concluidasValor.toLocaleString('pt-BR')}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
 
                     <div className="mt-8 mb-2">
@@ -539,6 +567,9 @@ export default function HistoricoClientes() {
                                        <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest">Sem Preço</span>
                                     )}
                                     {getStatusBadge(item.status)}
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item)} disabled={deleteMutation.isPending} className="h-6 w-6 ml-2 text-red-500 hover:text-white hover:bg-red-500/80 rounded-full bg-red-500/10 border border-red-500/20" title="Apagar Registro Permanentemente">
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
                                   </div>
                                 </div>
                               </div>
