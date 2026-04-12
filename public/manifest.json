@@ -1,0 +1,16 @@
+{
+  "name": "Casa do Ar Climatização",
+  "short_name": "Casa do Ar",
+  "description": "Sistema de gerenciamento de serviços de climatização",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1b3e",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/698ea42a04e403662faedcb4/20ff2fc9c_logocasadoar.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ]
+}
