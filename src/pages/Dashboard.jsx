@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import GanhosSemanaDashboard from '@/components/dashboard/GanhosSemanaDashboard';
-import { 
-  Users, 
-  ClipboardList, 
+import {
+  Users,
+  ClipboardList,
   Calendar,
   AlertTriangle,
   ArrowRight,
@@ -21,7 +21,8 @@ import {
   Filter,
   Tag,
   Bell,
-  DollarSign
+  DollarSign,
+  Wrench
 } from 'lucide-react';
 import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -103,12 +104,11 @@ export default function Dashboard() {
 
   // Estatísticas
   const totalClientes = clientes.length;
-  const clientesAtivos = clientes.filter(c => c.status === 'Ativo').length;
   
   const manutencoesPendentes = clientes.filter(c => {
     if (!c.proxima_manutencao) return false;
     const daysUntil = differenceInDays(new Date(c.proxima_manutencao), new Date());
-    return daysUntil <= 30;
+    return daysUntil <= 30 && daysUntil >= 0;
   });
 
   const manutencoesVencidas = clientes.filter(c => {
@@ -121,7 +121,7 @@ export default function Dashboard() {
     return daysA - daysB;
   });
 
-  // Filtrar serviços por período com timezone correto
+  // Filtrar serviços por período
   const servicosFiltrados = servicos.filter(s => {
     if (!s.data_programada) return false;
     const dataServico = toLocalDate(s.data_programada);
@@ -172,11 +172,9 @@ export default function Dashboard() {
     return isToday(dataServico);
   });
 
-  // Buscar equipe do usuário atual
   const usuarioAtual = usuarios.find(u => u.email === currentUser?.email);
   const equipeDoUsuario = usuarioAtual?.equipe_id;
 
-  // Filtrar apenas serviços da equipe do usuário (se não for admin)
   const servicosFiltradosPorEquipe = currentUser?.role === 'admin' 
     ? servicosHoje 
     : servicosHoje.filter(s => s.equipe_id === equipeDoUsuario);
@@ -188,120 +186,113 @@ export default function Dashboard() {
     }))
     .filter(e => e.servicos.length > 0);
 
-  const StatCard = ({ title, value, icon: Icon, color, subtitle, onClick, href }) => {
+  const StatCard = ({ title, value, icon: Icon, colorClass, subtitle, onClick, href }) => {
     const content = (
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">{title}</p>
-            <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2 text-gray-800">{value}</p>
-            {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+      <CardContent className="p-5 flex flex-col justify-between h-full">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1 pr-3">
+            <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider">{title}</p>
+            <p className="text-3xl sm:text-4xl font-bold mt-2 text-gray-100 tracking-tight">{value}</p>
           </div>
-          <div className={`w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-lg ${color}`}>
-            <Icon className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 ${colorClass}`}>
+            <Icon className="w-6 h-6" />
           </div>
         </div>
-        {(onClick || href) && (
-          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
-            <div className="flex items-center text-xs sm:text-sm font-medium text-blue-600 group-hover:text-blue-700">
-              Ver detalhes <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+        <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+          {(onClick || href) && (
+            <div className={`flex items-center text-xs font-semibold ${colorClass} group-hover:opacity-80 transition-opacity`}>
+              Ver Detalhes <ArrowRight className="w-3 h-3 ml-1.5 transition-transform group-hover:translate-x-1" />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     );
 
+    const baseClass = "bg-[#152236] border-white/5 shadow-sm hover:border-white/10 transition-all duration-300 rounded-2xl h-full flex flex-col";
+
     if (href) {
       return (
-        <Link to={href}>
-          <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02] group rounded-2xl">
-            {content}
-          </Card>
+        <Link to={href} className="block h-full outline-none">
+          <Card className={`${baseClass} cursor-pointer group`}>{content}</Card>
         </Link>
       );
     }
 
     return (
-      <Card
-        className={`bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 rounded-2xl ${onClick ? 'cursor-pointer hover:scale-[1.02] group' : ''}`}
-        onClick={onClick}
-      >
+      <Card className={`${baseClass} ${onClick ? 'cursor-pointer group' : ''}`} onClick={onClick}>
         {content}
       </Card>
     );
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ backgroundColor: '#1e3a8a' }}>
+    <div className="space-y-6 lg:space-y-8 max-w-full overflow-hidden">
+      {/* Header Minimalista */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-blue-200/80 mt-1 flex items-center gap-2 text-xs sm:text-sm">
-            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-            {format(getLocalDate(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-100 tracking-tight">Dashboard</h1>
+          <p className="text-gray-400 mt-1 flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4 text-blue-400" />
+            {format(getLocalDate(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
         <Link to={createPageUrl('Servicos')}>
-          <Button className="text-sm px-5 h-10 font-bold rounded-xl" style={{ backgroundColor: '#f59e0b', color: '#1e1e1e' }}>
-            <Plus className="w-4 h-4 mr-1" />
-            + Novo Serviço
+          <Button className="w-full sm:w-auto text-sm px-6 h-11 font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-300 border-0">
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Serviço
           </Button>
         </Link>
       </div>
 
-      {/* Cards de Alerta Admin: Precificação e Cobranças do Dia */}
+      {/* Alertas Admin Modernos (Glass Blocks) */}
       {currentUser?.role === 'admin' && (semPrecificacao.length > 0 || cobrarHoje.length > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Card: Serviços sem preço */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {semPrecificacao.length > 0 && (
-            <Link to={createPageUrl('PagamentosClientes') + '?highlight=sempreco'}>
-              <div className="rounded-2xl p-4 border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 transition-all cursor-pointer">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
-                    <Tag className="w-5 h-5 text-white" />
+            <Link to={createPageUrl('PagamentosClientes') + '?highlight=sempreco'} className="outline-none">
+              <div className="rounded-2xl p-5 border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/30 transition-all cursor-pointer group relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                  <Tag className="w-24 h-24 text-amber-500" />
+                </div>
+                <div className="relative z-10 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0 border border-amber-500/30">
+                    <Tag className="w-6 h-6 text-amber-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-amber-800 text-sm">Serviços sem precificação</p>
-                      <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{semPrecificacao.length}</span>
-                    </div>
-                    <p className="text-xs text-amber-700 mt-1">Clientes aguardando definição de preço</p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {semPrecificacao.slice(0, 3).map(p => (
-                        <span key={p.id} className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium truncate max-w-[120px]">{p.cliente_nome}</span>
+                    <p className="font-bold text-amber-400 text-base mb-1">Precificação Pendente</p>
+                    <p className="text-sm text-amber-200/70 mb-3">{semPrecificacao.length} serviços aguardando preço base</p>
+                    <div className="flex flex-wrap gap-2">
+                       {semPrecificacao.slice(0, 2).map(p => (
+                        <span key={p.id} className="text-[11px] bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-md font-medium truncate max-w-[130px] border border-amber-500/20">{p.cliente_nome}</span>
                       ))}
-                      {semPrecificacao.length > 3 && <span className="text-xs text-amber-600 font-semibold">+{semPrecificacao.length - 3} mais</span>}
+                      {semPrecificacao.length > 2 && <span className="text-[11px] text-amber-400 font-semibold flex items-center">+{semPrecificacao.length - 2} mais</span>}
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-amber-600 flex-shrink-0 mt-1" />
                 </div>
               </div>
             </Link>
           )}
 
-          {/* Card: Cobrar hoje */}
           {cobrarHoje.length > 0 && (
-            <Link to={createPageUrl('PagamentosClientes') + '?highlight=cobrar'}>
-              <div className="rounded-2xl p-4 border-2 border-orange-400 bg-orange-50 hover:bg-orange-100 transition-all cursor-pointer animate-pulse">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
-                    <Bell className="w-5 h-5 text-white" />
+            <Link to={createPageUrl('PagamentosClientes') + '?highlight=cobrar'} className="outline-none">
+              <div className="rounded-2xl p-5 border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30 transition-all cursor-pointer group relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                  <Bell className="w-24 h-24 text-red-500 animate-pulse" />
+                </div>
+                <div className="relative z-10 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0 border border-red-500/30">
+                    <Bell className="w-6 h-6 text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-orange-800 text-sm">🔔 Cobrar hoje!</p>
-                      <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{cobrarHoje.length}</span>
-                    </div>
-                    <p className="text-xs text-orange-700 mt-1">Pagamentos agendados para hoje</p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {cobrarHoje.slice(0, 3).map(p => (
-                        <span key={p.id} className="text-xs bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full font-medium truncate max-w-[120px]">{p.cliente_nome}</span>
+                    <p className="font-bold text-red-400 text-base mb-1">Cobranças Agendadas para Hoje</p>
+                    <p className="text-sm text-red-200/70 mb-3">{cobrarHoje.length} clientes a cobrar</p>
+                    <div className="flex flex-wrap gap-2">
+                      {cobrarHoje.slice(0, 2).map(p => (
+                        <span key={p.id} className="text-[11px] bg-red-500/20 text-red-300 px-2.5 py-1 rounded-md font-medium truncate max-w-[130px] border border-red-500/20">{p.cliente_nome}</span>
                       ))}
-                      {cobrarHoje.length > 3 && <span className="text-xs text-orange-600 font-semibold">+{cobrarHoje.length - 3} mais</span>}
+                      {cobrarHoje.length > 2 && <span className="text-[11px] text-red-400 font-semibold flex items-center">+{cobrarHoje.length - 2} mais</span>}
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-orange-600 flex-shrink-0 mt-1" />
                 </div>
               </div>
             </Link>
@@ -309,395 +300,259 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Serviços Diários por Equipe */}
-      {servicosPorEquipe.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            {currentUser?.role === 'admin' ? 'Serviços de Hoje por Equipe' : 'Meus Serviços de Hoje'}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {servicosPorEquipe.map(({ equipe, servicos }) => (
-              <div key={equipe.id} className="space-y-2">
-                {/* Header da equipe */}
-                <div className="flex items-center gap-2 px-1">
-                  <div 
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow"
-                    style={{ backgroundColor: equipe.cor || '#3b82f6' }}
-                  >
-                    {equipe.nome.charAt(0).toUpperCase()}
-                  </div>
-                  <p className="text-sm font-semibold text-gray-800">{equipe.nome}</p>
-                  <span className="text-xs text-gray-500">({servicos.length})</span>
-                </div>
+      {/* Grid Principal (Bento Style) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+        {currentUser?.role !== 'admin' && (
+          <div className="xl:col-span-2">
+            <GanhosSemanaDashboard />
+          </div>
+        )}
+        <div className="col-span-1">
+          <StatCard
+            title="Total Clientes"
+            value={totalClientes}
+            icon={Users}
+            colorClass="text-blue-400"
+            subtitle="Na base"
+            href={createPageUrl('Clientes')}
+          />
+        </div>
+        <div className="col-span-1">
+          <StatCard
+            title="Concluídos no Mês"
+            value={atendimentosDoMes.length}
+            icon={ClipboardList}
+            colorClass="text-emerald-400"
+            subtitle="Mês atual"
+            href={createPageUrl('Atendimentos')}
+          />
+        </div>
+        <div className="col-span-1">
+          <StatCard
+            title="Manutenções Programadas"
+            value={manutencoesPendentes.length}
+            icon={Calendar}
+            colorClass="text-amber-400"
+            subtitle="Próximos 30 dias"
+            href={createPageUrl('PreventivasFuturas')}
+          />
+        </div>
+        <div className="col-span-1">
+          <StatCard
+            title="Histórico Concluídos"
+            value={atendimentosConcluidos}
+            icon={CheckCircle2}
+            colorClass="text-purple-400"
+            subtitle="Desde o início"
+            href={createPageUrl('Atendimentos')}
+          />
+        </div>
+      </div>
 
-                {/* Mini cards dos serviços */}
-                <div className="space-y-1.5">
-                  {servicos.map(servico => {
-                    const statusColors = {
-                      'aberto': 'bg-gray-50 border-gray-200',
-                      'andamento': 'bg-blue-50 border-blue-200',
-                      'agendado': 'bg-amber-50 border-amber-200',
-                      'reagendado': 'bg-purple-50 border-purple-200'
-                    };
-                    const statusDot = {
-                      'aberto': 'bg-gray-500',
-                      'andamento': 'bg-blue-500',
-                      'agendado': 'bg-amber-500',
-                      'reagendado': 'bg-purple-500'
-                    };
-                    const statusClass = statusColors[servico.status] || statusColors.aberto;
-                    const dotClass = statusDot[servico.status] || statusDot.aberto;
-                    
+      {/* Grid Secundário Dividido */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        {/* Coluna Esquerda: Filtros e Estatísticas Radiação (Ocupa 2/3 no desktop) */}
+        <div className="xl:col-span-2 flex flex-col gap-6">
+          
+          {/* Manutenções Vencidas Críticas */}
+          {manutencoesVencidas.length > 0 && (
+            <Card className="border border-red-500/20 bg-[#1e1515] shadow-lg rounded-2xl overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+              <CardHeader className="pb-2 pt-5 px-5 sm:px-6 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold text-red-400 border-none m-0 leading-none">
+                      Ação Imediata Necessária
+                    </CardTitle>
+                    <p className="text-sm text-red-300/70 mt-1">{manutencoesVencidas.length} manutenções vencidas!</p>
+                  </div>
+                </div>
+                <Link to={createPageUrl('PreventivasFuturas')}>
+                  <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">Ver Detalhes</Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="px-5 sm:px-6 pb-5 pt-2">
+                 <div className="space-y-2 mt-2">
+                  {manutencoesVencidas.slice(0, 3).map((cliente) => {
+                    const daysOverdue = Math.abs(differenceInDays(new Date(cliente.proxima_manutencao), new Date()));
                     return (
-                      <Link key={servico.id} to={createPageUrl('Servicos')}>
-                        <div className={`p-2.5 rounded-lg border ${statusClass} hover:shadow-sm transition-all cursor-pointer`}>
-                          <div className="flex items-start gap-2">
-                            <div className={`w-2 h-2 rounded-full ${dotClass} mt-1.5 flex-shrink-0`} />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-gray-800 truncate">{servico.cliente_nome}</p>
-                              <p className="text-xs text-gray-600 truncate">{servico.tipo_servico}</p>
-                              {servico.horario && (
-                                <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {servico.horario}
-                                </p>
-                              )}
+                      <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block group">
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-red-500/30 hover:bg-red-500/5 transition-all cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <div className="hidden sm:flex w-10 h-10 bg-[#152236] border border-white/5 rounded-lg items-center justify-center">
+                              <Snowflake className="w-5 h-5 text-gray-500 group-hover:text-red-400 transition-colors" />
                             </div>
+                            <div>
+                              <p className="font-semibold text-gray-200 text-sm">{cliente.nome}</p>
+                              <p className="text-xs text-gray-500">{cliente.telefone && formatPhone(cliente.telefone)}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-red-500">{daysOverdue} dias</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">atrasado</p>
                           </div>
                         </div>
                       </Link>
                     );
                   })}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Ganhos dos Técnicos - Apenas para Admin */}
-      {currentUser?.role === 'admin' && tecnicosFinanceiro.length > 0 && (
-        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl col-span-full">
-          <CardHeader className="pb-3 px-4 pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-100">
-                <Users className="w-4 h-4 text-green-600" />
-              </div>
-              <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-                Ganhos dos Técnicos (Semana Atual)
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {tecnicosFinanceiro.map(tecnico => {
-                const inicioSemana = getStartOfWeek();
-                const fimSemana = getEndOfWeek();
-                
-                // Calcular comissões ganhas na semana
-                const comissoesSemana = lancamentosFinanceiros.filter(l => {
-                  if (l.tecnico_id !== tecnico.tecnico_id) return false;
-                  if (!l.data_geracao) return false;
-                  const dataGeracao = toLocalDate(l.data_geracao);
-                  return dataGeracao && dataGeracao >= inicioSemana && dataGeracao <= fimSemana;
-                });
-
-                const totalComissoes = comissoesSemana.reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
-
-                // Calcular pagamentos feitos na semana
-                const pagamentosSemana = pagamentosTecnicos.filter(p => {
-                  if (p.tecnico_id !== tecnico.tecnico_id) return false;
-                  if (p.status !== 'Confirmado') return false;
-                  if (!p.created_date) return false;
-                  const dataPagamento = toLocalDate(p.created_date);
-                  return dataPagamento && dataPagamento >= inicioSemana && dataPagamento <= fimSemana;
-                });
-
-                const totalPago = pagamentosSemana.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
-                const creditoPendente = Math.max(0, totalComissoes - totalPago);
-
-                return (
-                  <div key={tecnico.id} className="rounded-xl p-4 border border-gray-100 bg-gradient-to-br from-green-50 to-emerald-50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold text-sm">
-                        {tecnico.tecnico_nome?.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-xs text-gray-600 font-medium">{tecnico.tecnico_nome}</span>
-                    </div>
-                    <p className="text-2xl font-bold text-green-700">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(creditoPendente)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Pendente</p>
+          {/* Painel de Serviços com Filtro Moderno */}
+          <Card className="bg-[#152236] border border-white/5 shadow-sm rounded-2xl flex-1 flex flex-col">
+            <CardHeader className="pb-4 pt-5 px-5 sm:px-6 border-b border-white/5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-500/10 border border-blue-500/20">
+                    <Wrench className="w-5 h-5 text-blue-400" />
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  <CardTitle className="text-lg font-bold text-gray-100">Controle de Serviços</CardTitle>
+                </div>
+                <Select value={filtroServicos} onValueChange={setFiltroServicos}>
+                  <SelectTrigger className="w-full sm:w-48 bg-[#0d1826] border-white/10 text-gray-200 rounded-xl h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#152236] border-white/10 text-gray-200">
+                    <SelectItem value="dia" className="hover:bg-white/5 rounded-lg py-2">Hoje</SelectItem>
+                    <SelectItem value="semana" className="hover:bg-white/5 rounded-lg py-2">Esta Semana</SelectItem>
+                    <SelectItem value="mes" className="hover:bg-white/5 rounded-lg py-2">Este Mês</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="p-5 sm:p-6 flex-1 flex flex-col">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 flex-1">
+                <div className="rounded-2xl p-4 bg-emerald-500/5 border border-emerald-500/20 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs font-semibold text-emerald-400 uppercase tracking-widest">Concluídos</span>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-100">{servicosConcluidos}</p>
+                </div>
+                <div className="rounded-2xl p-4 bg-blue-500/5 border border-blue-500/20 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Em Andamento</span>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-100">{servicosAndamento}</p>
+                </div>
+                <div className="rounded-2xl p-4 bg-amber-500/5 border border-amber-500/20 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-3">
+                     <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-xs font-semibold text-amber-400 uppercase tracking-widest">Agendados</span>
+                  </div>
+                  <p className="text-3xl font-bold text-amber-100">{servicosAgendados}</p>
+                </div>
+                <div className="rounded-2xl p-4 bg-gray-500/10 border border-gray-500/20 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-gray-400" />
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Abertos</span>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-100">{servicosAbertos}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-5 pt-4 border-t border-white/5 text-center">
+                Visualizando <span className="font-bold text-gray-300">{servicosFiltrados.length}</span> serviços no total
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Stats Grid - Com card de ganhos para técnicos */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {currentUser?.role !== 'admin' && <GanhosSemanaDashboard />}
-        <StatCard
-          title="Clientes"
-          value={totalClientes}
-          icon={Users}
-          color="bg-blue-500"
-          subtitle={`${totalClientes} cadastrados`}
-          href={createPageUrl('Clientes')}
-        />
-        <StatCard
-          title="Atendimentos"
-          value={atendimentosDoMes.length}
-          icon={ClipboardList}
-          color="bg-amber-400"
-          subtitle="Este mês"
-          href={createPageUrl('Atendimentos')}
-        />
-        <StatCard
-          title="Preventivas Futuras"
-          value={manutencoesPendentes.length}
-          icon={AlertTriangle}
-          color="bg-emerald-500"
-          subtitle={`${manutencoesPendentes.length} agendadas`}
-          href={createPageUrl('PreventivasFuturas')}
-        />
-        <StatCard
-          title="Concluídos"
-          value={atendimentosConcluidos}
-          icon={CheckCircle2}
-          color="bg-emerald-500"
-          subtitle="Total histórico"
-          href={createPageUrl('Atendimentos')}
-        />
-      </div>
+        {/* Coluna Direita: Listas Menores e Equipes */}
+        <div className="xl:col-span-1 flex flex-col gap-6">
 
-      {/* Filtro de Serviços */}
-      <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
-        <CardHeader className="pb-3 px-4 pt-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-100">
-                <Filter className="w-4 h-4 text-blue-600" />
-              </div>
-              <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-                Serviços
-              </CardTitle>
-            </div>
-            <Select value={filtroServicos} onValueChange={setFiltroServicos}>
-              <SelectTrigger className="w-full sm:w-44 border-gray-200 text-gray-700 text-sm bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dia">Hoje</SelectItem>
-                <SelectItem value="semana">Esta Semana</SelectItem>
-                <SelectItem value="mes">Este Mês</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-xl p-3 border border-gray-100 bg-green-50">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                </div>
-                <span className="text-xs text-gray-500 font-medium">Concluídos</span>
-              </div>
-              <p className="text-xl font-bold text-green-700">{servicosConcluidos}</p>
-            </div>
-            <div className="rounded-xl p-3 border border-gray-100 bg-blue-50">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                </div>
-                <span className="text-xs text-gray-500 font-medium">Andamento</span>
-              </div>
-              <p className="text-xl font-bold text-blue-700">{servicosAndamento}</p>
-            </div>
-            <div className="rounded-xl p-3 border border-gray-100 bg-amber-50">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                </div>
-                <span className="text-xs text-gray-500 font-medium">Agendados</span>
-              </div>
-              <p className="text-xl font-bold text-amber-700">{servicosAgendados}</p>
-            </div>
-            <div className="rounded-xl p-3 border border-gray-100 bg-gray-50">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <ClipboardList className="w-4 h-4 text-gray-500" />
-                </div>
-                <span className="text-xs text-gray-500 font-medium">Abertos</span>
-              </div>
-              <p className="text-xl font-bold text-gray-700">{servicosAbertos}</p>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center">
-              Total de <span className="text-gray-700 font-semibold">{servicosFiltrados.length}</span> serviços no período selecionado
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Manutenções Vencidas - Alerta Destaque */}
-      {manutencoesVencidas.length > 0 && (
-        <Card className="border-0 shadow-2xl shadow-red-500/30" style={{background: 'linear-gradient(135deg, #dc2626, #ea580c)'}}>
-          <CardHeader className="pb-2 px-4 pt-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-base sm:text-xl font-bold text-white">
-                    Manutenções Vencidas
-                  </CardTitle>
-                  <p className="text-white/90 text-xs sm:text-sm">
-                    {manutencoesVencidas.length} {manutencoesVencidas.length === 1 ? 'cliente precisa' : 'clientes precisam'} de atenção
-                  </p>
-                </div>
-              </div>
-              <Link to={createPageUrl('PreventivasFuturas')}>
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 hover:text-white text-xs sm:text-sm">
-                  Ver <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="space-y-2">
-              {manutencoesVencidas.slice(0, 5).map((cliente) => {
-                const daysOverdue = Math.abs(differenceInDays(new Date(cliente.proxima_manutencao), new Date()));
-                return (
-                  <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/95 hover:bg-white transition-all cursor-pointer">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-9 h-9 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                          <Snowflake className="w-4 h-4 sm:w-6 sm:h-6 text-red-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-800 text-sm sm:text-base">{cliente.nome}</p>
-                          <p className="text-xs text-gray-600">{cliente.telefone && formatPhone(cliente.telefone)}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-red-600">{daysOverdue}d atrasado</p>
-                        <p className="text-xs text-gray-500">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
-                      </div>
+          {/* Serviços por Equipe / Cards Verticais Elegantes */}
+          {servicosPorEquipe.length > 0 && (
+            <Card className="bg-[#152236] border border-white/5 shadow-sm rounded-2xl flex-1">
+              <CardHeader className="pb-3 px-5 pt-5 border-b border-white/5">
+                 <CardTitle className="text-sm font-bold text-gray-200 tracking-wide uppercase flex items-center gap-2">
+                   <Users className="w-4 h-4 text-blue-400" />
+                   {currentUser?.role === 'admin' ? "Serviços das Equipes (Hoje)" : "Meus Serviços de Hoje"}
+                 </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-hidden divide-y divide-white/5">
+                {servicosPorEquipe.map(({ equipe, servicos }) => (
+                  <div key={equipe.id} className="p-4 sm:p-5 hover:bg-white/5 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                       <div className="flex items-center gap-2">
+                         <div 
+                           className="w-2 h-2 rounded-full shadow"
+                           style={{ backgroundColor: equipe.cor || '#3b82f6' }}
+                         />
+                         <p className="text-sm font-bold text-gray-200">{equipe.nome}</p>
+                       </div>
+                       <span className="text-[10px] font-bold text-gray-400 bg-[#0d1826] px-2 py-0.5 rounded-full border border-white/5">{servicos.length} Serviços</span>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    <div className="space-y-2">
+                      {servicos.slice(0, 3).map(servico => (
+                        <div key={servico.id} className="flex gap-3 items-start bg-[#0d1826] rounded-xl p-3 border border-white/5">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-xs text-gray-200 truncate">{servico.cliente_nome}</p>
+                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{servico.tipo_servico}</p>
+                          </div>
+                          {servico.horario && (
+                             <span className="text-[10px] text-gray-400 flex items-center bg-[#152236] px-1.5 py-0.5 rounded-md border border-white/5 whitespace-nowrap">
+                               <Clock className="w-3 h-3 mr-1 text-gray-500" />
+                               {servico.horario}
+                             </span>
+                          )}
+                        </div>
+                      ))}
+                      {servicos.length > 3 && (
+                        <div className="text-center pt-1">
+                          <span className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer font-medium">Ver mais {servicos.length - 3} serviços</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Manutenções Pendentes */}
-        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-            <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-              Manutenções Pendentes
-            </CardTitle>
-            <AlertTriangle className="w-5 h-5 text-orange-400" />
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            {manutencoesPendentes.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
-                </div>
-                <p className="text-gray-400 text-sm">Nenhuma manutenção pendente</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {manutencoesPendentes.slice(0, 5).map((cliente) => {
-                  const daysUntil = differenceInDays(new Date(cliente.proxima_manutencao), new Date());
-                  const isOverdue = daysUntil < 0;
-                  return (
-                    <Link key={cliente.id} to={createPageUrl('PreventivasFuturas')} className="block">
-                      <div className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
-                        isOverdue ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'
-                      }`}>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isOverdue ? 'bg-red-100' : 'bg-amber-100'}`}>
-                            <Snowflake className={`w-4 h-4 ${isOverdue ? 'text-red-500' : 'text-amber-500'}`} />
+          {/* Últimos Clientes Clean */}
+          <Card className="bg-[#152236] border border-white/5 shadow-sm rounded-2xl">
+             <CardHeader className="pb-3 px-5 pt-5 border-b border-white/5 flex flex-row items-center justify-between">
+               <CardTitle className="text-sm font-bold text-gray-200 tracking-wide uppercase">
+                 Recentes
+               </CardTitle>
+               <Link to={createPageUrl('Clientes')}>
+                 <Button variant="ghost" size="sm" className="text-xs text-blue-400 hover:text-blue-300 h-8 px-2 -mr-2">Ver Base</Button>
+               </Link>
+             </CardHeader>
+             <CardContent className="p-0">
+               {clientes.length === 0 ? (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500 text-sm">Nenhum cliente cadastrado</p>
+                  </div>
+               ) : (
+                 <div className="divide-y divide-white/5">
+                    {clientes.slice(0, 4).map((cliente) => (
+                      <Link key={cliente.id} to={createPageUrl('Clientes')} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs uppercase shadow-inner">
+                             {cliente.nome?.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-800 text-sm">{cliente.nome}</p>
-                            <p className="text-xs text-gray-400">{cliente.tipo_equipamento || 'N/A'}</p>
+                            <p className="font-semibold text-gray-200 text-sm group-hover:text-blue-400 transition-colors w-[150px] truncate">{cliente.nome}</p>
+                            <p className="text-[11px] text-gray-500 w-[150px] truncate">{cliente.cidade || 'Sem cidade'}</p>
                           </div>
                         </div>
-                        <div className={`text-right ${isOverdue ? 'text-red-500' : 'text-amber-600'}`}>
-                          <p className="text-xs font-medium">
-                            {isOverdue ? `${Math.abs(daysUntil)}d atrasado` : `em ${daysUntil}d`}
-                          </p>
-                          <p className="text-xs text-gray-400">{format(new Date(cliente.proxima_manutencao), "dd/MM/yy")}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        <p className="text-[10px] text-gray-500 whitespace-nowrap hidden sm:block">{format(new Date(cliente.created_date), "dd/MMM", { locale: ptBR })}</p>
+                      </Link>
+                    ))}
+                 </div>
+               )}
+             </CardContent>
+          </Card>
 
-        {/* Últimos Clientes */}
-        <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-            <CardTitle className="text-base sm:text-lg font-semibold text-gray-800">
-              Últimos Clientes
-            </CardTitle>
-            <Link to={createPageUrl('Clientes')}>
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm">
-                Ver todos <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            {clientes.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-6 h-6 text-blue-500" />
-                </div>
-                <p className="text-gray-400 text-sm">Nenhum cliente cadastrado</p>
-                <Link to={createPageUrl('Clientes')}>
-                  <Button variant="outline" className="mt-3 text-sm">
-                    Cadastrar primeiro cliente
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {clientes.slice(0, 5).map((cliente) => (
-                  <Link key={cliente.id} to={createPageUrl('Clientes')} className="block">
-                    <div className="flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer group border border-gray-100 hover:border-blue-200 hover:bg-blue-50">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #06b6d4)' }}>
-                          {cliente.nome?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800 text-sm group-hover:text-blue-600 transition-colors">{cliente.nome}</p>
-                          <p className="text-xs text-gray-400">{cliente.cidade || 'Sem cidade'}</p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-400">{format(new Date(cliente.created_date), "dd/MM/yy")}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
