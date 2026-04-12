@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import TipoServicoDisplay from '@/components/TipoServicoDisplay';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -184,7 +185,7 @@ export default function MeuFinanceiro() {
                           {data ? format(data, 'dd/MM/yyyy', { locale: ptBR }) : '-'}
                         </TableCell>
                         <TableCell className="font-medium">{c.cliente_nome}</TableCell>
-                        <TableCell className="text-sm">{c.tipo_servico}</TableCell>
+                        <TableCell><TipoServicoDisplay value={c.tipo_servico} /></TableCell>
                         <TableCell className="text-sm">{c.equipe_nome || '-'}</TableCell>
                         <TableCell className="font-semibold">{formatMoney(c.valor_total_servico)}</TableCell>
                         <TableCell className="font-bold text-green-600">{formatMoney(c.valor_comissao_tecnico)}</TableCell>

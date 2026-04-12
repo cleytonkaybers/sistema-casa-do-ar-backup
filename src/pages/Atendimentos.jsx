@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/PermissionGuard';
+import TipoServicoDisplay from '@/components/TipoServicoDisplay';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,7 +104,6 @@ export default function Atendimentos() {
     return Array.from(tiposSet).sort();
   }, [atendimentos]);
 
-  // equipe_id vem direto do auth.me() — sem depender da lista de usuários
   const equipeIdUsuario = currentUser?.equipe_id || null;
 
   const filteredAtendimentos = useMemo(() => {
@@ -148,13 +148,11 @@ export default function Atendimentos() {
 
   const hasActiveFilters = searchTerm || filterTipo !== 'all';
 
-  // Paginação
   const totalPages = Math.ceil(filteredAtendimentos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedAtendimentos = filteredAtendimentos.slice(startIndex, endIndex);
 
-  // Reset para página 1 quando filtros mudarem
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterTipo]);
@@ -173,7 +171,6 @@ export default function Atendimentos() {
   };
 
   const handleCompartilhar = (atendimento) => {
-    // Tenta buscar telefone: 1) direto, 2) do campo detalhes JSON, 3) do serviço original
     let telefone = atendimento.telefone;
     if (!telefone && atendimento.detalhes) {
       try {
@@ -185,7 +182,6 @@ export default function Atendimentos() {
       const servicoOrigem = servicos.find(s => s.id === atendimento.servico_id);
       telefone = servicoOrigem?.telefone || '';
     }
-    // Fallback final: buscar pelo nome do cliente na entidade Cliente
     if (!telefone && atendimento.cliente_nome) {
       const clienteMatch = clientes.find(c => 
         c.nome?.trim().toLowerCase() === atendimento.cliente_nome?.trim().toLowerCase()
@@ -193,7 +189,6 @@ export default function Atendimentos() {
       telefone = clienteMatch?.telefone || '';
     }
 
-    // Buscar dados extras de fallback (detalhes JSON ou serviço original)
     let det = null;
     if (atendimento.detalhes) {
       try { det = typeof atendimento.detalhes === 'string' ? JSON.parse(atendimento.detalhes) : atendimento.detalhes; } catch {}
@@ -225,55 +220,52 @@ export default function Atendimentos() {
 
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 max-w-full overflow-hidden">
+      {/* Header da Página */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Atendimentos</h1>
-          <p className="text-gray-500 mt-1">{atendimentos.length} atendimentos concluídos</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-100 tracking-tight">Atendimentos</h1>
+          <p className="text-gray-400 mt-1 flex items-center gap-2 text-sm">
+            Total Histórico: <span className="font-semibold text-gray-300">{atendimentos.length} concluídos</span>
+          </p>
         </div>
       </div>
 
-      <div className="rounded-2xl shadow-sm p-4 sm:p-6 space-y-4 border border-gray-200 bg-white">
-        <div className="flex items-center gap-2 text-gray-600 mb-2">
-          <Filter className="w-5 h-5" />
-          <span className="font-medium">Filtros</span>
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="ml-auto text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-4 h-4 mr-1" />
-              Limpar
-            </Button>
-          )}
+      {/* Toolbar / Filtros Modernos */}
+      <div className="bg-[#152236] border border-white/5 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Input
+            placeholder="Buscar por cliente ou descrição..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 bg-[#0d1826] border-white/10 text-gray-200 placeholder:text-gray-500 w-full h-11 rounded-xl"
+          />
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="sm:col-span-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Buscar por cliente ou descrição..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-11 border-gray-200 text-gray-700 placeholder:text-gray-400 bg-white"
-              />
-            </div>
-          </div>
 
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="h-11 border-gray-200 text-gray-700 bg-white">
+            <SelectTrigger className="w-full md:w-[220px] bg-[#0d1826] border-white/10 text-gray-200 h-11 rounded-xl">
               <SelectValue placeholder="Tipo de Serviço" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectContent className="bg-[#152236] border-white/10 text-gray-200">
+              <SelectItem value="all" className="hover:bg-white/5">Todos os tipos</SelectItem>
               {tiposServico.map(tipo => (
-                <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                <SelectItem key={tipo} value={tipo} className="hover:bg-white/5">{tipo}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              onClick={clearFilters}
+              className="text-gray-400 hover:text-white hover:bg-white/5 px-3 h-11 shrink-0"
+              title="Limpar Filtros"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -281,21 +273,21 @@ export default function Atendimentos() {
         <TableSkeleton rows={8} />
       ) : (
         <>
-          <div className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{Math.min(endIndex, filteredAtendimentos.length)}</span> de <span className="font-medium">{filteredAtendimentos.length}</span> atendimentos
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest w-full sm:w-auto text-center sm:text-left">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredAtendimentos.length)} de {filteredAtendimentos.length}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2 w-full sm:w-auto pb-4 sm:pb-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="border-gray-200"
+                className="bg-[#152236] border-white/10 text-gray-300 hover:bg-white/5"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm font-medium text-gray-400 mx-2">
                 Página {currentPage} de {totalPages}
               </span>
               <Button
@@ -303,7 +295,7 @@ export default function Atendimentos() {
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="border-gray-200"
+                className="bg-[#152236] border-white/10 text-gray-300 hover:bg-white/5"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -311,87 +303,87 @@ export default function Atendimentos() {
           </div>
 
           {paginatedAtendimentos.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ClipboardList className="w-10 h-10 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-800 mb-2">
-            {hasActiveFilters ? 'Nenhum atendimento encontrado' : 'Nenhum atendimento registrado'}
-          </h3>
-          <p className="text-gray-500">
-            {hasActiveFilters
-              ? 'Tente ajustar os filtros de busca'
-              : 'Os atendimentos são gerados automaticamente ao concluir um serviço'}
-          </p>
-        </div>
+            <div className="text-center py-20 bg-[#152236] border border-white/5 rounded-2xl flex flex-col items-center">
+              <div className="w-20 h-20 bg-[#0d1826] border border-white/5 rounded-full flex items-center justify-center mb-5">
+                <ClipboardList className="w-8 h-8 text-gray-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-200 mb-2">
+                {hasActiveFilters ? 'Nenhum atendimento encontrado' : 'Nenhum atendimento registrado'}
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                {hasActiveFilters
+                  ? 'Tente ajustar os filtros de busca para encontrar o que procura.'
+                  : 'Os atendimentos aparecem aqui automaticamente após a conclusão dos serviços.'}
+              </p>
+            </div>
       ) : (
         <>
-          {/* Desktop Table */}
-          <Card className="hidden lg:block border border-gray-200 shadow-sm overflow-hidden bg-white">
+          {/* Desktop Table (Visible on lg e superiores) */}
+          <Card className="hidden lg:block border border-white/5 bg-[#152236] shadow-sm rounded-2xl overflow-hidden">
             <Table>
-              <TableHeader>
-                <TableRow style={{ backgroundColor: '#1e3a8a' }}>
-                  <TableHead className="text-white">Cliente</TableHead>
-                  <TableHead className="text-white">Data Conclusão</TableHead>
-                  <TableHead className="text-white">Tipo de Serviço</TableHead>
-                  {isAdmin && <TableHead className="text-white">Valor</TableHead>}
-                  <TableHead className="text-white">Concluído por</TableHead>
-                  <TableHead className="text-right text-white">Ações</TableHead>
+              <TableHeader className="bg-[#0b1420] border-b border-white/5">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-gray-400 font-semibold h-12">Cliente</TableHead>
+                  <TableHead className="text-gray-400 font-semibold h-12 w-44">Data Conclusão</TableHead>
+                  <TableHead className="text-gray-400 font-semibold h-12 w-64">Tipo de Serviço</TableHead>
+                  {isAdmin && <TableHead className="text-gray-400 font-semibold h-12 w-32">Valor</TableHead>}
+                  <TableHead className="text-gray-400 font-semibold h-12 w-48">Concluído por</TableHead>
+                  <TableHead className="text-right text-gray-400 font-semibold h-12 w-36">Ações</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="divide-y divide-white/5">
                 {paginatedAtendimentos.map((atendimento) => (
-                  <TableRow key={atendimento.id} className="border-gray-100 hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-medium">
+                  <TableRow key={atendimento.id} className="hover:bg-white/5 border-none transition-colors group">
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-bold shadow-inner">
                           {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-800">{atendimento.cliente_nome || '-'}</p>
-                          {atendimento.telefone && <p className="text-xs text-gray-400">{atendimento.telefone}</p>}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-200 truncate">{atendimento.cliente_nome || '-'}</p>
+                          {atendimento.telefone && <p className="text-[11px] text-gray-500 mt-0.5">{atendimento.telefone}</p>}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-gray-600">
-                        <Calendar className="w-4 h-4 text-green-400" />
-                        {formatDate(atendimento.data_conclusao || atendimento.data_atendimento)}
+                      <div className="flex items-center gap-2 text-gray-300 bg-[#0d1826] border border-white/5 px-3 py-1.5 rounded-lg w-max shadow-sm">
+                        <Calendar className="w-4 h-4 text-emerald-500" />
+                        <span className="text-sm">{formatDate(atendimento.data_conclusao || atendimento.data_atendimento)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5 text-gray-600">
-                        <Wrench className="w-4 h-4 text-blue-400" />
-                        {atendimento.tipo_servico}
+                      <div className="flex items-start gap-2 text-gray-300">
+                        <Wrench className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                        <TipoServicoDisplay value={atendimento.tipo_servico} />
                       </div>
                     </TableCell>
                     {isAdmin && (
                       <TableCell>
-                        <span className="font-medium text-green-600">
+                        <span className="font-semibold text-emerald-400">
                           {formatCurrency(atendimento.valor)}
                         </span>
                       </TableCell>
                     )}
                     <TableCell>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-gray-300 space-y-1">
                         {(() => {
                           const equipe = atendimento.equipe_nome || 
                             servicos.find(s => s.id === atendimento.servico_id)?.equipe_nome || '';
-                          return equipe ? <p className="font-medium text-blue-700">👷 {equipe}</p> : null;
+                          return equipe ? <p className="font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md inline-block border border-blue-500/10">👷 {equipe}</p> : null;
                         })()}
-                        <p className="text-gray-400">{atendimento.usuario_conclusao || '-'}</p>
+                        <p className="text-gray-500 mt-1">{atendimento.usuario_conclusao || '-'}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleCompartilhar(atendimento)} className="text-gray-400 hover:text-green-600" title="Compartilhar">
-                          <Share2 className="w-4 h-4" />
+                      <div className="flex items-center justify-end gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" onClick={() => handleCompartilhar(atendimento)} className="h-8 w-8 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10" title="Compartilhar">
+                           <Share2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleVerDetalhes(atendimento)} className="text-gray-400 hover:text-blue-600" title="Ver Detalhes">
+                        <Button variant="ghost" size="icon" onClick={() => handleVerDetalhes(atendimento)} className="h-8 w-8 text-gray-400 hover:text-white hover:bg-white/10" title="Ver Detalhes">
                            <Info className="w-4 h-4" />
                          </Button>
                          {isAdmin && (
-                           <Button variant="ghost" size="icon" onClick={() => handleDelete(atendimento)} className="text-gray-400 hover:text-red-500" title="Excluir">
+                           <Button variant="ghost" size="icon" onClick={() => handleDelete(atendimento)} className="h-8 w-8 text-gray-400 hover:text-red-400 hover:bg-red-500/10" title="Excluir">
                              <Trash2 className="w-4 h-4" />
                            </Button>
                          )}
@@ -403,48 +395,66 @@ export default function Atendimentos() {
             </Table>
           </Card>
 
-          {/* Mobile Cards */}
-          <div className="lg:hidden space-y-4">
+          {/* Mobile Cards View (Otimizado, flexível flex box) */}
+          <div className="lg:hidden flex flex-col gap-4">
             {paginatedAtendimentos.map((atendimento) => (
-              <Card key={atendimento.id} className="border border-gray-200 shadow-sm bg-white">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white font-medium">
+              <Card key={atendimento.id} className="bg-[#152236] border border-white/5 shadow-md hover:border-white/10 transition-colors overflow-hidden rounded-2xl flex flex-col">
+                <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
+                  {/* Card Header (Client info) */}
+                  <div className="flex items-start justify-between mb-4 gap-2">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-bold shrink-0">
                         {atendimento.cliente_nome?.charAt(0).toUpperCase() || '?'}
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{atendimento.cliente_nome || '-'}</p>
-                        <p className="text-sm text-gray-500">{atendimento.tipo_servico}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-100 text-[15px] truncate">{atendimento.cliente_nome || '-'}</p>
+                        <TipoServicoDisplay value={atendimento.tipo_servico} className="mt-0.5" />
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-700 border-green-200 border text-xs flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Concluído
+                    <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] shrink-0 font-semibold">
+                      <CheckCircle2 className="w-3 h-3 mr-1" /> Concluído
                     </Badge>
                   </div>
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-green-400" />
-                      {formatDate(atendimento.data_conclusao || atendimento.data_atendimento)}
-                    </div>
-                    {isAdmin && <span className="font-medium text-green-600">{formatCurrency(atendimento.valor)}</span>}
+                  
+                  {/* Detailed Info */}
+                  <div className="bg-[#0b1420] border border-white/5 rounded-xl p-3 mb-4 space-y-2.5">
+                     <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-2 text-xs text-gray-300">
+                           <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                           <span>{formatDate(atendimento.data_conclusao || atendimento.data_atendimento)}</span>
+                         </div>
+                         {isAdmin && <span className="font-bold text-emerald-400 text-sm">{formatCurrency(atendimento.valor)}</span>}
+                     </div>
+                     {atendimento.usuario_conclusao && (
+                        <div className="flex items-center gap-2 text-[11px] text-gray-500 pt-1.5 border-t border-white/5">
+                           <span>Concluído por:</span>
+                           <span className="font-medium text-gray-300 truncate">{atendimento.usuario_conclusao}</span>
+                        </div>
+                     )}
                   </div>
+                  
                   {atendimento.observacoes_conclusao && (
-                    <p className="text-sm text-gray-500 border border-gray-100 p-2 rounded-lg mb-3 line-clamp-2 bg-gray-50">
-                      {atendimento.observacoes_conclusao}
-                    </p>
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-widest">Observações</p>
+                      <p className="text-sm text-gray-300 italic line-clamp-2">"{atendimento.observacoes_conclusao}"</p>
+                    </div>
                   )}
-                  <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                    <Button variant="outline" size="sm" onClick={() => handleCompartilhar(atendimento)} className="border-gray-200 text-gray-500 hover:text-green-600">
-                      <Share2 className="w-4 h-4" />
+
+                  {/* Actions Grid (Otimizado pro toque na tela) */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-auto pt-3 border-t border-white/5">
+                    <Button variant="outline" className="w-full bg-[#0d1826] border-white/10 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20 h-10 text-gray-300 flex" onClick={() => handleCompartilhar(atendimento)}>
+                        <Share2 className="w-4 h-4 mr-2" />
+                        <span className="text-xs font-semibold">Compartilhar</span>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleVerDetalhes(atendimento)} className="flex-1 border-gray-200 text-gray-600 hover:text-blue-600">
-                      <Info className="w-4 h-4 mr-1.5" /> Ver Detalhes
+                    <Button variant="outline" className="w-full bg-[#0d1826] border-white/10 hover:bg-white/10 hover:text-white h-10 text-gray-300 flex" onClick={() => handleVerDetalhes(atendimento)}>
+                        <Info className="w-4 h-4 mr-2" />
+                        <span className="text-xs font-semibold">Detalhes</span>
                     </Button>
                     {isAdmin && (
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(atendimento)} className="border-gray-200 text-gray-500 hover:text-red-500">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <Button variant="outline" className="md:col-start-4 w-full bg-red-500/5 border-red-500/20 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 text-red-500 h-10 flex" onClick={() => handleDelete(atendimento)}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          <span className="text-xs font-semibold">Excluir</span>
+                        </Button>
                     )}
                   </div>
                 </CardContent>

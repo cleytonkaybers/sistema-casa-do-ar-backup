@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import TipoServicoDisplay from '@/components/TipoServicoDisplay';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { exportarExcel } from '@/lib/excelUtils';
@@ -563,7 +564,7 @@ function AgendarDataModal({ open, onClose, pagamento, onSave }) {
           <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
             <span className="font-semibold">{pagamento?.cliente_nome}</span>
             <br />
-            <span className="text-xs text-gray-500">{pagamento?.tipo_servico}</span>
+            <TipoServicoDisplay value={pagamento?.tipo_servico} />
           </p>
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">📅 Data que o cliente vai pagar</label>
@@ -766,7 +767,7 @@ function HistoricoModal({ open, onClose, pagamento }) {
       <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Histórico — {pagamento?.cliente_nome}</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
-          <p className="text-sm text-gray-500">{pagamento?.tipo_servico}</p>
+          <TipoServicoDisplay value={pagamento?.tipo_servico} />
 
           {/* Serviços realizados */}
           {records.length > 0 && (

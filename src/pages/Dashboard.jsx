@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import TipoServicoDisplay from '@/components/TipoServicoDisplay';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -494,7 +495,7 @@ export default function Dashboard() {
                         <div key={servico.id} className="flex gap-3 items-start bg-[#0d1826] rounded-xl p-3 border border-white/5">
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-xs text-gray-200 truncate">{servico.cliente_nome}</p>
-                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{servico.tipo_servico}</p>
+                            <TipoServicoDisplay value={servico.tipo_servico} className="mt-0.5 [&_span.text-sm]:text-[11px] [&_span.text-xs]:text-[10px]" />
                           </div>
                           {servico.horario && (
                              <span className="text-[10px] text-gray-400 flex items-center bg-[#152236] px-1.5 py-0.5 rounded-md border border-white/5 whitespace-nowrap">

@@ -1,4 +1,5 @@
 import React from 'react';
+import TipoServicoDisplay from '@/components/TipoServicoDisplay';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -119,7 +120,7 @@ export default function DetalhesModal({ open, onClose, atendimento }) {
             <p className="text-sm text-gray-500 flex items-center gap-1.5 mb-1">
               <Wrench className="w-4 h-4" /> Tipo de Serviço
             </p>
-            <p className="font-medium text-gray-800">{atendimento.tipo_servico}</p>
+            <TipoServicoDisplay value={atendimento.tipo_servico} />
           </div>
 
           {/* Valor */}
