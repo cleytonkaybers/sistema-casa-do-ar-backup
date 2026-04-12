@@ -4,31 +4,33 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 213 94% 45%;
+    /* === DARK NAVY THEME === */
+    --background:    214 47% 10%;    /* #0d1826 fundo principal */
+    --foreground:    214 32% 91%;    /* #e2e8f0 texto primário */
+    --card:          214 42% 15%;    /* #152236 cards */
+    --card-foreground: 214 32% 91%;
+    --popover:       214 42% 15%;
+    --popover-foreground: 214 32% 91%;
+    --primary:       199 89% 48%;    /* #0ea5e9 sky blue acento */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 95%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 95%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 95%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary:     214 47% 13%;    /* #111f30 */
+    --secondary-foreground: 214 32% 91%;
+    --muted:         214 47% 13%;
+    --muted-foreground: 215 16% 65%; /* #94a3b8 texto secundário */
+    --accent:        214 47% 13%;
+    --accent-foreground: 214 32% 91%;
+    --destructive:   0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 213 27% 88%;
-    --input: 213 27% 88%;
-    --ring: 213 94% 45%;
-    --chart-1: 213 94% 45%;
-    --chart-2: 160 60% 40%;
-    --chart-3: 262 83% 58%;
-    --chart-4: 43 96% 50%;
+    --border:        214 40% 20%;    /* #1e3047 bordas */
+    --input:         213 45% 18%;    /* #1a2d45 inputs */
+    --ring:          199 89% 48%;
+    --chart-1: 199 89% 48%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 262 83% 68%;
+    --chart-4: 43 96% 56%;
     --chart-5: 4 90% 58%;
     --radius: 0.625rem;
+    /* Sidebar — manter inalterada */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 90%;
     --sidebar-primary: 213 94% 68%;
@@ -91,8 +93,8 @@
 @layer components {
   /* Cards com sombra suave e borda leve */
   .card-elegant {
-    @apply bg-white rounded-2xl border border-blue-100/60 shadow-sm;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(14,115,180,0.06);
+    @apply bg-card rounded-2xl border border-border shadow-sm;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(14,165,233,0.08);
   }
 
   /* Botões primários com gradiente */
@@ -115,15 +117,15 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #f0f9ff;
+    background: #0d1826;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #bae6fd;
+    background: #1e3047;
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #7dd3fc;
+    background: #0ea5e9;
   }
 }

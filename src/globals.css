@@ -4,21 +4,12 @@
 @tailwind utilities;
 
 :root {
-  --primary-blue: #1e3a8a;
+  --primary-blue: #0ea5e9;
   --primary-yellow: #f59e0b;
-  --bg-main: #f0f4f8;
-  --bg-sidebar: #1e3a8a;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f8fafc;
-}
-
-/* Remove dark backgrounds from pages/cards - force light theme */
-[style*="background-color: #243447"],
-[style*="background-color: #1e2a3a"],
-[style*="background-color: #0f1923"],
-[style*="backgroundColor: #243447"],
-[style*="backgroundColor: #1e2a3a"] {
-  background-color: #ffffff !important;
+  --bg-main: #0d1826;
+  --bg-sidebar: #0d1b3e;
+  --bg-card: #152236;
+  --bg-card-hover: #111f30;
 }
 
 * {
@@ -36,36 +27,11 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-}
-
 @layer utilities {
   .touch-action-none {
     touch-action: none;
   }
-  
+
   .touch-action-manipulation {
     touch-action: manipulation;
   }
@@ -87,4 +53,97 @@ input, textarea {
   * {
     cursor: default !important;
   }
+}
+
+/* ============================================================
+   DARK NAVY THEME — Overrides globais para classes Tailwind
+   hard-coded nas páginas (bg-white, text-gray-*, etc.)
+   Permite converter todas as 31 páginas sem editar cada arquivo.
+   ============================================================ */
+
+/* Fundos neutros */
+.bg-white    { background-color: #152236 !important; }
+.bg-gray-50  { background-color: #111f30 !important; }
+.bg-gray-100 { background-color: #1a2d45 !important; }
+.bg-gray-200 { background-color: #1e3047 !important; }
+
+/* Textos neutros */
+.text-gray-900 { color: #e2e8f0 !important; }
+.text-gray-800 { color: #cbd5e1 !important; }
+.text-gray-700 { color: #cbd5e1 !important; }
+.text-gray-600 { color: #94a3b8 !important; }
+.text-gray-500 { color: #64748b !important; }
+.text-gray-400 { color: #475569 !important; }
+
+/* Bordas neutras */
+.border-gray-100 { border-color: #1a2d45 !important; }
+.border-gray-200 { border-color: #1e3047 !important; }
+.border-gray-300 { border-color: #243d5c !important; }
+
+/* Divide (separadores de tabela/lista) */
+.divide-gray-200 > * + * { border-color: #1e3047 !important; }
+.divide-gray-100 > * + * { border-color: #1a2d45 !important; }
+
+/* Hovers sobre fundos neutros */
+.hover\:bg-white:hover    { background-color: #1e3047 !important; }
+.hover\:bg-gray-50:hover  { background-color: #1a2d45 !important; }
+.hover\:bg-gray-100:hover { background-color: #1e3047 !important; }
+
+/* Fundos semânticos nível 50 → tint escuro translúcido */
+.bg-blue-50   { background-color: rgba(14,165,233,0.12)  !important; }
+.bg-green-50  { background-color: rgba(34,197,94,0.12)   !important; }
+.bg-red-50    { background-color: rgba(239,68,68,0.12)   !important; }
+.bg-orange-50 { background-color: rgba(249,115,22,0.12)  !important; }
+.bg-amber-50  { background-color: rgba(245,158,11,0.12)  !important; }
+.bg-yellow-50 { background-color: rgba(234,179,8,0.12)   !important; }
+.bg-purple-50 { background-color: rgba(168,85,247,0.12)  !important; }
+.bg-indigo-50 { background-color: rgba(99,102,241,0.12)  !important; }
+.bg-teal-50   { background-color: rgba(20,184,166,0.12)  !important; }
+.bg-cyan-50   { background-color: rgba(6,182,212,0.12)   !important; }
+.bg-pink-50   { background-color: rgba(236,72,153,0.12)  !important; }
+
+/* Fundos semânticos nível 100 */
+.bg-blue-100   { background-color: rgba(14,165,233,0.18)  !important; }
+.bg-green-100  { background-color: rgba(34,197,94,0.18)   !important; }
+.bg-red-100    { background-color: rgba(239,68,68,0.18)   !important; }
+.bg-orange-100 { background-color: rgba(249,115,22,0.18)  !important; }
+.bg-amber-100  { background-color: rgba(245,158,11,0.18)  !important; }
+.bg-purple-100 { background-color: rgba(168,85,247,0.18)  !important; }
+
+/* Bordas semânticas 200 */
+.border-blue-200   { border-color: rgba(14,165,233,0.35)  !important; }
+.border-green-200  { border-color: rgba(34,197,94,0.35)   !important; }
+.border-red-200    { border-color: rgba(239,68,68,0.35)   !important; }
+.border-orange-200 { border-color: rgba(249,115,22,0.35)  !important; }
+.border-amber-200  { border-color: rgba(245,158,11,0.35)  !important; }
+.border-yellow-200 { border-color: rgba(234,179,8,0.35)   !important; }
+.border-purple-200 { border-color: rgba(168,85,247,0.35)  !important; }
+.border-indigo-200 { border-color: rgba(99,102,241,0.35)  !important; }
+
+/* Hovers semânticos */
+.hover\:bg-blue-50:hover   { background-color: rgba(14,165,233,0.18) !important; }
+.hover\:bg-green-50:hover  { background-color: rgba(34,197,94,0.18)  !important; }
+.hover\:bg-red-50:hover    { background-color: rgba(239,68,68,0.18)  !important; }
+.hover\:bg-orange-50:hover { background-color: rgba(249,115,22,0.18) !important; }
+.hover\:bg-amber-50:hover  { background-color: rgba(245,158,11,0.18) !important; }
+
+/* Variantes com transparência */
+.bg-white\/95 { background-color: rgba(21,34,54,0.95) !important; }
+.bg-white\/90 { background-color: rgba(21,34,54,0.90) !important; }
+.bg-white\/80 { background-color: rgba(21,34,54,0.80) !important; }
+
+/* Hover de linha de tabela shadcn (hover:bg-muted/50) */
+.hover\:bg-muted\/50:hover {
+  background-color: rgba(30,48,71,0.5) !important;
+}
+
+/* Tooltips Recharts com inline style branco */
+[style*="backgroundColor: #fff"],
+[style*="background-color: #fff"],
+[style*="backgroundColor: rgb(255, 255, 255)"] {
+  background-color: #152236 !important;
+  border-color: #1e3047 !important;
+}
+[style*="border: 1px solid #e2e8f0"] {
+  border-color: #1e3047 !important;
 }

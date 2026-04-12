@@ -127,7 +127,7 @@ function LayoutContent({ children }) {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen" style={{ backgroundColor: '#f0f9ff' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#0d1826' }}>
         {/* Backdrop mobile */}
         {sidebarOpen &&
         <div
