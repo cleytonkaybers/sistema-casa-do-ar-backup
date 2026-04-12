@@ -8,7 +8,7 @@ export const base44 = createClient({
   appId,
   token,
   functionsVersion,
-  serverUrl: import.meta.env.VITE_BASE44_APP_BASE_URL || '',
+  serverUrl: import.meta.env.VITE_BASE44_APP_BASE_URL ?? 'https://sistema-casa-do-ar-copy-ef8ddf65.base44.app',
   requiresAuth: false,
   appBaseUrl
 });
