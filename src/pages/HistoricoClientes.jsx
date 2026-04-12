@@ -109,6 +109,13 @@ export default function HistoricoClientes() {
     // Adiciona Serviços (Agendados, Abertos, Reagendados, Andamento)
     servicos.forEach(s => {
       if (s.status === 'concluido') return; // Os itens concluídos no ciclo real de app tornam-se Atendimento
+      
+      let pag = pagamentos.find(p => p.servico_id === s.id);
+      let finalValor = s.valor;
+      if (pag) {
+        finalValor = pag.valor_total !== undefined ? pag.valor_total : (pag.valor !== undefined ? pag.valor : s.valor);
+      }
+
       historicoUnificado.push({
         id: `s-${s.id}`,
         originalId: s.id,
@@ -120,13 +127,19 @@ export default function HistoricoClientes() {
         horario: s.horario,
         status: s.status,
         equipe_nome: s.equipe_nome,
-        valor: s.valor,
+        valor: finalValor,
         descricao: s.descricao
       });
     });
 
     // Adiciona Atendimentos (Concluídos)
     atendimentos.forEach(a => {
+      let pag = pagamentos.find(p => p.servico_id === a.servico_id || p.id === a.id);
+      let finalValor = a.valor;
+      if (pag) {
+        finalValor = pag.valor_total !== undefined ? pag.valor_total : (pag.valor !== undefined ? pag.valor : a.valor);
+      }
+
       historicoUnificado.push({
         id: `a-${a.id}`,
         originalId: a.id,
@@ -138,7 +151,7 @@ export default function HistoricoClientes() {
         horario: null,
         status: 'concluido',
         equipe_nome: a.equipe_nome,
-        valor: a.valor,
+        valor: finalValor,
         descricao: a.descricao,
         observacoes: a.observacoes_conclusao,
         servico_id: a.servico_id
