@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import { useEmpresa } from '@/components/auth/EmpresaGuard';
 import TipoServicoDisplay from '@/components/TipoServicoDisplay';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,8 @@ const formatPhone = (phone) => {
 export default function Dashboard() {
   const [filtroServicos, setFiltroServicos] = useState('mes');
   const { user: currentUser } = useAuth();
+  const { isAdminEmpresa, isSuperAdmin } = useEmpresa();
+  const isAdmin = isAdminEmpresa() || isSuperAdmin();
   
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ['clientes'],
@@ -87,7 +90,7 @@ export default function Dashboard() {
   const { data: pagamentosClientes = [] } = useQuery({
     queryKey: ['pagamentos-clientes-dash'],
     queryFn: () => base44.entities.PagamentoCliente.list('-data_conclusao'),
-    enabled: currentUser?.role === 'admin',
+    enabled: isAdmin,
   });
 
   // Cards de alerta para admin
@@ -168,7 +171,7 @@ export default function Dashboard() {
 
   // --- ADMIN STATS ---
   const adminResumoMes = React.useMemo(() => {
-    if (currentUser?.role !== 'admin') return { receita: 0, despesas: 0, comissoes: 0 };
+    if (!isAdmin) return { receita: 0, despesas: 0, comissoes: 0 };
     const hoje = getLocalDate();
     const inicioMes = startOfMonth(hoje);
     const fimMes = endOfMonth(hoje);
@@ -202,42 +205,58 @@ export default function Dashboard() {
     }).reduce((sum, l) => sum + (l.valor_comissao_equipe || 0), 0);
 
     return { receita, despesas, comissoes };
-  }, [pagamentosClientes, lancamentosFinanceiros, currentUser?.role]);
+  }, [pagamentosClientes, lancamentosFinanceiros, isAdmin]);
 
   const adminTecnicosSemana = React.useMemo(() => {
-    if (currentUser?.role !== 'admin') return [];
+    if (!isAdmin) return [];
     const inicioSemanaAtual = getStartOfWeek();
     const fimSemanaAtual = getEndOfWeek();
 
-    return tecnicosFinanceiro.map(t => {
-      const lancamentosSemana = lancamentosFinanceiros.filter(l => {
-        if (l.tecnico_id !== t.tecnico_id) return false;
-        if (!l.data_geracao) return false;
-        const dataGeracao = toLocalDate(new Date(l.data_geracao));
-        if (!dataGeracao) return false;
-        return isWithinInterval(dataGeracao, { start: inicioSemanaAtual, end: fimSemanaAtual });
-      });
-      const totalGanho = lancamentosSemana.reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
+    return tecnicosFinanceiro
+      .map(t => {
+        // Ganho desta semana (para contexto)
+        const lancamentosSemana = lancamentosFinanceiros.filter(l => {
+          if (l.tecnico_id !== t.tecnico_id) return false;
+          if (!l.data_geracao) return false;
+          const dataGeracao = toLocalDate(new Date(l.data_geracao));
+          if (!dataGeracao) return false;
+          return isWithinInterval(dataGeracao, { start: inicioSemanaAtual, end: fimSemanaAtual });
+        });
+        const totalGanho = lancamentosSemana.reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
 
-      const pagamentosSemana = pagamentosTecnicos.filter(p => {
-        if (p.tecnico_id !== t.tecnico_id) return false;
-        if (p.status !== 'Confirmado') return false;
-        if (!p.created_date) return false;
-        const dataPagamento = toLocalDate(new Date(p.created_date));
-        if (!dataPagamento) return false;
-        return isWithinInterval(dataPagamento, { start: inicioSemanaAtual, end: fimSemanaAtual });
-      });
-      const creditoPago = pagamentosSemana.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
-      const creditoPendente = Math.max(0, totalGanho - creditoPago);
+        // Pago esta semana
+        const pagamentosSemana = pagamentosTecnicos.filter(p => {
+          if (p.tecnico_id !== t.tecnico_id) return false;
+          if (p.status !== 'Confirmado') return false;
+          if (!p.created_date) return false;
+          const dataPagamento = toLocalDate(new Date(p.created_date));
+          if (!dataPagamento) return false;
+          return isWithinInterval(dataPagamento, { start: inicioSemanaAtual, end: fimSemanaAtual });
+        });
+        const creditoPago = pagamentosSemana.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
 
-      return {
-        ...t,
-        credito_pendente: creditoPendente,
-        credito_pago: creditoPago,
-        total_ganho: totalGanho
-      };
-    });
-  }, [tecnicosFinanceiro, lancamentosFinanceiros, pagamentosTecnicos, currentUser?.role]);
+        // Pendente acumulado real direto da entidade (não só desta semana)
+        const creditoPendente = t.credito_pendente || 0;
+
+        return {
+          ...t,
+          credito_pendente: creditoPendente,
+          credito_pago: creditoPago,
+          total_ganho: totalGanho
+        };
+      })
+      // Mostrar todos que têm pendente OU que trabalharam esta semana
+      .filter(t => t.credito_pendente > 0 || t.total_ganho > 0);
+  }, [tecnicosFinanceiro, lancamentosFinanceiros, pagamentosTecnicos, isAdmin]);
+
+  const adminResumoTecnicos = React.useMemo(() => {
+    if (!isAdmin) return { totalGanhoSemana: 0, totalPagoSemana: 0, totalPendente: 0 };
+    return {
+      totalGanhoSemana: adminTecnicosSemana.reduce((s, t) => s + (t.total_ganho || 0), 0),
+      totalPagoSemana:  adminTecnicosSemana.reduce((s, t) => s + (t.credito_pago  || 0), 0),
+      totalPendente:    tecnicosFinanceiro.reduce((s, t)  => s + (t.credito_pendente || 0), 0),
+    };
+  }, [adminTecnicosSemana, tecnicosFinanceiro, isAdmin]);
 
   // Serviços de hoje por equipe
   const servicosHoje = servicos.filter(s => {
@@ -251,7 +270,7 @@ export default function Dashboard() {
   const usuarioAtual = usuarios.find(u => u.email === currentUser?.email);
   const equipeDoUsuario = usuarioAtual?.equipe_id;
 
-  const servicosFiltradosPorEquipe = currentUser?.role === 'admin' 
+  const servicosFiltradosPorEquipe = isAdmin
     ? servicosHoje 
     : servicosHoje.filter(s => s.equipe_id === equipeDoUsuario);
 
@@ -323,7 +342,7 @@ export default function Dashboard() {
       </div>
 
       {/* Alertas Admin Modernos (Glass Blocks) */}
-      {currentUser?.role === 'admin' && (semPrecificacao.length > 0 || cobrarHoje.length > 0) && (
+      {isAdmin && (semPrecificacao.length > 0 || cobrarHoje.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {semPrecificacao.length > 0 && (
             <Link to={createPageUrl('PagamentosClientes') + '?highlight=sempreco'} className="outline-none">
@@ -378,7 +397,7 @@ export default function Dashboard() {
       )}
 
       {/* Cards do Admin */}
-      {currentUser?.role === 'admin' && (
+      {isAdmin && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           {/* Resumo aparece primeiro no mobile (order-first) e último no desktop */}
           <div className="md:col-span-1 flex flex-col order-first md:order-last">
@@ -390,14 +409,19 @@ export default function Dashboard() {
             />
           </div>
           <div className="md:col-span-2 flex flex-col">
-            <GanhosTecnicosAdminDashboard tecnicos={adminTecnicosSemana} />
+            <GanhosTecnicosAdminDashboard
+              tecnicos={adminTecnicosSemana}
+              totalGanhoSemana={adminResumoTecnicos.totalGanhoSemana}
+              totalPagoSemana={adminResumoTecnicos.totalPagoSemana}
+              totalPendente={adminResumoTecnicos.totalPendente}
+            />
           </div>
         </div>
       )}
 
       {/* Grid Principal (Bento Style) */}
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6">
-        {currentUser?.role !== 'admin' && (
+        {!isAdmin && (
           <div className="col-span-2 xl:col-span-2">
             <GanhosSemanaDashboard />
           </div>
@@ -568,7 +592,7 @@ export default function Dashboard() {
               <CardHeader className="pb-3 px-5 pt-5 border-b border-white/5">
                  <CardTitle className="text-sm font-bold text-gray-200 tracking-wide uppercase flex items-center gap-2">
                    <Users className="w-4 h-4 text-blue-400" />
-                   {currentUser?.role === 'admin' ? "Serviços das Equipes (Hoje)" : "Meus Serviços de Hoje"}
+                   {isAdmin ? "Serviços das Equipes (Hoje)" : "Meus Serviços de Hoje"}
                  </CardTitle>
               </CardHeader>
               <CardContent className="p-0 overflow-hidden divide-y divide-white/5">
