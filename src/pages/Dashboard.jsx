@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import GanhosSemanaDashboard from '@/components/dashboard/GanhosSemanaDashboard';
+import ResumoMesAdminDashboard from '@/components/dashboard/ResumoMesAdminDashboard';
+import GanhosTecnicosAdminDashboard from '@/components/dashboard/GanhosTecnicosAdminDashboard';
 import {
   Users,
   ClipboardList,
@@ -164,6 +166,79 @@ export default function Dashboard() {
 
   const atendimentosConcluidos = atendimentos.filter(a => a.status === 'Concluído').length;
 
+  // --- ADMIN STATS ---
+  const adminResumoMes = React.useMemo(() => {
+    if (currentUser?.role !== 'admin') return { receita: 0, despesas: 0, comissoes: 0 };
+    const hoje = getLocalDate();
+    const inicioMes = startOfMonth(hoje);
+    const fimMes = endOfMonth(hoje);
+    
+    // Receita: PagamentosClientes
+    const receita = pagamentosClientes.reduce((sum, pag) => {
+      const pgs = pag.historico_pagamentos || [];
+      const pagoNoMes = pgs.filter(p => {
+        if(!p.data || p.agendada) return false;
+        try {
+          const dt = toLocalDate(new Date(p.data + 'T12:00:00'));
+          if (!dt) return false;
+          return isWithinInterval(dt, { start: inicioMes, end: fimMes });
+        } catch { return false; }
+      }).reduce((s, p) => s + (parseFloat(p.valor) || 0), 0);
+      return sum + pagoNoMes;
+    }, 0);
+
+    const comissoes = lancamentosFinanceiros.filter(l => {
+      if (!l.data_geracao) return false;
+      const dataGeracao = toLocalDate(new Date(l.data_geracao));
+      if (!dataGeracao) return false;
+      return isWithinInterval(dataGeracao, { start: inicioMes, end: fimMes });
+    }).reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
+
+    const despesas = lancamentosFinanceiros.filter(l => {
+      if (!l.data_geracao) return false;
+      const dataGeracao = toLocalDate(new Date(l.data_geracao));
+      if (!dataGeracao) return false;
+      return isWithinInterval(dataGeracao, { start: inicioMes, end: fimMes });
+    }).reduce((sum, l) => sum + (l.valor_comissao_equipe || 0), 0);
+
+    return { receita, despesas, comissoes };
+  }, [pagamentosClientes, lancamentosFinanceiros, currentUser?.role]);
+
+  const adminTecnicosSemana = React.useMemo(() => {
+    if (currentUser?.role !== 'admin') return [];
+    const inicioSemanaAtual = getStartOfWeek();
+    const fimSemanaAtual = getEndOfWeek();
+
+    return tecnicosFinanceiro.map(t => {
+      const lancamentosSemana = lancamentosFinanceiros.filter(l => {
+        if (l.tecnico_id !== t.tecnico_id) return false;
+        if (!l.data_geracao) return false;
+        const dataGeracao = toLocalDate(new Date(l.data_geracao));
+        if (!dataGeracao) return false;
+        return isWithinInterval(dataGeracao, { start: inicioSemanaAtual, end: fimSemanaAtual });
+      });
+      const totalGanho = lancamentosSemana.reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
+
+      const pagamentosSemana = pagamentosTecnicos.filter(p => {
+        if (p.tecnico_id !== t.tecnico_id) return false;
+        if (p.status !== 'Confirmado') return false;
+        if (!p.created_date) return false;
+        const dataPagamento = toLocalDate(new Date(p.created_date));
+        if (!dataPagamento) return false;
+        return isWithinInterval(dataPagamento, { start: inicioSemanaAtual, end: fimSemanaAtual });
+      });
+      const creditoPago = pagamentosSemana.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
+      const creditoPendente = Math.max(0, totalGanho - creditoPago);
+
+      return {
+        ...t,
+        credito_pendente: creditoPendente,
+        credito_pago: creditoPago,
+        total_ganho: totalGanho
+      };
+    });
+  }, [tecnicosFinanceiro, lancamentosFinanceiros, pagamentosTecnicos, currentUser?.role]);
+
   // Serviços de hoje por equipe
   const servicosHoje = servicos.filter(s => {
     if (!s.data_programada) return false;
@@ -298,6 +373,23 @@ export default function Dashboard() {
               </div>
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Cards do Admin */}
+      {currentUser?.role === 'admin' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+          <div className="xl:col-span-2">
+            <GanhosTecnicosAdminDashboard tecnicos={adminTecnicosSemana} />
+          </div>
+          <div className="xl:col-span-1">
+            <ResumoMesAdminDashboard 
+              servicosConcluidos={atendimentosDoMes.length} 
+              receita={adminResumoMes.receita} 
+              despesas={adminResumoMes.despesas} 
+              comissoes={adminResumoMes.comissoes}
+            />
+          </div>
         </div>
       )}
 
