@@ -1323,7 +1323,6 @@ function PagamentosClientesContent() {
     const records = pag._records?.length > 1 ? pag._records : [pag];
     let remaining = valor;
     const dataStr = format(new Date(), "dd/MM/yyyy HH:mm");
-    // Se registrou pagamento sem agendar data, manter como pendente até quitar
 
     const calcularValorRecord = (rec) => {
       const tipos = (rec.tipo_servico || '').split('+').map(s => s.trim()).filter(Boolean);
@@ -1339,7 +1338,11 @@ function PagamentosClientesContent() {
       return { ...rec, valor_total: novoPreco > 0 ? novoPreco : rec.valor_total };
     });
 
-    for (const rec of recordsAtualizados) {
+    // Rastrear estado atualizado de cada record para repassar ao modal do PDF
+    const recordsParaModal = recordsAtualizados.map(r => ({ ...r }));
+
+    for (let i = 0; i < recordsAtualizados.length; i++) {
+      const rec = recordsAtualizados[i];
       if (remaining <= 0.01) break;
       const recSaldo = calcularSaldo(rec.valor_total, rec.valor_pago);
       if (recSaldo <= 0.01) continue;
@@ -1368,9 +1371,20 @@ function PagamentosClientesContent() {
           data_pagamento_agendado: dataPagamentoAgendado || undefined,
         },
       });
+      // Atualizar snapshot para o modal com os valores já gravados
+      recordsParaModal[i] = { ...rec, valor_pago: novoPago, historico_pagamentos: novoHistorico, status: statusFinal };
     }
+
     toast.success('✅ Pagamento registrado!');
-    setCompartilharModal(pag);
+
+    // Montar pag atualizado para o PDF — usando os valores efetivamente gravados, não o snapshot antigo
+    const totalPagoAtualizado = recordsParaModal.reduce((s, r) => s + (r.valor_pago || 0), 0);
+    setCompartilharModal({
+      ...pag,
+      _records: recordsParaModal,
+      valor_pago: totalPagoAtualizado,
+      historico_pagamentos: recordsParaModal.flatMap(r => r.historico_pagamentos || []),
+    });
   };
 
   const handleEditarValor = async (pag, novoValor) => {
