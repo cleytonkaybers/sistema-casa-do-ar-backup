@@ -264,21 +264,22 @@ export default function Dashboard() {
 
   const StatCard = ({ title, value, icon: Icon, colorClass, subtitle, onClick, href }) => {
     const content = (
-      <CardContent className="p-5 flex flex-col justify-between h-full">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 pr-3">
-            <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider">{title}</p>
-            <p className="text-3xl sm:text-4xl font-bold mt-2 text-gray-100 tracking-tight">{value}</p>
+      <CardContent className="p-3 sm:p-5 flex flex-col justify-between h-full">
+        <div className="flex items-start justify-between mb-2 sm:mb-4">
+          <div className="flex-1 pr-2">
+            <p className="text-[10px] sm:text-[13px] font-semibold text-gray-400 uppercase tracking-wider leading-tight">{title}</p>
+            <p className="text-2xl sm:text-4xl font-bold mt-1 sm:mt-2 text-gray-100 tracking-tight">{value}</p>
           </div>
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 ${colorClass}`}>
-            <Icon className="w-6 h-6" />
+          <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 ${colorClass} shrink-0`}>
+            <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
         </div>
-        <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
-          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+        <div className="flex items-center justify-between pt-2 sm:pt-4 border-t border-white/5 mt-auto">
+          {subtitle && <p className="text-[11px] sm:text-sm text-gray-500">{subtitle}</p>}
           {(onClick || href) && (
-            <div className={`flex items-center text-xs font-semibold ${colorClass} group-hover:opacity-80 transition-opacity`}>
-              Ver Detalhes <ArrowRight className="w-3 h-3 ml-1.5 transition-transform group-hover:translate-x-1" />
+            <div className={`flex items-center text-[10px] sm:text-xs font-semibold ${colorClass} group-hover:opacity-80 transition-opacity`}>
+              <span className="hidden sm:inline">Ver Detalhes</span>
+              <ArrowRight className="w-3 h-3 sm:ml-1.5 transition-transform group-hover:translate-x-1" />
             </div>
           )}
         </div>
@@ -379,10 +380,8 @@ export default function Dashboard() {
       {/* Cards do Admin */}
       {currentUser?.role === 'admin' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          <div className="md:col-span-2 flex flex-col">
-            <GanhosTecnicosAdminDashboard tecnicos={adminTecnicosSemana} />
-          </div>
-          <div className="md:col-span-1 flex flex-col">
+          {/* Resumo aparece primeiro no mobile (order-first) e último no desktop */}
+          <div className="md:col-span-1 flex flex-col order-first md:order-last">
             <ResumoMesAdminDashboard
               servicosConcluidos={atendimentosDoMes.length}
               receita={adminResumoMes.receita}
@@ -390,13 +389,16 @@ export default function Dashboard() {
               comissoes={adminResumoMes.comissoes}
             />
           </div>
+          <div className="md:col-span-2 flex flex-col">
+            <GanhosTecnicosAdminDashboard tecnicos={adminTecnicosSemana} />
+          </div>
         </div>
       )}
 
       {/* Grid Principal (Bento Style) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6">
         {currentUser?.role !== 'admin' && (
-          <div className="xl:col-span-2">
+          <div className="col-span-2 xl:col-span-2">
             <GanhosSemanaDashboard />
           </div>
         )}
