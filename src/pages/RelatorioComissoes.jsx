@@ -3,9 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Download, DollarSign, TrendingUp, Calendar, Filter, Trophy, Users } from 'lucide-react';
+import { FileText, DollarSign, TrendingUp, Calendar, Filter, Trophy, Users } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { calcularTotalComissoes, agruparPorPeriodo } from '@/lib/utils/calculations';
 import { TableSkeleton, CardSkeleton } from '@/components/LoadingSkeleton';
@@ -20,7 +18,237 @@ const inputDark = 'bg-[#1e2d3d] border-[#2d3f55] text-gray-100 placeholder:text-
 const selectDark = 'bg-[#1e2d3d] border border-[#2d3f55] text-gray-100 h-10 px-3 rounded-md w-full text-sm focus:outline-none focus:border-blue-500';
 
 const NUM_SEMANAS = 10;
+const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
+// ─── Gerador de PDF (HTML → window.print) ─────────────────────────────────
+function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim }) {
+  const agora = format(getLocalDate(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  const periodo = dataInicio && dataFim
+    ? `${formatDate(dataInicio)} a ${formatDate(dataFim)}`
+    : dataInicio ? `A partir de ${formatDate(dataInicio)}`
+    : dataFim   ? `Até ${formatDate(dataFim)}`
+    : 'Todo o período';
+
+  // Agrupa lançamentos por técnico
+  const porTecnico = {};
+  lancamentosFiltrados.forEach(l => {
+    const key = l.tecnico_id || l.tecnico_nome || 'Sem técnico';
+    if (!porTecnico[key]) porTecnico[key] = { nome: l.tecnico_nome || 'Sem técnico', equipe: l.equipe_nome || '—', itens: [] };
+    porTecnico[key].itens.push(l);
+  });
+
+  const statusBadge = (s) => {
+    const map = { pago: '#16a34a', creditado: '#2563eb', pendente: '#d97706' };
+    return `<span style="background:${map[s] || '#6b7280'}22;color:${map[s] || '#6b7280'};border:1px solid ${map[s] || '#6b7280'}44;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${s}</span>`;
+  };
+
+  // Seção de cada técnico
+  const tecnicosSections = Object.values(porTecnico).map(tec => {
+    const totalTec = tec.itens.reduce((s, l) => s + (l.valor_comissao_tecnico || 0), 0);
+    const pendenteTec = tec.itens.filter(l => l.status === 'pendente').reduce((s, l) => s + (l.valor_comissao_tecnico || 0), 0);
+    const pagoTec = tec.itens.filter(l => l.status === 'pago').reduce((s, l) => s + (l.valor_comissao_tecnico || 0), 0);
+
+    const linhas = tec.itens.map((l, i) => `
+      <tr style="background:${i % 2 === 0 ? '#f9fafb' : '#ffffff'}">
+        <td style="padding:7px 10px;font-size:12px;color:#374151;white-space:nowrap">${formatDate(l.data_geracao)}</td>
+        <td style="padding:7px 10px;font-size:12px;color:#111827;font-weight:500">${l.cliente_nome || '—'}</td>
+        <td style="padding:7px 10px;font-size:11px;color:#6b7280;max-width:160px">${l.tipo_servico || '—'}</td>
+        <td style="padding:7px 10px;font-size:12px;color:#111827;text-align:right;white-space:nowrap">${fmt(l.valor_total_servico)}</td>
+        <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#16a34a;text-align:right;white-space:nowrap">${fmt(l.valor_comissao_tecnico)}</td>
+        <td style="padding:7px 10px;text-align:center">${statusBadge(l.status)}</td>
+      </tr>`).join('');
+
+    return `
+    <div style="page-break-inside:avoid;margin-bottom:28px">
+      <!-- Cabeçalho do técnico -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#1e3a5f;color:#fff;padding:10px 16px;border-radius:8px 8px 0 0">
+        <div>
+          <div style="font-size:15px;font-weight:700">${tec.nome}</div>
+          <div style="font-size:11px;color:#93c5fd;margin-top:2px">Equipe: ${tec.equipe} &nbsp;·&nbsp; ${tec.itens.length} lançamento${tec.itens.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:800;color:#86efac">${fmt(totalTec)}</div>
+          <div style="font-size:10px;color:#93c5fd;margin-top:2px">Pago: ${fmt(pagoTec)} &nbsp;|&nbsp; Pendente: ${fmt(pendenteTec)}</div>
+        </div>
+      </div>
+      <!-- Tabela de serviços -->
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">
+        <thead>
+          <tr style="background:#f3f4f6">
+            <th style="padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:left;white-space:nowrap">Data</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:left">Cliente</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:left">Serviço</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">Valor Total</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">Comissão</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+        <tfoot>
+          <tr style="background:#f0fdf4;border-top:2px solid #bbf7d0">
+            <td colspan="4" style="padding:10px 10px;font-size:12px;font-weight:700;color:#15803d">TOTAL DO TÉCNICO</td>
+            <td style="padding:10px 10px;font-size:14px;font-weight:800;color:#15803d;text-align:right">${fmt(totalTec)}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+  }).join('');
+
+  // Tabela semanal por equipe
+  const semanaisHeader = equipesNomes.map(n => `<th style="padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">${n}</th>`).join('');
+  const semanaisLinhas = ganhosSemanais.map((sem, i) => {
+    const melhor = equipesNomes.reduce((b, n) => sem.porEquipe[n] > (sem.porEquipe[b] || 0) ? n : b, equipesNomes[0]);
+    const cols = equipesNomes.map(n => {
+      const v = sem.porEquipe[n] || 0;
+      const isBest = v > 0 && n === melhor && equipesNomes.length > 1;
+      return `<td style="padding:7px 12px;text-align:right;font-size:12px;font-weight:${isBest ? '700' : '500'};color:${v === 0 ? '#d1d5db' : isBest ? '#15803d' : '#374151'}">${v === 0 ? '—' : fmt(v)}${isBest && v > 0 ? ' ↑' : ''}</td>`;
+    }).join('');
+    return `<tr style="background:${i % 2 === 0 ? '#f9fafb' : '#ffffff'}">
+      <td style="padding:7px 12px;font-size:12px;color:#374151;font-weight:500;white-space:nowrap">${sem.label}</td>
+      ${cols}
+      <td style="padding:7px 12px;text-align:right;font-size:12px;font-weight:700;color:${sem.total === 0 ? '#d1d5db' : '#1e40af'}">${sem.total === 0 ? '—' : fmt(sem.total)}</td>
+    </tr>`;
+  }).join('');
+  const rodapeEquipes = equipesNomes.map(n => `<td style="padding:9px 12px;text-align:right;font-size:12px;font-weight:700;color:#b45309">${fmt(totaisPorEquipe.porEquipe[n] || 0)}</td>`).join('');
+
+  // Resumo mensal
+  const resumoMensalLinhas = Object.entries(porMes).map(([mes, items], i) => {
+    const t = calcularTotalComissoes(items);
+    return `<tr style="background:${i % 2 === 0 ? '#f9fafb' : '#fff'}">
+      <td style="padding:8px 14px;font-size:13px;font-weight:600;color:#111827">${mes}</td>
+      <td style="padding:8px 14px;font-size:12px;color:#6b7280;text-align:center">${items.length} lançamentos</td>
+      <td style="padding:8px 14px;font-size:13px;font-weight:700;color:#1e40af;text-align:right">${fmt(t.total)}</td>
+      <td style="padding:8px 14px;font-size:12px;color:#d97706;text-align:right">${fmt(t.pendente)}</td>
+      <td style="padding:8px 14px;font-size:12px;color:#16a34a;text-align:right">${fmt(t.pago)}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Relatório de Comissões — Casa do Ar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #111827; font-size: 13px; }
+    @page { size: A4; margin: 18mm 14mm 18mm 14mm; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+    }
+    .btn-print { background:#1e3a5f;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:24px;display:flex;align-items:center;gap:8px }
+    .btn-print:hover { background:#1e40af }
+    h2 { font-size: 15px; font-weight: 700; color: #1e3a5f; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; display:flex;align-items:center;gap:8px }
+    .section { margin-bottom: 32px; }
+  </style>
+</head>
+<body style="padding:24px">
+
+  <!-- Botão imprimir (desaparece no PDF) -->
+  <div class="no-print" style="margin-bottom:16px">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
+  </div>
+
+  <!-- ══ CABEÇALHO ══ -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #1e3a5f">
+    <div>
+      <div style="font-size:22px;font-weight:800;color:#1e3a5f;letter-spacing:-.5px">Casa do Ar Climatização</div>
+      <div style="font-size:17px;font-weight:700;color:#374151;margin-top:4px">Relatório de Comissões</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:6px">Período: <strong>${periodo}</strong></div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:#9ca3af">Gerado em</div>
+      <div style="font-size:12px;font-weight:600;color:#374151">${agora}</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:6px">${lancamentosFiltrados.length} lançamentos</div>
+    </div>
+  </div>
+
+  <!-- ══ RESUMO GERAL ══ -->
+  <div class="section">
+    <h2>📊 Resumo Geral</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:4px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:8px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.5px">Total Gerado</div>
+        <div style="font-size:22px;font-weight:800;color:#1e40af;margin-top:4px">${fmt(totais.total)}</div>
+        <div style="font-size:11px;color:#93c5fd;margin-top:2px">${lancamentosFiltrados.length} lançamentos</div>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-left:4px solid #d97706;border-radius:8px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:.5px">Pendente</div>
+        <div style="font-size:22px;font-weight:800;color:#92400e;margin-top:4px">${fmt(totais.pendente)}</div>
+        <div style="font-size:11px;color:#fcd34d;margin-top:2px">${lancamentosFiltrados.filter(l=>l.status==='pendente').length} aguardando</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #16a34a;border-radius:8px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.5px">Pago</div>
+        <div style="font-size:22px;font-weight:800;color:#15803d;margin-top:4px">${fmt(totais.pago)}</div>
+        <div style="font-size:11px;color:#86efac;margin-top:2px">${lancamentosFiltrados.filter(l=>l.status==='pago').length} liquidados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GANHOS SEMANAIS POR EQUIPE ══ -->
+  ${equipesNomes.length > 0 ? `
+  <div class="section">
+    <h2>🏆 Ganhos Semanais por Equipe <span style="font-size:11px;font-weight:400;color:#9ca3af">(últimas ${NUM_SEMANAS} semanas)</span></h2>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+      <thead>
+        <tr style="background:#f3f4f6">
+          <th style="padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:left">Semana</th>
+          ${semanaisHeader}
+          <th style="padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">Total</th>
+        </tr>
+      </thead>
+      <tbody>${semanaisLinhas}</tbody>
+      <tfoot>
+        <tr style="background:#fefce8;border-top:2px solid #fde68a">
+          <td style="padding:9px 12px;font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px">Total período</td>
+          ${rodapeEquipes}
+          <td style="padding:9px 12px;text-align:right;font-size:13px;font-weight:800;color:#1e40af">${fmt(totaisPorEquipe.total)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>` : ''}
+
+  <!-- ══ RESUMO MENSAL ══ -->
+  <div class="section">
+    <h2>📅 Resumo Mensal</h2>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+      <thead>
+        <tr style="background:#f3f4f6">
+          <th style="padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:left">Mês</th>
+          <th style="padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:center">Lançamentos</th>
+          <th style="padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">Total</th>
+          <th style="padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">Pendente</th>
+          <th style="padding:8px 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;text-align:right">Pago</th>
+        </tr>
+      </thead>
+      <tbody>${resumoMensalLinhas}</tbody>
+    </table>
+  </div>
+
+  <!-- ══ COMISSÕES POR TÉCNICO ══ -->
+  <div class="section page-break">
+    <h2>👷 Comissões por Técnico</h2>
+    ${tecnicosSections || '<p style="color:#9ca3af;text-align:center;padding:20px">Nenhum lançamento encontrado.</p>'}
+  </div>
+
+  <!-- ══ RODAPÉ ══ -->
+  <div style="margin-top:40px;padding-top:14px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af">
+    <span>Casa do Ar Climatização — Relatório de Comissões</span>
+    <span>Gerado em ${agora}</span>
+  </div>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+}
+
+// ─── Componente principal ──────────────────────────────────────────────────
 export default function RelatorioComissoes() {
   const { isAdmin } = usePermissions();
   const navigate = useNavigate();
@@ -57,7 +285,6 @@ export default function RelatorioComissoes() {
     queryFn: () => base44.entities.Equipe.list(),
   });
 
-  // Filtragem geral
   const lancamentosFiltrados = useMemo(() => {
     return lancamentos.filter(lanc => {
       const dataLanc = new Date(lanc.data_geracao);
@@ -71,11 +298,9 @@ export default function RelatorioComissoes() {
   const totais = useMemo(() => calcularTotalComissoes(lancamentosFiltrados), [lancamentosFiltrados]);
   const porMes = useMemo(() => agruparPorPeriodo(lancamentosFiltrados), [lancamentosFiltrados]);
 
-  // ---------- Ganhos semanais por equipe ----------
+  // Ganhos semanais por equipe
   const { semanas, equipesNomes } = useMemo(() => {
     const hoje = getLocalDate();
-
-    // Monta lista das últimas NUM_SEMANAS semanas (mais recente primeiro)
     const sems = Array.from({ length: NUM_SEMANAS }, (_, i) => {
       const ref = subWeeks(hoje, i);
       const inicio = getStartOfWeek(ref);
@@ -83,13 +308,9 @@ export default function RelatorioComissoes() {
       const label  = `${format(inicio, 'dd/MM', { locale: ptBR })} – ${format(fim, 'dd/MM', { locale: ptBR })}`;
       return { inicio, fim, label };
     });
-
-    // Nomes únicos de equipes que aparecem nos lancamentos (preserva ordem da entity)
     const nomesSet = new Set(lancamentos.map(l => l.equipe_nome).filter(Boolean));
-    // Ordena pela lista de equipes cadastradas, depois appends extras
     const ordered = equipes.map(e => e.nome).filter(n => nomesSet.has(n));
     nomesSet.forEach(n => { if (!ordered.includes(n)) ordered.push(n); });
-
     return { semanas: sems, equipesNomes: ordered };
   }, [lancamentos, equipes]);
 
@@ -103,25 +324,20 @@ export default function RelatorioComissoes() {
           return isWithinInterval(dt, { start: inicio, end: fim });
         } catch { return false; }
       });
-
       const porEquipe = {};
       let totalSemana = 0;
       equipesNomes.forEach(nome => { porEquipe[nome] = 0; });
-
       lancsSemana.forEach(l => {
         const nome = l.equipe_nome;
         if (!nome) return;
-        // usa valor_comissao_tecnico (sempre preenchido); cai em valor_comissao_equipe se existir
         const val = (l.valor_comissao_tecnico || 0) + (l.valor_comissao_equipe || 0);
         porEquipe[nome] = (porEquipe[nome] || 0) + val;
         totalSemana += val;
       });
-
       return { label, porEquipe, total: totalSemana };
     });
   }, [semanas, lancamentos, equipesNomes]);
 
-  // Totais por equipe (rodapé da tabela semanal)
   const totaisPorEquipe = useMemo(() => {
     const t = {};
     equipesNomes.forEach(n => { t[n] = 0; });
@@ -133,28 +349,8 @@ export default function RelatorioComissoes() {
     return { porEquipe: t, total: grand };
   }, [ganhosSemanais, equipesNomes]);
 
-  // Exportar CSV
-  const exportarCSV = () => {
-    const csv = [
-      ['Data', 'Técnico', 'Equipe', 'Cliente', 'Tipo Serviço', 'Valor Total', 'Comissão Técnico', 'Comissão Equipe', 'Status'].join(';'),
-      ...lancamentosFiltrados.map(l => [
-        formatDate(l.data_geracao),
-        l.tecnico_nome,
-        l.equipe_nome,
-        l.cliente_nome,
-        l.tipo_servico,
-        l.valor_total_servico,
-        l.valor_comissao_tecnico,
-        l.valor_comissao_equipe,
-        l.status
-      ].join(';'))
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `comissoes_${format(getLocalDate(), 'yyyy-MM-dd')}.csv`;
-    link.click();
+  const handleGerarPDF = () => {
+    gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim });
   };
 
   if (!user) {
@@ -185,9 +381,12 @@ export default function RelatorioComissoes() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">Relatório de Comissões</h1>
           <p className="text-gray-400 mt-1 text-sm">Extrato detalhado de comissões por período</p>
         </div>
-        <Button onClick={exportarCSV} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 self-start sm:self-auto">
-          <Download className="w-4 h-4" />
-          Exportar CSV
+        <Button
+          onClick={handleGerarPDF}
+          className="bg-blue-600 hover:bg-blue-700 text-white gap-2 self-start sm:self-auto"
+        >
+          <FileText className="w-4 h-4" />
+          Gerar PDF
         </Button>
       </div>
 
@@ -197,7 +396,7 @@ export default function RelatorioComissoes() {
           <CardContent className="p-5 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Gerado</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1">{formatCurrency(totais.total)}</p>
+              <p className="text-2xl font-bold text-blue-400 mt-1">{fmt(totais.total)}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-blue-400" />
@@ -209,7 +408,7 @@ export default function RelatorioComissoes() {
           <CardContent className="p-5 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Pendente</p>
-              <p className="text-2xl font-bold text-amber-400 mt-1">{formatCurrency(totais.pendente)}</p>
+              <p className="text-2xl font-bold text-amber-400 mt-1">{fmt(totais.pendente)}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-amber-400" />
@@ -221,7 +420,7 @@ export default function RelatorioComissoes() {
           <CardContent className="p-5 flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Pago</p>
-              <p className="text-2xl font-bold text-emerald-400 mt-1">{formatCurrency(totais.pago)}</p>
+              <p className="text-2xl font-bold text-emerald-400 mt-1">{fmt(totais.pago)}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-emerald-400" />
@@ -242,29 +441,15 @@ export default function RelatorioComissoes() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wider">Data Início</label>
-              <input
-                type="date"
-                value={dataInicio}
-                onChange={(e) => setDataInicio(e.target.value)}
-                className={inputDark}
-              />
+              <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className={inputDark} />
             </div>
             <div>
               <label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wider">Data Fim</label>
-              <input
-                type="date"
-                value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
-                className={inputDark}
-              />
+              <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className={inputDark} />
             </div>
             <div>
               <label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wider">Técnico</label>
-              <select
-                value={tecnicoFiltro}
-                onChange={(e) => setTecnicoFiltro(e.target.value)}
-                className={selectDark}
-              >
+              <select value={tecnicoFiltro} onChange={(e) => setTecnicoFiltro(e.target.value)} className={selectDark}>
                 <option value="">Todos</option>
                 {tecnicos.map(t => (
                   <option key={t.tecnico_id} value={t.tecnico_id}>{t.tecnico_nome}</option>
@@ -282,7 +467,7 @@ export default function RelatorioComissoes() {
             <CardTitle className="text-sm font-bold text-gray-200 tracking-wide flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
               Ganhos Semanais por Equipe
-              <span className="text-[10px] font-normal text-gray-500 ml-1">(últimas {NUM_SEMANAS} semanas · comissão equipe)</span>
+              <span className="text-[10px] font-normal text-gray-500 ml-1">(últimas {NUM_SEMANAS} semanas)</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
@@ -291,9 +476,7 @@ export default function RelatorioComissoes() {
                 <tr className="border-b border-white/5 bg-[#0d1826]/50">
                   <th className="text-left px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-36">Semana</th>
                   {equipesNomes.map(nome => (
-                    <th key={nome} className="text-right px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                      {nome}
-                    </th>
+                    <th key={nome} className="text-right px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{nome}</th>
                   ))}
                   <th className="text-right px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total</th>
                 </tr>
@@ -311,7 +494,7 @@ export default function RelatorioComissoes() {
                         return (
                           <td key={nome} className="px-4 py-3 text-right">
                             <span className={`text-xs font-bold ${val === 0 ? 'text-gray-600' : isBest ? 'text-emerald-400' : 'text-gray-300'}`}>
-                              {val === 0 ? '—' : formatCurrency(val)}
+                              {val === 0 ? '—' : fmt(val)}
                             </span>
                             {isBest && val > 0 && (
                               <span className="ml-1.5 text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">↑</span>
@@ -321,24 +504,23 @@ export default function RelatorioComissoes() {
                       })}
                       <td className="px-5 py-3 text-right">
                         <span className={`text-xs font-bold ${sem.total === 0 ? 'text-gray-600' : 'text-blue-400'}`}>
-                          {sem.total === 0 ? '—' : formatCurrency(sem.total)}
+                          {sem.total === 0 ? '—' : fmt(sem.total)}
                         </span>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
-              {/* Rodapé com totais */}
               <tfoot>
                 <tr className="border-t border-white/10 bg-[#0d1826]/70">
                   <td className="px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total período</td>
                   {equipesNomes.map(nome => (
                     <td key={nome} className="px-4 py-3 text-right">
-                      <span className="text-xs font-bold text-amber-400">{formatCurrency(totaisPorEquipe.porEquipe[nome] || 0)}</span>
+                      <span className="text-xs font-bold text-amber-400">{fmt(totaisPorEquipe.porEquipe[nome] || 0)}</span>
                     </td>
                   ))}
                   <td className="px-5 py-3 text-right">
-                    <span className="text-xs font-bold text-blue-400">{formatCurrency(totaisPorEquipe.total)}</span>
+                    <span className="text-xs font-bold text-blue-400">{fmt(totaisPorEquipe.total)}</span>
                   </td>
                 </tr>
               </tfoot>
@@ -368,8 +550,8 @@ export default function RelatorioComissoes() {
                     <p className="text-xs text-gray-500 mt-0.5">{items.length} lançamentos</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-base text-blue-400">{formatCurrency(total.total)}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Pendente: {formatCurrency(total.pendente)}</p>
+                    <p className="font-bold text-base text-blue-400">{fmt(total.total)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Pendente: {fmt(total.pendente)}</p>
                   </div>
                 </div>
               );
@@ -399,9 +581,7 @@ export default function RelatorioComissoes() {
             <tbody className="divide-y divide-white/5">
               {lancamentosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-gray-500 text-sm">
-                    Nenhum lançamento encontrado
-                  </td>
+                  <td colSpan={8} className="text-center py-10 text-gray-500 text-sm">Nenhum lançamento encontrado</td>
                 </tr>
               ) : (
                 lancamentosFiltrados.map((lanc) => (
@@ -411,15 +591,13 @@ export default function RelatorioComissoes() {
                     <td className="px-4 py-3 text-gray-400 text-xs">{lanc.equipe_nome || '—'}</td>
                     <td className="px-4 py-3 text-gray-300 text-xs">{lanc.cliente_nome}</td>
                     <td className="px-4 py-3 text-gray-400 text-xs max-w-[160px] truncate">{lanc.tipo_servico}</td>
-                    <td className="px-4 py-3 text-gray-200 font-medium text-xs whitespace-nowrap">{formatCurrency(lanc.valor_total_servico)}</td>
-                    <td className="px-4 py-3 font-bold text-emerald-400 text-xs whitespace-nowrap">{formatCurrency(lanc.valor_comissao_tecnico)}</td>
+                    <td className="px-4 py-3 text-gray-200 font-medium text-xs whitespace-nowrap">{fmt(lanc.valor_total_servico)}</td>
+                    <td className="px-4 py-3 font-bold text-emerald-400 text-xs whitespace-nowrap">{fmt(lanc.valor_comissao_tecnico)}</td>
                     <td className="px-4 py-3">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        lanc.status === 'pago'
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : lanc.status === 'creditado'
-                          ? 'bg-blue-500/15 text-blue-400'
-                          : 'bg-amber-500/15 text-amber-400'
+                        lanc.status === 'pago' ? 'bg-emerald-500/15 text-emerald-400' :
+                        lanc.status === 'creditado' ? 'bg-blue-500/15 text-blue-400' :
+                        'bg-amber-500/15 text-amber-400'
                       }`}>
                         {lanc.status}
                       </span>
