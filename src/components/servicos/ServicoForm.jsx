@@ -675,9 +675,10 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                 <Input
                   type="number" step="0.01"
                   value={formData.valor}
-                  onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                  onChange={(e) => isAdmin && setFormData({ ...formData, valor: e.target.value })}
                   placeholder="0.00"
-                  className={inputDark}
+                  readOnly={!isAdmin}
+                  className={`${inputDark} ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
                 />
                 {formData.tipos_servico.length > 0 && calcularValorTotal() > 0 && (
                   <div className="text-xs text-gray-500 space-y-0.5 mt-1">
