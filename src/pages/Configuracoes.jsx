@@ -40,12 +40,20 @@ export default function ConfiguracoesPage() {
     },
   });
 
+  const { data: pdfSettings = null } = useQuery({
+    queryKey: ['pdfSettings'],
+    queryFn: async () => {
+      const result = await base44.entities.PDFSettings.list();
+      return result.length > 0 ? result[0] : null;
+    },
+  });
+
   const [formData, setFormData] = useState({
     company_name: '',
     company_icon: 'Snowflake',
     company_logo_url: '',
-    company_banner_url: '',
   });
+  const [bannerUrl, setBannerUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
@@ -55,10 +63,15 @@ export default function ConfiguracoesPage() {
         company_name: settings.company_name || '',
         company_icon: settings.company_icon || 'Snowflake',
         company_logo_url: settings.company_logo_url || '',
-        company_banner_url: settings.company_banner_url || '',
       });
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (pdfSettings) {
+      setBannerUrl(pdfSettings.banner_url || '');
+    }
+  }, [pdfSettings]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
@@ -95,10 +108,30 @@ export default function ConfiguracoesPage() {
     setUploadingBanner(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData(prev => ({ ...prev, company_banner_url: file_url }));
-      toast.success('Banner carregado com sucesso!');
+      setBannerUrl(file_url);
+      // Salva imediatamente na entidade PDFSettings
+      if (pdfSettings?.id) {
+        await base44.entities.PDFSettings.update(pdfSettings.id, { banner_url: file_url });
+      } else {
+        await base44.entities.PDFSettings.create({ banner_url: file_url });
+      }
+      queryClient.invalidateQueries({ queryKey: ['pdfSettings'] });
+      // Limpa cache do utilitário para forçar releitura na próxima geração de PDF
+      const { clearBannerCache } = await import('@/lib/pdfBanner');
+      clearBannerCache();
+      toast.success('Banner salvo com sucesso!');
     } catch { toast.error('Erro ao carregar o banner'); }
     finally { setUploadingBanner(false); }
+  };
+
+  const handleRemoveBanner = async () => {
+    setBannerUrl('');
+    try {
+      if (pdfSettings?.id) {
+        await base44.entities.PDFSettings.update(pdfSettings.id, { banner_url: '' });
+        queryClient.invalidateQueries({ queryKey: ['pdfSettings'] });
+      }
+    } catch { /* silent */ }
   };
 
   const handleDownloadLogo = () => {
@@ -218,28 +251,29 @@ export default function ConfiguracoesPage() {
             <Label>Banner para PDFs e Relatórios</Label>
             <p className="text-xs text-gray-500">Imagem horizontal exibida no topo de todos os documentos gerados (comprovantes, relatórios, comissões). Recomendado: 1000×180 px ou similar.</p>
             <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
-              {formData.company_banner_url ? (
+              {bannerUrl ? (
                 <div className="space-y-3">
-                  <img src={formData.company_banner_url} alt="Banner" className="w-full h-20 object-cover rounded-lg" />
-                  <div className="flex gap-2">
+                  <img src={bannerUrl} alt="Banner" className="w-full h-20 object-cover rounded-lg" />
+                  <div className="flex gap-2 items-center">
                     <label className="text-xs text-gray-500 cursor-pointer hover:text-gray-600 flex items-center gap-1">
                       <Upload className="w-3 h-3" /> Alterar banner
                       <input type="file" accept="image/*" onChange={handleBannerUpload} disabled={uploadingBanner} className="hidden" />
                     </label>
                     <button
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, company_banner_url: '' }))}
+                      onClick={handleRemoveBanner}
                       className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
                     >
                       <X className="w-3 h-3" /> Remover
                     </button>
+                    <span className="text-xs text-emerald-600 font-medium ml-auto">✓ Banner salvo</span>
                   </div>
                 </div>
               ) : (
                 <label className="cursor-pointer block">
                   <div className="flex flex-col items-center py-4">
                     {uploadingBanner ? <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" /> : <Upload className="w-6 h-6 text-gray-400 mb-2" />}
-                    <p className="text-sm text-gray-600">{uploadingBanner ? 'Enviando...' : 'Clique para fazer upload do banner'}</p>
+                    <p className="text-sm text-gray-600">{uploadingBanner ? 'Enviando e salvando...' : 'Clique para fazer upload do banner'}</p>
                     <p className="text-xs text-gray-500 mt-1">PNG, JPG — imagem horizontal (ex: 1000×180 px)</p>
                   </div>
                   <input type="file" accept="image/*" onChange={handleBannerUpload} disabled={uploadingBanner} className="hidden" />

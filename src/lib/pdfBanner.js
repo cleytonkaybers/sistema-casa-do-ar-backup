@@ -5,6 +5,13 @@
  */
 
 let _cache = { url: null, b64: null };
+let _bannerUrlCache = null;
+
+/** Limpa o cache de banner (chamar após trocar o banner em Configurações) */
+export function clearBannerCache() {
+  _cache = { url: null, b64: null };
+  _bannerUrlCache = null;
+}
 
 /** Converte uma URL de imagem para base64 (com cache em memória) */
 async function urlToBase64(url) {
@@ -30,14 +37,16 @@ function detectFormat(urlOrB64) {
 }
 
 /**
- * Busca a URL do banner nas CompanySettings.
+ * Busca a URL do banner em PDFSettings.
  * Retorna null se não configurado.
  */
 export async function getBannerUrl() {
+  if (_bannerUrlCache !== null) return _bannerUrlCache;
   try {
     const { base44 } = await import('@/api/base44Client');
-    const result = await base44.entities.CompanySettings.list();
-    return result?.[0]?.company_banner_url || null;
+    const result = await base44.entities.PDFSettings.list();
+    _bannerUrlCache = result?.[0]?.banner_url || null;
+    return _bannerUrlCache;
   } catch {
     return null;
   }
