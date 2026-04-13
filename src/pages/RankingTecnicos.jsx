@@ -130,9 +130,9 @@ export default function RankingTecnicos() {
     .map((t) => ({
       ...t,
       pendente: Math.max(0, t.total_ganho - t.total_pago),
-      media_servico: t.servicos > 0 ? t.total_ganho / t.servicos : 0,
+      media_servico: t.servicos > 0 ? t.total_pago / t.servicos : 0,
     }))
-    .sort((a, b) => b.total_ganho - a.total_ganho);
+    .sort((a, b) => b.total_pago - a.total_pago);
 
   const totalGeral = ranking.reduce((s, t) => s + t.total_ganho, 0);
   const totalServicos = ranking.reduce((s, t) => s + t.servicos, 0);
@@ -230,7 +230,7 @@ export default function RankingTecnicos() {
                 <p className="text-xs text-gray-500">{ranking[1].equipe_nome}</p>
               </div>
               <div className="w-full bg-gray-300/20 rounded-t-xl pt-6 pb-4 flex flex-col items-center gap-1 border border-gray-300/20">
-                <p className="text-sm font-bold text-emerald-400">{fmt(ranking[1].total_ganho)}</p>
+                <p className="text-sm font-bold text-blue-400">{fmt(ranking[1].total_pago)}</p>
                 <p className="text-xs text-gray-500">{ranking[1].servicos} serv.</p>
               </div>
             </div>
@@ -245,7 +245,7 @@ export default function RankingTecnicos() {
                 <p className="text-xs text-gray-500">{ranking[0].equipe_nome}</p>
               </div>
               <div className="w-full bg-yellow-400/10 rounded-t-xl pt-8 pb-4 flex flex-col items-center gap-1 border border-yellow-400/20">
-                <p className="text-base font-bold text-yellow-400">{fmt(ranking[0].total_ganho)}</p>
+                <p className="text-base font-bold text-yellow-400">{fmt(ranking[0].total_pago)}</p>
                 <p className="text-xs text-gray-400">{ranking[0].servicos} serv.</p>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function RankingTecnicos() {
                 <p className="text-xs text-gray-500">{ranking[2].equipe_nome}</p>
               </div>
               <div className="w-full bg-amber-600/20 rounded-t-xl pt-4 pb-4 flex flex-col items-center gap-1 border border-amber-600/20">
-                <p className="text-sm font-bold text-emerald-400">{fmt(ranking[2].total_ganho)}</p>
+                <p className="text-sm font-bold text-blue-400">{fmt(ranking[2].total_pago)}</p>
                 <p className="text-xs text-gray-500">{ranking[2].servicos} serv.</p>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function RankingTecnicos() {
           <CardContent className="p-0">
             <div className="divide-y divide-white/5">
               {ranking.map((tec, idx) => {
-                const pct = lider?.total_ganho > 0 ? (tec.total_ganho / lider.total_ganho) * 100 : 0;
+                const pct = lider?.total_pago > 0 ? (tec.total_pago / lider.total_pago) * 100 : 0;
                 return (
                   <div
                     key={tec.id}
