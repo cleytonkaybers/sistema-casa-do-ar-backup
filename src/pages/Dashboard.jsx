@@ -236,15 +236,8 @@ export default function Dashboard() {
         });
         const creditoPago = pagamentosSemana.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
 
-        // Pendente real: total de comissões geradas - total de pagamentos confirmados (todos os tempos)
-        // Calculado dos dados brutos para não depender do campo possivelmente defasado da entidade
-        const totalComissoesAll = lancamentosFinanceiros
-          .filter(l => l.tecnico_id === t.tecnico_id)
-          .reduce((sum, l) => sum + (l.valor_comissao_tecnico || 0), 0);
-        const totalPagoAll = pagamentosTecnicos
-          .filter(p => p.tecnico_id === t.tecnico_id && p.status === 'Confirmado')
-          .reduce((sum, p) => sum + (p.valor_pago || 0), 0);
-        const creditoPendente = Math.max(0, totalComissoesAll - totalPagoAll);
+        // Pendente da semana: comissões da semana - pagamentos da semana (igual ao Financeiro Admin)
+        const creditoPendente = Math.max(0, totalGanho - creditoPago);
 
         return {
           ...t,
@@ -262,7 +255,7 @@ export default function Dashboard() {
     return {
       totalGanhoSemana: adminTecnicosSemana.reduce((s, t) => s + (t.total_ganho || 0), 0),
       totalPagoSemana:  adminTecnicosSemana.reduce((s, t) => s + (t.credito_pago  || 0), 0),
-      totalPendente:    tecnicosFinanceiro.reduce((s, t)  => s + (t.credito_pendente || 0), 0),
+      totalPendente:    adminTecnicosSemana.reduce((s, t) => s + (t.credito_pendente || 0), 0),
     };
   }, [adminTecnicosSemana, tecnicosFinanceiro, isAdmin]);
 
