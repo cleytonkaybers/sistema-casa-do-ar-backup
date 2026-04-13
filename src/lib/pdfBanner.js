@@ -4,36 +4,42 @@
  * em todos os documentos PDF (jsPDF e window.print).
  */
 
-let _cache = { url: null, b64: null };
-let _bannerUrlCache = null;
+let _imgCache = { url: null, b64: null };
+let _bannerUrlCache = null; // null = não buscado ainda, '' = buscado e vazio
 
-/** Limpa o cache de banner (chamar após trocar o banner em Configurações) */
+/** Limpa o cache (chamar após trocar o banner em Configurações) */
 export function clearBannerCache() {
-  _cache = { url: null, b64: null };
+  _imgCache = { url: null, b64: null };
   _bannerUrlCache = null;
 }
 
-/** Converte uma URL de imagem para base64 (com cache em memória) */
+/**
+ * Converte uma URL de imagem para base64 via canvas.
+ * Não usa fetch — carrega como HTMLImageElement para evitar problemas de CORS.
+ */
 async function urlToBase64(url) {
-  if (_cache.url === url && _cache.b64) return _cache.b64;
-  const res = await fetch(url, { mode: 'cors' });
-  const blob = await res.blob();
-  const b64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-  _cache = { url, b64 };
-  return b64;
-}
+  if (_imgCache.url === url && _imgCache.b64) return _imgCache.b64;
 
-/** Detecta o formato da imagem a partir da URL ou do base64 */
-function detectFormat(urlOrB64) {
-  const s = (urlOrB64 || '').toLowerCase();
-  if (s.includes('png')) return 'PNG';
-  if (s.includes('gif')) return 'GIF';
-  return 'JPEG';
+  const b64 = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // necessário para canvas não ficar "tainted"
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = () => reject(new Error('Falha ao carregar imagem: ' + url));
+    img.src = url;
+  });
+
+  _imgCache = { url, b64 };
+  return b64;
 }
 
 /**
@@ -41,12 +47,14 @@ function detectFormat(urlOrB64) {
  * Retorna null se não configurado.
  */
 export async function getBannerUrl() {
-  if (_bannerUrlCache !== null) return _bannerUrlCache;
+  // _bannerUrlCache === null significa "ainda não buscou"
+  // _bannerUrlCache === '' significa "buscou e não há banner"
+  if (_bannerUrlCache !== null) return _bannerUrlCache || null;
   try {
     const { base44 } = await import('@/api/base44Client');
     const result = await base44.entities.PDFSettings.list();
-    _bannerUrlCache = result?.[0]?.banner_url || null;
-    return _bannerUrlCache;
+    _bannerUrlCache = result?.[0]?.banner_url || '';
+    return _bannerUrlCache || null;
   } catch {
     return null;
   }
@@ -54,32 +62,33 @@ export async function getBannerUrl() {
 
 /**
  * Adiciona o banner ao topo de um documento jsPDF.
- * @param {jsPDF} doc - instância do jsPDF
+ * @param {jsPDF} doc  - instância do jsPDF
  * @param {string|null} bannerUrl - URL da imagem do banner
- * @param {number} [heightMm=28] - altura do banner em mm
- * @returns {number} coordenada Y de onde o conteúdo deve começar
+ * @param {number} [heightMm=28]  - altura do banner em mm
+ * @returns {number} coordenada Y onde o conteúdo deve começar
  */
 export async function addBannerToDoc(doc, bannerUrl, heightMm = 28) {
   if (!bannerUrl) return 20;
   try {
     const b64 = await urlToBase64(bannerUrl);
     const pageWidth = doc.internal.pageSize.getWidth();
-    doc.addImage(b64, detectFormat(bannerUrl), 0, 0, pageWidth, heightMm);
-    return heightMm + 6; // margem após o banner
-  } catch {
+    doc.addImage(b64, 'JPEG', 0, 0, pageWidth, heightMm);
+    return heightMm + 6;
+  } catch (err) {
+    console.warn('[pdfBanner] Não foi possível adicionar banner:', err?.message || err);
     return 20;
   }
 }
 
 /**
- * Retorna a tag <img> do banner para uso em PDFs HTML (window.print).
+ * Retorna a tag <img> do banner para PDFs HTML (window.print).
+ * Sem crossorigin — tags <img> não precisam de CORS para exibir.
  */
 export function bannerHtmlImg(bannerUrl) {
   if (!bannerUrl) return '';
   return `<img
     src="${bannerUrl}"
     alt="Banner Casa do Ar"
-    crossorigin="anonymous"
     style="width:100%;max-height:90px;object-fit:cover;display:block;border-radius:6px;margin-bottom:18px"
   />`;
 }
