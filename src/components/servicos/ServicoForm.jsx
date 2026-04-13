@@ -420,43 +420,36 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
               <span className="text-purple-400 font-semibold text-sm tracking-wide uppercase">Dados do Cliente</span>
             </div>
 
-            {/* Cliente Cadastrado — combobox customizado (funciona no celular) */}
-            {!servico && (
+            {/* Nome + Telefone — nome tem autocomplete de clientes cadastrados */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className={labelDark}>Cliente Cadastrado (opcional)</Label>
+                <Label className={labelDark}>Nome do Cliente *</Label>
                 <div className="relative" ref={clienteSearchRef}>
                   <Input
-                    placeholder="Buscar cliente cadastrado..."
-                    value={clienteSearch}
+                    value={formData.cliente_nome}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, cliente_nome: val });
+                      setClienteSearch(val);
+                      setShowClienteDropdown(val.trim().length > 0);
+                    }}
+                    onFocus={() => {
+                      if (formData.cliente_nome.trim().length > 0) setShowClienteDropdown(true);
+                    }}
+                    placeholder="Nome completo"
+                    required
                     autoComplete="off"
-                    onChange={(e) => { setClienteSearch(e.target.value); setShowClienteDropdown(true); }}
-                    onFocus={() => setShowClienteDropdown(true)}
                     className={inputDark}
                   />
-                  {showClienteDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-[#1e2a3a] border border-[#2d3f55] rounded-lg shadow-2xl max-h-60 overflow-y-auto">
-                      <button
-                        type="button"
-                        onPointerDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setClienteSearch('');
-                          setFormData(prev => ({ ...prev, cliente_nome: '', telefone: '', cpf: '', endereco: '' }));
-                          setShowClienteDropdown(false);
-                        }}
-                        className="w-full text-left px-3 py-2 text-gray-400 italic text-sm hover:bg-white/5 border-b border-[#2d3f55]"
-                      >
-                        — Preencher manualmente —
-                      </button>
-                      {clientesFiltrados.length === 0 && (
-                        <p className="px-3 py-3 text-gray-500 text-sm text-center">Nenhum cliente encontrado</p>
-                      )}
+                  {showClienteDropdown && clientesFiltrados.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-[#1e2a3a] border border-[#2d3f55] rounded-lg shadow-2xl max-h-52 overflow-y-auto">
                       {clientesFiltrados.map(cliente => (
                         <button
                           key={cliente.id}
                           type="button"
                           onPointerDown={(e) => e.preventDefault()}
                           onClick={() => { handleSelectCliente(cliente); setShowClienteDropdown(false); }}
-                          className="w-full text-left px-3 py-2.5 hover:bg-white/10 transition-colors border-b border-white/5 last:border-0"
+                          className="w-full text-left px-3 py-2.5 hover:bg-white/10 active:bg-white/20 transition-colors border-b border-white/5 last:border-0"
                         >
                           <p className="font-medium text-white text-sm">{cliente.nome}</p>
                           <p className="text-xs text-gray-400">{cliente.telefone}</p>
@@ -465,20 +458,6 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Nome + Telefone */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className={labelDark}>Nome do Cliente *</Label>
-                <Input
-                  value={formData.cliente_nome}
-                  onChange={(e) => setFormData({ ...formData, cliente_nome: e.target.value })}
-                  placeholder="Nome completo"
-                  required
-                  className={inputDark}
-                />
               </div>
               <div className="space-y-1">
                 <Label className={labelDark}>Telefone *</Label>
