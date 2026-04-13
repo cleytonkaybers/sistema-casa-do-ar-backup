@@ -136,11 +136,12 @@ async function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesN
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #111827; font-size: 13px; }
-    @page { size: A4; margin: 18mm 14mm 18mm 14mm; }
+    @page { size: A4; margin: 0; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; }
       .page-break { page-break-before: always; }
+      .content-wrapper { padding: 14mm 14mm 18mm !important; }
     }
     .btn-print { background:#1e3a5f;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:24px;display:flex;align-items:center;gap:8px }
     .btn-print:hover { background:#1e40af }
@@ -148,15 +149,17 @@ async function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesN
     .section { margin-bottom: 32px; }
   </style>
 </head>
-<body style="padding:24px">
+<body style="padding:0;margin:0">
 
   <!-- Botão imprimir (desaparece no PDF) -->
-  <div class="no-print" style="margin-bottom:16px">
+  <div class="no-print" style="padding:16px 24px 0">
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
   </div>
 
-  <!-- ══ BANNER DA EMPRESA ══ -->
+  <!-- ══ BANNER DA EMPRESA — full bleed, sem padding ══ -->
   ${bannerTag}
+
+  <div class="content-wrapper" style="padding:20px 24px 24px">
 
   <!-- ══ CABEÇALHO ══ -->
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #1e3a5f">
@@ -246,6 +249,7 @@ async function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesN
     <span>Gerado em ${agora}</span>
   </div>
 
+  </div><!-- fim do wrapper com padding -->
 </body>
 </html>`;
 

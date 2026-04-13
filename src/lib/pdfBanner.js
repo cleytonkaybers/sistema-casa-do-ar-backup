@@ -96,11 +96,14 @@ async function urlToBase64(url) {
  * Adiciona o banner ao topo de um documento jsPDF.
  * @returns {number} Y de onde o conteúdo deve começar
  */
-export async function addBannerToDoc(doc, bannerUrl, heightMm = 28) {
+export async function addBannerToDoc(doc, bannerUrl) {
   if (!bannerUrl) return 20;
   try {
     const b64 = await urlToBase64(bannerUrl);
     const pageWidth = doc.internal.pageSize.getWidth();
+    // Calcula altura proporcional à imagem real
+    const props = doc.getImageProperties(b64);
+    const heightMm = pageWidth * (props.height / props.width);
     doc.addImage(b64, 'JPEG', 0, 0, pageWidth, heightMm);
     return heightMm + 6;
   } catch (err) {
@@ -117,6 +120,6 @@ export function bannerHtmlImg(bannerUrl) {
   return `<img
     src="${bannerUrl}"
     alt="Banner Casa do Ar"
-    style="width:100%;max-height:90px;object-fit:cover;display:block;border-radius:6px;margin-bottom:18px"
+    style="width:100%;height:auto;display:block;margin-bottom:18px"
   />`;
 }

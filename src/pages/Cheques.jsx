@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, CheckCircle, XCircle, Bell, AlertTriangle, Clock, DollarSign, Pencil } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, XCircle, Bell, AlertTriangle, Clock, DollarSign, Pencil, Landmark } from 'lucide-react';
 
 function parseBRL(str) {
   if (!str) return '';
@@ -70,7 +70,7 @@ export default function Cheques() {
   };
 
   const verificarAlertas = (data) => {
-    const pendentes = data.filter(c => c.status === 'pendente');
+    const pendentes = data.filter(c => c.status === 'pendente' && !c.depositado);
     const novosAlertas = [];
 
     pendentes.forEach(c => {
@@ -143,6 +143,13 @@ export default function Cheques() {
     loadCheques();
   };
 
+  const handleToggleDepositado = async (cheque) => {
+    const novoValor = !cheque.depositado;
+    await base44.entities.Cheque.update(cheque.id, { depositado: novoValor });
+    toast.success(novoValor ? 'Marcado como depositado — alertas suprimidos' : 'Depósito desmarcado');
+    loadCheques();
+  };
+
   const handleDelete = async (id) => {
     if (!confirm('Excluir este cheque?')) return;
     await base44.entities.Cheque.delete(id);
@@ -150,8 +157,8 @@ export default function Cheques() {
     loadCheques();
   };
 
-  const getDataAlert = (data_comp, status) => {
-    if (status !== 'pendente') return null;
+  const getDataAlert = (data_comp, status, depositado) => {
+    if (status !== 'pendente' || depositado) return null;
     const d = parseISO(data_comp);
     const diff = differenceInDays(d, new Date());
     if (isPast(d) && !isToday(d)) return { label: 'Vencido', color: 'text-red-600', icon: XCircle };
@@ -251,15 +258,16 @@ export default function Cheques() {
                   <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Valor</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Banco</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase">Obs</th>
+                  <th className="text-center px-2 py-2.5 text-xs font-semibold text-gray-500 uppercase" title="Depositado no banco">Dep.</th>
                   <th className="px-4 py-2.5"></th>
                 </tr>
               </thead>
               <tbody>
                 {pendentes.map(c => {
-                  const alerta = getDataAlert(c.data_compensacao, c.status);
+                  const alerta = getDataAlert(c.data_compensacao, c.status, c.depositado);
                   const AlertIcon = alerta?.icon;
                   return (
-                    <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <tr key={c.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${c.depositado ? 'opacity-70' : ''}`}>
                       <td className="px-4 py-2.5 font-medium text-gray-800">{c.nome}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quem_passou || '—'}</td>
                       <td className="px-4 py-2.5">
@@ -276,6 +284,15 @@ export default function Cheques() {
                       <td className="px-4 py-2.5 text-right font-semibold text-green-700">R$ {c.valor?.toFixed(2)}</td>
                       <td className="px-4 py-2.5 text-gray-500 text-xs">{c.banco || '—'}</td>
                       <td className="px-4 py-2.5 text-gray-400 text-xs max-w-[120px] truncate">{c.observacoes || '—'}</td>
+                      <td className="px-2 py-2.5 text-center">
+                        <button
+                          onClick={() => handleToggleDepositado(c)}
+                          title={c.depositado ? 'Depositado — clique para desmarcar' : 'Marcar como depositado no banco'}
+                          className={`p-1.5 rounded transition-colors ${c.depositado ? 'text-blue-600 bg-blue-100 hover:bg-blue-200' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
+                        >
+                          <Landmark className="w-4 h-4" />
+                        </button>
+                      </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1 justify-end">
                           <button onClick={() => handleStatus(c, 'compensado')} title="Compensado" className="p-1.5 rounded hover:bg-green-100 text-gray-400 hover:text-green-600 transition-colors">

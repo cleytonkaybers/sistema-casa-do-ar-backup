@@ -195,7 +195,7 @@ export default function ConfiguracoesPage() {
               {formData.company_logo_url ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                    <img src={formData.company_logo_url} alt="Logo" className="h-12 w-12 object-contain" />
+                    <img src={formData.company_logo_url} alt="Logo" className="h-24 w-24 object-contain" />
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -258,7 +258,7 @@ export default function ConfiguracoesPage() {
             <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
               {bannerUrl ? (
                 <div className="space-y-3">
-                  <img src={bannerUrl} alt="Banner" className="w-full h-20 object-cover rounded-lg" />
+                  <img src={bannerUrl} alt="Banner" className="w-full h-auto object-contain rounded-lg" />
                   <div className="flex gap-2 items-center">
                     <label className="text-xs text-gray-500 cursor-pointer hover:text-gray-600 flex items-center gap-1">
                       <Upload className="w-3 h-3" /> Alterar banner

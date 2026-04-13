@@ -153,7 +153,7 @@ function LayoutContent({ children }) {
                   <img
                     src={companySettings.company_logo_url}
                     alt="Logo"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
                   />
                   : null}
