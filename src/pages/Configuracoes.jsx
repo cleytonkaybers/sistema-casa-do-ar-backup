@@ -44,8 +44,10 @@ export default function ConfiguracoesPage() {
     company_name: '',
     company_icon: 'Snowflake',
     company_logo_url: '',
+    company_banner_url: '',
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -53,6 +55,7 @@ export default function ConfiguracoesPage() {
         company_name: settings.company_name || '',
         company_icon: settings.company_icon || 'Snowflake',
         company_logo_url: settings.company_logo_url || '',
+        company_banner_url: settings.company_banner_url || '',
       });
     }
   }, [settings]);
@@ -75,22 +78,27 @@ export default function ConfiguracoesPage() {
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem válida');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Por favor, selecione uma imagem válida'); return; }
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData({ ...formData, company_logo_url: file_url });
+      setFormData(prev => ({ ...prev, company_logo_url: file_url }));
       toast.success('Logo carregado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao carregar a imagem');
-    } finally {
-      setUploading(false);
-    }
+    } catch { toast.error('Erro ao carregar a imagem'); }
+    finally { setUploading(false); }
+  };
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Por favor, selecione uma imagem válida'); return; }
+    setUploadingBanner(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setFormData(prev => ({ ...prev, company_banner_url: file_url }));
+      toast.success('Banner carregado com sucesso!');
+    } catch { toast.error('Erro ao carregar o banner'); }
+    finally { setUploadingBanner(false); }
   };
 
   const handleDownloadLogo = () => {
@@ -200,6 +208,41 @@ export default function ConfiguracoesPage() {
                     disabled={uploading}
                     className="hidden"
                   />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Banner para PDFs */}
+          <div className="space-y-2">
+            <Label>Banner para PDFs e Relatórios</Label>
+            <p className="text-xs text-gray-500">Imagem horizontal exibida no topo de todos os documentos gerados (comprovantes, relatórios, comissões). Recomendado: 1000×180 px ou similar.</p>
+            <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
+              {formData.company_banner_url ? (
+                <div className="space-y-3">
+                  <img src={formData.company_banner_url} alt="Banner" className="w-full h-20 object-cover rounded-lg" />
+                  <div className="flex gap-2">
+                    <label className="text-xs text-gray-500 cursor-pointer hover:text-gray-600 flex items-center gap-1">
+                      <Upload className="w-3 h-3" /> Alterar banner
+                      <input type="file" accept="image/*" onChange={handleBannerUpload} disabled={uploadingBanner} className="hidden" />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, company_banner_url: '' }))}
+                      className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Remover
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="cursor-pointer block">
+                  <div className="flex flex-col items-center py-4">
+                    {uploadingBanner ? <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-2" /> : <Upload className="w-6 h-6 text-gray-400 mb-2" />}
+                    <p className="text-sm text-gray-600">{uploadingBanner ? 'Enviando...' : 'Clique para fazer upload do banner'}</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG — imagem horizontal (ex: 1000×180 px)</p>
+                  </div>
+                  <input type="file" accept="image/*" onChange={handleBannerUpload} disabled={uploadingBanner} className="hidden" />
                 </label>
               )}
             </div>

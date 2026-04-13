@@ -85,20 +85,27 @@ const desenharTabela = (doc, colunas, larguras, linhas) => {
   return y;
   };
 
-export const gerarPDFCliente = (cliente, servicos, atendimentos) => {
+export const gerarPDFCliente = async (cliente, servicos, atendimentos) => {
+  const { addBannerToDoc, getBannerUrl } = await import('@/lib/pdfBanner');
+  const bannerUrl = await getBannerUrl();
   const doc = new jsPDF();
 
-  doc.setFontSize(20);
-  doc.setTextColor(30, 58, 138);
-  doc.text('Casa do Ar Climatização', 15, 15);
+  let startY = await addBannerToDoc(doc, bannerUrl);
+  if (!bannerUrl) {
+    doc.setFontSize(20); doc.setTextColor(30, 58, 138);
+    doc.text('Casa do Ar Climatização', 15, 15);
+    startY = 28;
+  }
 
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Histórico de Serviços - ${cliente}`, 15, 28);
+  doc.text(`Histórico de Serviços - ${cliente}`, 15, startY);
+  startY += 12;
 
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Data do Relatório: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 15, 40);
+  doc.text(`Data do Relatório: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 15, startY);
+  startY += 12;
 
   const historico = [
     ...atendimentos.map(a => ({
@@ -120,8 +127,10 @@ export const gerarPDFCliente = (cliente, servicos, atendimentos) => {
 
   doc.setFontSize(11);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Total de Serviços: ${grupos.length} visitas`, 15, 52);
-  doc.text(`Valor Total Investido: R$ ${totalValor.toLocaleString('pt-BR')}`, 15, 60);
+  doc.text(`Total de Serviços: ${grupos.length} visitas`, 15, startY);
+  startY += 8;
+  doc.text(`Valor Total Investido: R$ ${totalValor.toLocaleString('pt-BR')}`, 15, startY);
+  startY += 12;
 
   const colunas = ['Data', 'Equipe', 'Qtd', 'Serviço', 'Valor Unit.', 'Total'];
   const larguras = [25, 40, 12, 65, 25, 23];
@@ -141,7 +150,7 @@ export const gerarPDFCliente = (cliente, servicos, atendimentos) => {
     });
   });
 
-  doc._lastY = 72;
+  doc._lastY = startY;
   desenharTabela(doc, colunas, larguras, linhas);
 
   doc.setFontSize(9);
@@ -152,22 +161,27 @@ export const gerarPDFCliente = (cliente, servicos, atendimentos) => {
   doc.save(`Historico_${cliente.replace(/\s+/g, '_')}_${format(new Date(), 'dd-MM-yyyy')}.pdf`);
 };
 
-export const gerarPDFTodos = (clientesAgrupados) => {
+export const gerarPDFTodos = async (clientesAgrupados) => {
+  const { addBannerToDoc, getBannerUrl } = await import('@/lib/pdfBanner');
+  const bannerUrl = await getBannerUrl();
   const doc = new jsPDF();
 
-  doc.setFontSize(20);
-  doc.setTextColor(30, 58, 138);
-  doc.text('Casa do Ar Climatização', 15, 15);
+  let startY = await addBannerToDoc(doc, bannerUrl);
+  if (!bannerUrl) {
+    doc.setFontSize(20); doc.setTextColor(30, 58, 138);
+    doc.text('Casa do Ar Climatização', 15, 15);
+    startY = 28;
+  }
 
-  doc.setFontSize(14);
-  doc.setTextColor(0, 0, 0);
-  doc.text('Histórico Completo de Clientes', 15, 28);
+  doc.setFontSize(14); doc.setTextColor(0, 0, 0);
+  doc.text('Histórico Completo de Clientes', 15, startY);
+  startY += 10;
 
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Data do Relatório: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 15, 40);
+  doc.setFontSize(10); doc.setTextColor(100, 100, 100);
+  doc.text(`Data do Relatório: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 15, startY);
+  startY += 12;
 
-  let y = 52;
+  let y = startY;
   const pageHeight = doc.internal.pageSize.getHeight();
   const colunas = ['Data', 'Equipe', 'Qtd', 'Serviço', 'Valor Unit.', 'Total'];
   const larguras = [25, 40, 12, 65, 25, 23];

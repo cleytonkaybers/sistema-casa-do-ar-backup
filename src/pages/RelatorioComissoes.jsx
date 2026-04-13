@@ -21,7 +21,11 @@ const NUM_SEMANAS = 10;
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 // ─── Gerador de PDF (HTML → window.print) ─────────────────────────────────
-function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim }) {
+async function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim }) {
+  const { bannerHtmlImg, getBannerUrl } = await import('@/lib/pdfBanner');
+  const bannerUrl = await getBannerUrl();
+  const bannerTag = bannerHtmlImg(bannerUrl);
+
   const agora = format(getLocalDate(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   const periodo = dataInicio && dataFim
     ? `${formatDate(dataInicio)} a ${formatDate(dataFim)}`
@@ -150,6 +154,9 @@ function gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, 
   <div class="no-print" style="margin-bottom:16px">
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
   </div>
+
+  <!-- ══ BANNER DA EMPRESA ══ -->
+  ${bannerTag}
 
   <!-- ══ CABEÇALHO ══ -->
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #1e3a5f">
@@ -349,8 +356,8 @@ export default function RelatorioComissoes() {
     return { porEquipe: t, total: grand };
   }, [ganhosSemanais, equipesNomes]);
 
-  const handleGerarPDF = () => {
-    gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim });
+  const handleGerarPDF = async () => {
+    await gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim });
   };
 
   if (!user) {

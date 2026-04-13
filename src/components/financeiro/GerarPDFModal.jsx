@@ -49,6 +49,8 @@ export default function GerarPDFModal({ open, onClose, equipes, tecnicos, lancam
     setGerando(true);
     try {
       const { jsPDF } = await import('jspdf');
+      const { addBannerToDoc, getBannerUrl } = await import('@/lib/pdfBanner');
+      const bannerUrl = await getBannerUrl();
       const doc = new jsPDF();
 
       // Determinar quais técnicos incluir
@@ -79,17 +81,21 @@ export default function GerarPDFModal({ open, onClose, equipes, tecnicos, lancam
       const nomeEquipe = equipeId ? equipes.find(e => e.id === equipeId)?.nome : null;
       const nomeTecnico = tecnicoId ? tecnicos.find(t => t.tecnico_id === tecnicoId)?.tecnico_nome : null;
 
-      doc.setFontSize(16);
-      doc.setTextColor(30, 58, 138);
-      doc.text('Relatório Financeiro - Casa do Ar', 20, 20);
-      doc.setTextColor(0);
-      doc.setFontSize(9);
-      doc.text(`Gerado em: ${format(agora, 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 20, 28);
-      doc.text(`Período: ${format(intervalo.inicio, 'dd/MM/yyyy')} a ${format(intervalo.fim, 'dd/MM/yyyy')}`, 20, 34);
-      if (nomeEquipe) doc.text(`Equipe: ${nomeEquipe}`, 20, 40);
-      if (nomeTecnico) doc.text(`Técnico: ${nomeTecnico}`, 20, 40);
-
-      let y = nomeEquipe || nomeTecnico ? 50 : 44;
+      // Banner da empresa
+      let y = await addBannerToDoc(doc, bannerUrl);
+      if (!bannerUrl) {
+        doc.setFontSize(16); doc.setTextColor(30, 58, 138);
+        doc.text('Relatório Financeiro - Casa do Ar', 20, 20);
+        y = 28;
+      }
+      doc.setTextColor(0); doc.setFontSize(9);
+      doc.text(`Gerado em: ${format(agora, 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 20, y);
+      y += 6;
+      doc.text(`Período: ${format(intervalo.inicio, 'dd/MM/yyyy')} a ${format(intervalo.fim, 'dd/MM/yyyy')}`, 20, y);
+      y += 6;
+      if (nomeEquipe) { doc.text(`Equipe: ${nomeEquipe}`, 20, y); y += 6; }
+      if (nomeTecnico) { doc.text(`Técnico: ${nomeTecnico}`, 20, y); y += 6; }
+      y += 4;
 
       // ─── RESUMO POR TÉCNICO ───────────────────────────────────────────
       doc.setFillColor(30, 58, 138);

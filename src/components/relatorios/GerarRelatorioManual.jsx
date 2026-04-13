@@ -61,21 +61,34 @@ export default function GerarRelatorioManual({ open, onClose }) {
 
       // Gerar PDF
       const pdf = new jsPDF();
+      const { addBannerToDoc, getBannerUrl } = await import('@/lib/pdfBanner');
+      const bannerUrl = await getBannerUrl();
       const pageWidth = pdf.internal.pageSize.getWidth();
-      
-      // Título
-      pdf.setFontSize(20);
-      pdf.text('Relatório de Serviços', pageWidth / 2, 20, { align: 'center' });
-      
-      pdf.setFontSize(12);
-      pdf.text(`Período: ${format(dataInicio, 'dd/MM/yyyy')} - ${format(dataFim, 'dd/MM/yyyy')}`, pageWidth / 2, 30, { align: 'center' });
-      
+
+      // Banner da empresa
+      let y = await addBannerToDoc(pdf, bannerUrl);
+      if (!bannerUrl) {
+        pdf.setFontSize(20);
+        pdf.text('Relatório de Serviços', pageWidth / 2, 20, { align: 'center' });
+        pdf.setFontSize(12);
+        pdf.text(`Período: ${format(dataInicio, 'dd/MM/yyyy')} - ${format(dataFim, 'dd/MM/yyyy')}`, pageWidth / 2, 30, { align: 'center' });
+        y = 45;
+      } else {
+        pdf.setFontSize(16); pdf.setTextColor(30, 58, 138);
+        pdf.text('Relatório de Serviços', pageWidth / 2, y, { align: 'center' });
+        y += 8;
+        pdf.setFontSize(11); pdf.setTextColor(100, 100, 100);
+        pdf.text(`Período: ${format(dataInicio, 'dd/MM/yyyy')} - ${format(dataFim, 'dd/MM/yyyy')}`, pageWidth / 2, y, { align: 'center' });
+        pdf.setTextColor(0, 0, 0);
+        y += 12;
+      }
+
       // Estatísticas
       pdf.setFontSize(14);
-      pdf.text('Resumo', 20, 45);
-      
+      pdf.text('Resumo', 20, y);
+      y += 10;
+
       pdf.setFontSize(11);
-      let y = 55;
       pdf.text(`Total de Serviços: ${stats.total}`, 20, y);
       y += 7;
       pdf.text(`Concluídos: ${stats.concluidos}`, 20, y);

@@ -38,7 +38,10 @@ const getWhatsApp = (phone) => {
 const TIPOS_IGNORADOS = ['Ver defeito', 'Verificar defeito', 'Outro tipo de serviço', 'Serviço avulso'];
 const calcularSaldo = (total, pago) => (total || 0) - (pago || 0);
 
-function gerarPDFCobranca(pag) {
+async function gerarPDFCobranca(pag) {
+  const { addBannerToDoc, getBannerUrl } = await import('@/lib/pdfBanner');
+  const bannerUrl = await getBannerUrl();
+
   const records = pag._records || [pag];
 
   // Agrupa por tipo de serviço contando quantidade e somando valores
@@ -59,46 +62,48 @@ function gerarPDFCobranca(pag) {
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
 
-  // Cabeçalho
-  doc.setFillColor(30, 58, 138);
-  doc.rect(0, 0, pageWidth, 35, 'F');
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont(undefined, 'bold');
-  doc.text('Casa do Ar Climatização', 15, 16);
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
-  doc.text('Comprovante de Serviços Realizados', 15, 26);
-
-  // Data
-  doc.setTextColor(180, 200, 255);
-  doc.setFontSize(9);
-  doc.text(`Emitido em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth - 15, 26, { align: 'right' });
-
-  // Cliente
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(13);
-  doc.setFont(undefined, 'bold');
-  doc.text(`Cliente: ${pag.cliente_nome}`, 15, 50);
-  if (pag.telefone) {
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Telefone: ${pag.telefone}`, 15, 58);
+  // Banner ou cabeçalho colorido
+  let y = await addBannerToDoc(doc, bannerUrl);
+  if (!bannerUrl) {
+    doc.setFillColor(30, 58, 138);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    doc.setFontSize(18); doc.setTextColor(255, 255, 255); doc.setFont(undefined, 'bold');
+    doc.text('Casa do Ar Climatização', 15, 16);
+    doc.setFontSize(10); doc.setFont(undefined, 'normal');
+    doc.text('Comprovante de Serviços Realizados', 15, 26);
+    doc.setTextColor(180, 200, 255); doc.setFontSize(9);
+    doc.text(`Emitido em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth - 15, 26, { align: 'right' });
+    y = 44;
+  } else {
+    // Subtítulo após banner
+    doc.setFontSize(13); doc.setTextColor(30, 58, 138); doc.setFont(undefined, 'bold');
+    doc.text('Comprovante de Serviços Realizados', 15, y);
+    doc.setFontSize(9); doc.setTextColor(100, 100, 100); doc.setFont(undefined, 'normal');
+    doc.text(`Emitido em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth - 15, y, { align: 'right' });
+    y += 10;
   }
 
+  // Cliente
+  doc.setTextColor(0, 0, 0); doc.setFontSize(13); doc.setFont(undefined, 'bold');
+  doc.text(`Cliente: ${pag.cliente_nome}`, 15, y);
+  y += 8;
+  if (pag.telefone) {
+    doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(100, 100, 100);
+    doc.text(`Telefone: ${pag.telefone}`, 15, y);
+    y += 8;
+  }
+  y += 4;
+
   // Tabela de serviços
-  let y = 72;
   const col = { qtd: 15, servico: 35, unit: 130, total: 165 };
   const rowH = 10;
 
   // Cabeçalho tabela
   doc.setFillColor(240, 244, 248);
   doc.rect(15, y - 6, pageWidth - 30, rowH, 'F');
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(30, 58, 138);
+  doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(30, 58, 138);
   doc.text('Qtd', col.qtd, y);
   doc.text('Descrição do Serviço', col.servico, y);
   doc.text('Valor Unit.', col.unit, y);
@@ -106,8 +111,7 @@ function gerarPDFCobranca(pag) {
   y += rowH;
 
   // Linhas
-  doc.setFont(undefined, 'normal');
-  doc.setTextColor(0, 0, 0);
+  doc.setFont(undefined, 'normal'); doc.setTextColor(0, 0, 0);
   servicos.forEach((sv, idx) => {
     if (idx % 2 === 0) {
       doc.setFillColor(250, 252, 255);
@@ -128,9 +132,7 @@ function gerarPDFCobranca(pag) {
   y += 8;
 
   // Totais
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(0, 0, 0);
   doc.text('Total dos Serviços:', col.unit - 30, y);
   doc.text(`R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, col.total, y);
   y += 8;
@@ -145,23 +147,18 @@ function gerarPDFCobranca(pag) {
   if (saldo > 0.01) {
     doc.setFillColor(254, 242, 242);
     doc.rect(15, y - 6, pageWidth - 30, 12, 'F');
-    doc.setTextColor(185, 28, 28);
-    doc.setFontSize(12);
+    doc.setTextColor(185, 28, 28); doc.setFontSize(12);
     doc.text('SALDO A PAGAR:', col.unit - 30, y + 2);
     doc.text(`R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, col.total, y + 2);
   } else {
     doc.setFillColor(240, 253, 244);
     doc.rect(15, y - 6, pageWidth - 30, 12, 'F');
-    doc.setTextColor(22, 163, 74);
-    doc.setFontSize(12);
+    doc.setTextColor(22, 163, 74); doc.setFontSize(12);
     doc.text('SERVIÇOS QUITADOS', 15, y + 2);
   }
 
   // Rodapé
-  const pageH = doc.internal.pageSize.getHeight();
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.setFont(undefined, 'normal');
+  doc.setFontSize(8); doc.setTextColor(150, 150, 150); doc.setFont(undefined, 'normal');
   doc.text('Obrigado pela preferência! Em caso de dúvidas, entre em contato conosco.', 15, pageH - 10);
 
   doc.save(`Cobranca_${pag.cliente_nome.replace(/\s+/g, '_')}_${format(new Date(), 'dd-MM-yyyy')}.pdf`);

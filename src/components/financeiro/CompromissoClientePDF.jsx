@@ -25,25 +25,35 @@ export default function CompromissoClientePDF({ isOpen, onClose, pagamento = nul
   // Agrupar parcelas futuras
   const parcelasFuturas = records.flatMap(r => (r.historico_pagamentos || []).filter(h => h.agendada === true));
 
-  const gerarPDF = () => {
+  const gerarPDF = async () => {
     setLoading(true);
     try {
+      const { addBannerToDoc, getBannerUrl } = await import('@/lib/pdfBanner');
+      const bannerUrl = await getBannerUrl();
+
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 15;
-      let yPos = 20;
 
-      // Cabeçalho com logo/marca
-      doc.setFontSize(16);
-      doc.setTextColor(30, 58, 138);
-      doc.text('RECIBO DE QUITAÇÃO', margin, yPos);
-      yPos += 8;
-
-      doc.setDrawColor(30, 58, 138);
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 8;
+      // Banner da empresa no topo
+      let yPos = await addBannerToDoc(doc, bannerUrl);
+      if (!bannerUrl) {
+        doc.setFontSize(16); doc.setTextColor(30, 58, 138);
+        doc.text('RECIBO DE QUITAÇÃO', margin, yPos);
+        yPos += 8;
+        doc.setDrawColor(30, 58, 138); doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 8;
+      } else {
+        doc.setFontSize(16); doc.setTextColor(30, 58, 138); doc.setFont(undefined, 'bold');
+        doc.text('RECIBO DE QUITAÇÃO', margin, yPos);
+        doc.setFont(undefined, 'normal');
+        yPos += 6;
+        doc.setDrawColor(30, 58, 138); doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 8;
+      }
 
       // Dados do cliente
       doc.setFontSize(11);
