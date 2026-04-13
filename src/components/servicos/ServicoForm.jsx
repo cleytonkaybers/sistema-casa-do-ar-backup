@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, MapPin, Search, ExternalLink, Users, Plus, X, AlertCircle, Minus, Wrench, Calendar, User } from 'lucide-react';
+import { Loader2, MapPin, Search, ExternalLink, Users, Plus, X, Minus, Wrench, Calendar, User } from 'lucide-react';
 import { toast } from 'sonner';
 import TimePickerClock from '@/components/ui/time-picker-clock';
 import { base44 } from '@/api/base44Client';
@@ -757,47 +757,33 @@ export default function ServicoForm({ open, onClose, onSave, servico, isLoading,
               />
             </div>
 
-            {/* Horário fixo checkbox */}
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-yellow-800/40 bg-yellow-900/10">
-              <input
-                type="checkbox"
-                id="horario_alerta"
-                checked={formData.horario_alerta || false}
-                onChange={(e) => setFormData({ ...formData, horario_alerta: e.target.checked })}
-                className="mt-0.5 h-4 w-4 accent-yellow-500 cursor-pointer"
-              />
-              <div>
-                <label htmlFor="horario_alerta" className="text-sm font-semibold text-yellow-400 cursor-pointer flex items-center gap-1.5">
-                  ⚠️ Horário Fixo — O técnico NÃO pode atrasar
-                </label>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Ative esta opção se o cliente tem horário fixo que não permite atrasos. O técnico receberá um alerta especial.
-                </p>
-              </div>
-            </div>
-          </div>
+            {/* Checkboxes compactos */}
+            <div className="flex flex-wrap gap-2">
+              <label htmlFor="horario_alerta" className={`flex items-center gap-2 px-3 py-1.5 rounded-md border cursor-pointer transition-colors select-none text-xs font-medium ${formData.horario_alerta ? 'border-yellow-600/60 bg-yellow-900/20 text-yellow-400' : 'border-white/10 bg-white/5 text-gray-400 hover:border-yellow-700/40 hover:text-yellow-500'}`}>
+                <input
+                  type="checkbox"
+                  id="horario_alerta"
+                  checked={formData.horario_alerta || false}
+                  onChange={(e) => setFormData({ ...formData, horario_alerta: e.target.checked })}
+                  className="hidden"
+                />
+                ⚠️ Horário Fixo — O técnico NÃO pode atrasar
+              </label>
 
-          {/* Serviço avulso */}
-          {!servico && (
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-orange-800/40 bg-orange-900/10">
-              <input
-                type="checkbox"
-                id="sem_registro_cliente"
-                checked={semRegistroCliente}
-                onChange={(e) => setSemRegistroCliente(e.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-orange-500 cursor-pointer"
-              />
-              <div>
-                <label htmlFor="sem_registro_cliente" className="text-sm font-medium text-orange-400 cursor-pointer flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4" />
+              {!servico && (
+                <label htmlFor="sem_registro_cliente" className={`flex items-center gap-2 px-3 py-1.5 rounded-md border cursor-pointer transition-colors select-none text-xs font-medium ${semRegistroCliente ? 'border-orange-600/60 bg-orange-900/20 text-orange-400' : 'border-white/10 bg-white/5 text-gray-400 hover:border-orange-700/40 hover:text-orange-500'}`}>
+                  <input
+                    type="checkbox"
+                    id="sem_registro_cliente"
+                    checked={semRegistroCliente}
+                    onChange={(e) => setSemRegistroCliente(e.target.checked)}
+                    className="hidden"
+                  />
                   Serviço avulso (sem vínculo)
                 </label>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Não salva como cliente e não sincroniza com preventivas futuras.
-                </p>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Botões */}
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
