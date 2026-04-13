@@ -71,7 +71,7 @@ export default function Cheques() {
   };
 
   const verificarAlertas = (data) => {
-    const pendentes = data.filter(c => c.status === 'pendente');
+    const pendentes = data.filter(c => c.status === 'pendente' && !c.notificacao_enviada);
     const novosAlertas = [];
 
     pendentes.forEach(c => {
@@ -145,10 +145,14 @@ export default function Cheques() {
   };
 
   const handleToggleDepositado = async (cheque) => {
-    const novoStatus = cheque.status === 'depositado' ? 'pendente' : 'depositado';
-    await base44.entities.Cheque.update(cheque.id, { status: novoStatus });
-    toast.success(novoStatus === 'depositado' ? 'Cheque marcado como depositado no banco' : 'Voltou para pendente');
-    loadCheques();
+    const novoValor = !cheque.notificacao_enviada;
+    try {
+      await base44.entities.Cheque.update(cheque.id, { notificacao_enviada: novoValor });
+      toast.success(novoValor ? 'Cheque marcado como depositado no banco' : 'Depósito desmarcado');
+      loadCheques();
+    } catch (err) {
+      toast.error('Erro ao salvar: ' + (err?.message || err));
+    }
   };
 
   const handleDelete = async (id) => {
@@ -158,8 +162,8 @@ export default function Cheques() {
     loadCheques();
   };
 
-  const getDataAlert = (data_comp, status) => {
-    if (status !== 'pendente') return null;
+  const getDataAlert = (data_comp, status, depositado) => {
+    if (status !== 'pendente' || depositado) return null;
     const d = parseISO(data_comp);
     const diff = differenceInDays(d, new Date());
     if (isPast(d) && !isToday(d)) return { label: 'Vencido', color: 'text-red-600', icon: XCircle };
@@ -170,9 +174,9 @@ export default function Cheques() {
   };
 
   const pendentes = cheques
-    .filter(c => c.status === 'pendente' || c.status === 'depositado')
+    .filter(c => c.status === 'pendente')
     .sort((a, b) => new Date(a.data_compensacao) - new Date(b.data_compensacao));
-  const outros = cheques.filter(c => c.status === 'compensado' || c.status === 'devolvido');
+  const outros = cheques.filter(c => c.status !== 'pendente');
   const totalPendente = pendentes.reduce((acc, c) => acc + (c.valor || 0), 0);
   const totalEmprestimosAtivos = emprestimos
     .filter(e => e.status === 'ativo')
@@ -265,9 +269,9 @@ export default function Cheques() {
               </thead>
               <tbody>
                 {pendentes.map(c => {
-                  const alerta = getDataAlert(c.data_compensacao, c.status);
+                  const isDepositado = !!c.notificacao_enviada;
+                  const alerta = getDataAlert(c.data_compensacao, c.status, isDepositado);
                   const AlertIcon = alerta?.icon;
-                  const isDepositado = c.status === 'depositado';
                   return (
                     <tr key={c.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${isDepositado ? 'opacity-75' : ''}`}>
                       <td className="px-4 py-2.5 font-medium text-gray-800">{c.nome}</td>
