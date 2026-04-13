@@ -31,6 +31,7 @@
       "type": "string",
       "enum": [
         "pendente",
+        "depositado",
         "compensado",
         "devolvido"
       ],
@@ -41,11 +42,6 @@
       "type": "boolean",
       "default": false,
       "description": "Se a notifica\u00e7\u00e3o foi enviada"
-    },
-    "depositado": {
-      "type": "boolean",
-      "default": false,
-      "description": "Indica que o cheque foi depositado no banco — suprime alertas de vencimento"
     }
   },
   "required": [

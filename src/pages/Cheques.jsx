@@ -42,6 +42,7 @@ import {
 
 const STATUS_CONFIG = {
   pendente: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+  depositado: { label: 'Depositado', color: 'bg-blue-100 text-blue-700 border-blue-200' },
   compensado: { label: 'Compensado', color: 'bg-green-100 text-green-700 border-green-200' },
   devolvido: { label: 'Devolvido', color: 'bg-red-100 text-red-700 border-red-200' },
 };
@@ -70,7 +71,7 @@ export default function Cheques() {
   };
 
   const verificarAlertas = (data) => {
-    const pendentes = data.filter(c => c.status === 'pendente' && !c.depositado);
+    const pendentes = data.filter(c => c.status === 'pendente');
     const novosAlertas = [];
 
     pendentes.forEach(c => {
@@ -144,9 +145,9 @@ export default function Cheques() {
   };
 
   const handleToggleDepositado = async (cheque) => {
-    const novoValor = !cheque.depositado;
-    await base44.entities.Cheque.update(cheque.id, { depositado: novoValor });
-    toast.success(novoValor ? 'Marcado como depositado — alertas suprimidos' : 'Depósito desmarcado');
+    const novoStatus = cheque.status === 'depositado' ? 'pendente' : 'depositado';
+    await base44.entities.Cheque.update(cheque.id, { status: novoStatus });
+    toast.success(novoStatus === 'depositado' ? 'Cheque marcado como depositado no banco' : 'Voltou para pendente');
     loadCheques();
   };
 
@@ -157,8 +158,8 @@ export default function Cheques() {
     loadCheques();
   };
 
-  const getDataAlert = (data_comp, status, depositado) => {
-    if (status !== 'pendente' || depositado) return null;
+  const getDataAlert = (data_comp, status) => {
+    if (status !== 'pendente') return null;
     const d = parseISO(data_comp);
     const diff = differenceInDays(d, new Date());
     if (isPast(d) && !isToday(d)) return { label: 'Vencido', color: 'text-red-600', icon: XCircle };
@@ -169,9 +170,9 @@ export default function Cheques() {
   };
 
   const pendentes = cheques
-    .filter(c => c.status === 'pendente')
+    .filter(c => c.status === 'pendente' || c.status === 'depositado')
     .sort((a, b) => new Date(a.data_compensacao) - new Date(b.data_compensacao));
-  const outros = cheques.filter(c => c.status !== 'pendente');
+  const outros = cheques.filter(c => c.status === 'compensado' || c.status === 'devolvido');
   const totalPendente = pendentes.reduce((acc, c) => acc + (c.valor || 0), 0);
   const totalEmprestimosAtivos = emprestimos
     .filter(e => e.status === 'ativo')
@@ -264,16 +265,21 @@ export default function Cheques() {
               </thead>
               <tbody>
                 {pendentes.map(c => {
-                  const alerta = getDataAlert(c.data_compensacao, c.status, c.depositado);
+                  const alerta = getDataAlert(c.data_compensacao, c.status);
                   const AlertIcon = alerta?.icon;
+                  const isDepositado = c.status === 'depositado';
                   return (
-                    <tr key={c.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${c.depositado ? 'opacity-70' : ''}`}>
+                    <tr key={c.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${isDepositado ? 'opacity-75' : ''}`}>
                       <td className="px-4 py-2.5 font-medium text-gray-800">{c.nome}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quem_passou || '—'}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5">
                           <span className="text-gray-700">{format(parseISO(c.data_compensacao), 'dd/MM/yyyy')}</span>
-                          {alerta && (
+                          {isDepositado ? (
+                            <span className="flex items-center gap-0.5 text-xs text-blue-600 font-medium">
+                              <Landmark className="w-3 h-3" /> Dep.
+                            </span>
+                          ) : alerta && (
                             <span className={`flex items-center gap-0.5 text-xs ${alerta.color}`}>
                               <AlertIcon className="w-3 h-3" />
                               {alerta.label}
@@ -287,8 +293,8 @@ export default function Cheques() {
                       <td className="px-2 py-2.5 text-center">
                         <button
                           onClick={() => handleToggleDepositado(c)}
-                          title={c.depositado ? 'Depositado — clique para desmarcar' : 'Marcar como depositado no banco'}
-                          className={`p-1.5 rounded transition-colors ${c.depositado ? 'text-blue-600 bg-blue-100 hover:bg-blue-200' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
+                          title={isDepositado ? 'Depositado no banco — clique para desmarcar' : 'Marcar como depositado no banco'}
+                          className={`p-1.5 rounded transition-colors ${isDepositado ? 'text-blue-600 bg-blue-100 hover:bg-blue-200' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
                         >
                           <Landmark className="w-4 h-4" />
                         </button>
