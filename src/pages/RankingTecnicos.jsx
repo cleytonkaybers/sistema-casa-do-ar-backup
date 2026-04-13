@@ -66,7 +66,7 @@ export default function RankingTecnicos() {
     }
   };
 
-  const { inicio, fim } = getRange(periodo);
+  const { inicio, fim } = getRange(isTecnico ? 'mes' : periodo);
 
   const { data: lancamentos = [], isLoading: loadLanc } = useQuery({
     queryKey: ['lancamentos-ranking'],
@@ -160,18 +160,20 @@ export default function RankingTecnicos() {
             Desempenho e comissões — {periodoLabel}
           </p>
         </div>
-        <Select value={periodo} onValueChange={setPeriodo}>
-          <SelectTrigger className="w-52 bg-[#152236] border-white/10 text-gray-200 focus:ring-blue-500">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-[#152236] border-white/10 text-gray-200">
-            <SelectItem value="semana">Semana Atual</SelectItem>
-            <SelectItem value="semana_ant">Semana Anterior</SelectItem>
-            <SelectItem value="mes">Mês Atual</SelectItem>
-            <SelectItem value="mes_ant">Mês Anterior</SelectItem>
-            <SelectItem value="tudo">Todo o período</SelectItem>
-          </SelectContent>
-        </Select>
+        {!isTecnico && (
+          <Select value={periodo} onValueChange={setPeriodo}>
+            <SelectTrigger className="w-52 bg-[#152236] border-white/10 text-gray-200 focus:ring-blue-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#152236] border-white/10 text-gray-200">
+              <SelectItem value="semana">Semana Atual</SelectItem>
+              <SelectItem value="semana_ant">Semana Anterior</SelectItem>
+              <SelectItem value="mes">Mês Atual</SelectItem>
+              <SelectItem value="mes_ant">Mês Anterior</SelectItem>
+              <SelectItem value="tudo">Todo o período</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Summary cards — somente admin */}
