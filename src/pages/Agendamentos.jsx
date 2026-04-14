@@ -196,9 +196,15 @@ export default function Agendamentos() {
       const tipoStr = Array.isArray(tipos_servico)
         ? tipos_servico.map(t => `${t.quantidade || 1}x ${t.tipo}`).join(', ')
         : '';
-      await base44.entities.Servico.create({ ...rest, tipo_servico: tipoStr, status: 'aberto' });
+      // Gerar número de OS sequencial
+      const todosServicos = await base44.entities.Servico.list();
+      const maxOs = todosServicos
+        .map(s => parseInt((s.os_numero || '').replace(/\D/g, '') || '0'))
+        .reduce((max, n) => Math.max(max, n), 0);
+      const os_numero = `OS-${String(maxOs + 1).padStart(4, '0')}`;
+      await base44.entities.Servico.create({ ...rest, tipo_servico: tipoStr, status: 'aberto', os_numero });
       queryClient.invalidateQueries({ queryKey: ['servicos'] });
-      toast.success('Serviço criado com sucesso!');
+      toast.success(`Serviço ${os_numero} criado com sucesso!`);
       setNovoServicoOpen(false);
       setNovoServicoData(null);
     } catch (err) {

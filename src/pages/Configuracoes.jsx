@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, Settings, Upload, Download, X } from 'lucide-react';
+import { Loader2, Settings, Upload, Download, X, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import NoPermission from '../components/NoPermission';
 import { usePermissions } from '../components/auth/PermissionGuard';
@@ -150,6 +150,32 @@ export default function ConfiguracoesPage() {
     updateMutation.mutate(formData);
   };
 
+  const [backfilling, setBackfilling] = useState(false);
+  const handleBackfillOS = async () => {
+    if (!confirm('Isso vai numerar todos os serviços que ainda não têm número de OS, ordenados por data. Continuar?')) return;
+    setBackfilling(true);
+    try {
+      const todos = await base44.entities.Servico.list('data_programada');
+      const semOS = todos.filter(s => !s.os_numero);
+      const maxExistente = todos
+        .map(s => parseInt((s.os_numero || '').replace(/\D/g, '') || '0'))
+        .reduce((max, n) => Math.max(max, n), 0);
+
+      let contador = maxExistente;
+      for (const s of semOS) {
+        contador++;
+        await base44.entities.Servico.update(s.id, {
+          os_numero: `OS-${String(contador).padStart(4, '0')}`
+        });
+      }
+      toast.success(`${semOS.length} serviços numerados com sucesso!`);
+    } catch (err) {
+      toast.error('Erro ao numerar serviços: ' + (err?.message || err));
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -171,6 +197,31 @@ export default function ConfiguracoesPage() {
           <p className="text-gray-500 mt-1">Personalize as informações da sua empresa</p>
         </div>
       </div>
+
+      {/* Card de numeração OS */}
+      <Card className="border-2 border-orange-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Hash className="w-5 h-5 text-orange-500" />
+            Numeração de Ordens de Serviço
+          </CardTitle>
+          <CardDescription>Numera automaticamente os serviços antigos que ainda não possuem número de OS (OS-0001, OS-0002...)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleBackfillOS}
+            disabled={backfilling}
+            variant="outline"
+            className="w-full h-11 border-orange-300 text-orange-700 hover:bg-orange-50"
+          >
+            {backfilling ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Numerando serviços...</>
+            ) : (
+              <><Hash className="w-4 h-4 mr-2" />Numerar Serviços Existentes</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="border-2">
         <CardHeader>
