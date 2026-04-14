@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, Settings, Upload, Download, X, Hash } from 'lucide-react';
+import { Loader2, Settings, Upload, Download, X, Hash, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import NoPermission from '../components/NoPermission';
 import { usePermissions } from '../components/auth/PermissionGuard';
@@ -150,6 +150,69 @@ export default function ConfiguracoesPage() {
     updateMutation.mutate(formData);
   };
 
+  const [limpando, setLimpando] = useState(false);
+  const handleLimparComissoesDuplicadas = async () => {
+    // Início desta semana (segunda-feira)
+    const hoje = new Date();
+    const diaSemana = hoje.getDay(); // 0=dom, 1=seg...
+    const diasAteLunes = diaSemana === 0 ? 6 : diaSemana - 1;
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - diasAteLunes);
+    inicioSemana.setHours(0, 0, 0, 0);
+
+    if (!confirm(`Isso vai remover lançamentos de comissão com status "pendente" de serviços anteriores a ${inicioSemana.toLocaleDateString('pt-BR')}, revertendo os créditos dos técnicos. Continuar?`)) return;
+    setLimpando(true);
+    try {
+      const [todoLanc, todosServicos, tecnicosFinanceiros] = await Promise.all([
+        base44.entities.LancamentoFinanceiro.list(),
+        base44.entities.Servico.list(),
+        base44.entities.TecnicoFinanceiro.list(),
+      ]);
+
+      const servicoMap = Object.fromEntries(todosServicos.map(s => [s.id, s]));
+
+      const duplicados = todoLanc.filter(l => {
+        if (l.status !== 'pendente') return false; // manter os já pagos
+        const servico = servicoMap[l.servico_id];
+        if (!servico) return false;
+        const dataServico = new Date(servico.data_programada || servico.data_conclusao || '');
+        return dataServico < inicioSemana;
+      });
+
+      if (duplicados.length === 0) {
+        toast.info('Nenhum lançamento duplicado encontrado.');
+        setLimpando(false);
+        return;
+      }
+
+      // Reverter créditos por técnico
+      const revertPorTecnico = {};
+      duplicados.forEach(l => {
+        const tid = l.tecnico_id;
+        if (!revertPorTecnico[tid]) revertPorTecnico[tid] = 0;
+        revertPorTecnico[tid] += (l.valor_comissao_tecnico || 0);
+      });
+
+      await Promise.all([
+        // Deletar lançamentos
+        ...duplicados.map(l => base44.entities.LancamentoFinanceiro.delete(l.id)),
+        // Reverter créditos_pendentes dos técnicos
+        ...tecnicosFinanceiros
+          .filter(t => revertPorTecnico[t.tecnico_id] !== undefined)
+          .map(t => base44.entities.TecnicoFinanceiro.update(t.id, {
+            credito_pendente: Math.max(0, (t.credito_pendente || 0) - revertPorTecnico[t.tecnico_id]),
+            total_ganho: Math.max(0, (t.total_ganho || 0) - revertPorTecnico[t.tecnico_id]),
+          })),
+      ]);
+
+      toast.success(`${duplicados.length} lançamentos duplicados removidos e créditos revertidos!`);
+    } catch (err) {
+      toast.error('Erro na limpeza: ' + (err?.message || err));
+    } finally {
+      setLimpando(false);
+    }
+  };
+
   const [backfilling, setBackfilling] = useState(false);
   const handleBackfillOS = async () => {
     if (!confirm('Isso vai numerar todos os serviços que ainda não têm número de OS, ordenados por data. Continuar?')) return;
@@ -164,9 +227,10 @@ export default function ConfiguracoesPage() {
       let contador = maxExistente;
       for (const s of semOS) {
         contador++;
-        await base44.entities.Servico.update(s.id, {
-          os_numero: `OS-${String(contador).padStart(4, '0')}`
-        });
+        const patch = { os_numero: `OS-${String(contador).padStart(4, '0')}` };
+        // Se já concluído, marcar comissao_gerada=true para evitar re-disparo de comissões
+        if (s.status === 'concluido') patch.comissao_gerada = true;
+        await base44.entities.Servico.update(s.id, patch);
       }
       toast.success(`${semOS.length} serviços numerados com sucesso!`);
     } catch (err) {
@@ -197,6 +261,31 @@ export default function ConfiguracoesPage() {
           <p className="text-gray-500 mt-1">Personalize as informações da sua empresa</p>
         </div>
       </div>
+
+      {/* Card de limpeza de comissões duplicadas */}
+      <Card className="border-2 border-red-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-red-500" />
+            Limpar Comissões Duplicadas
+          </CardTitle>
+          <CardDescription>Remove lançamentos de comissão com status "pendente" gerados incorretamente para serviços de semanas anteriores, revertendo os créditos dos técnicos.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleLimparComissoesDuplicadas}
+            disabled={limpando}
+            variant="outline"
+            className="w-full h-11 border-red-300 text-red-700 hover:bg-red-50"
+          >
+            {limpando ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Limpando...</>
+            ) : (
+              <><Trash2 className="w-4 h-4 mr-2" />Remover Lançamentos Duplicados</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Card de numeração OS */}
       <Card className="border-2 border-orange-200">
