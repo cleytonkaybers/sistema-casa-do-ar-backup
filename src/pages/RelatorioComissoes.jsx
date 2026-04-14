@@ -1,9 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, DollarSign, TrendingUp, Calendar, Filter, Trophy, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { FileText, DollarSign, TrendingUp, Calendar, Filter, Trophy, Users, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils/formatters';
 import { calcularTotalComissoes, agruparPorPeriodo } from '@/lib/utils/calculations';
 import { TableSkeleton, CardSkeleton } from '@/components/LoadingSkeleton';
@@ -264,9 +268,13 @@ export default function RelatorioComissoes() {
   const { isAdmin } = usePermissions();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const queryClient = useQueryClient();
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [tecnicoFiltro, setTecnicoFiltro] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [novoLanc, setNovoLanc] = useState({ tecnico_id: '', cliente_nome: '', tipo_servico: '', valor_servico: '', data_geracao: new Date().toISOString().slice(0,10) });
+  const [salvando, setSalvando] = useState(false);
 
   React.useEffect(() => {
     const checkAdmin = async () => {
@@ -360,6 +368,65 @@ export default function RelatorioComissoes() {
     return { porEquipe: t, total: grand };
   }, [ganhosSemanais, equipesNomes]);
 
+  const handleSalvarLancamento = async () => {
+    const tec = tecnicos.find(t => t.tecnico_id === novoLanc.tecnico_id);
+    if (!tec) { toast.error('Selecione um técnico'); return; }
+    const valor = parseFloat(novoLanc.valor_servico);
+    if (!valor || isNaN(valor)) { toast.error('Informe o valor do serviço'); return; }
+    if (!novoLanc.cliente_nome.trim()) { toast.error('Informe o cliente'); return; }
+    setSalvando(true);
+    try {
+      const agora = novoLanc.data_geracao ? new Date(novoLanc.data_geracao + 'T12:00:00').toISOString() : new Date().toISOString();
+      await base44.entities.LancamentoFinanceiro.create({
+        tecnico_id: tec.tecnico_id,
+        tecnico_nome: tec.tecnico_nome,
+        equipe_id: tec.equipe_id || '',
+        equipe_nome: tec.equipe_nome || '',
+        cliente_nome: novoLanc.cliente_nome.trim(),
+        tipo_servico: novoLanc.tipo_servico.trim() || 'Serviço',
+        valor_total_servico: valor,
+        percentual_tecnico: 15,
+        valor_comissao_tecnico: valor * 0.15,
+        percentual_equipe: 30,
+        valor_comissao_equipe: valor * 0.3,
+        status: 'pendente',
+        data_geracao: agora,
+        usuario_geracao: user?.email || '',
+      });
+      // Atualizar crédito pendente do técnico
+      await base44.entities.TecnicoFinanceiro.update(tec.id, {
+        credito_pendente: (tec.credito_pendente || 0) + valor * 0.15,
+        total_ganho: (tec.total_ganho || 0) + valor * 0.15,
+      });
+      queryClient.invalidateQueries({ queryKey: ['lancamentos-financeiros'] });
+      queryClient.invalidateQueries({ queryKey: ['tecnicos-financeiro'] });
+      toast.success('Lançamento adicionado!');
+      setModalOpen(false);
+      setNovoLanc({ tecnico_id: '', cliente_nome: '', tipo_servico: '', valor_servico: '', data_geracao: new Date().toISOString().slice(0,10) });
+    } catch (err) {
+      toast.error('Erro ao salvar: ' + (err?.message || err));
+    } finally { setSalvando(false); }
+  };
+
+  const handleDeletarLancamento = async (lanc) => {
+    if (!confirm(`Remover lançamento de ${lanc.tecnico_nome} — ${lanc.cliente_nome} (${fmt(lanc.valor_comissao_tecnico)})?`)) return;
+    try {
+      await base44.entities.LancamentoFinanceiro.delete(lanc.id);
+      // Reverter crédito do técnico
+      const tec = tecnicos.find(t => t.tecnico_id === lanc.tecnico_id);
+      if (tec) {
+        await base44.entities.TecnicoFinanceiro.update(tec.id, {
+          credito_pendente: Math.max(0, (tec.credito_pendente || 0) - (lanc.valor_comissao_tecnico || 0)),
+          total_ganho: Math.max(0, (tec.total_ganho || 0) - (lanc.valor_comissao_tecnico || 0)),
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['lancamentos-financeiros'] });
+      toast.success('Lançamento removido');
+    } catch (err) {
+      toast.error('Erro ao remover');
+    }
+  };
+
   const handleGerarPDF = async () => {
     await gerarPDF({ lancamentosFiltrados, totais, ganhosSemanais, equipesNomes, totaisPorEquipe, porMes, dataInicio, dataFim });
   };
@@ -392,13 +459,22 @@ export default function RelatorioComissoes() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">Relatório de Comissões</h1>
           <p className="text-gray-400 mt-1 text-sm">Extrato detalhado de comissões por período</p>
         </div>
-        <Button
-          onClick={handleGerarPDF}
-          className="bg-blue-600 hover:bg-blue-700 text-white gap-2 self-start sm:self-auto"
-        >
-          <FileText className="w-4 h-4" />
-          Gerar PDF
-        </Button>
+        <div className="flex gap-2 self-start sm:self-auto">
+          <Button
+            onClick={() => setModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Adicionar
+          </Button>
+          <Button
+            onClick={handleGerarPDF}
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Gerar PDF
+          </Button>
+        </div>
       </div>
 
       {/* Totalizadores */}
@@ -584,8 +660,8 @@ export default function RelatorioComissoes() {
           <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b border-white/5 bg-[#0d1826]/50">
-                {['Data', 'Técnico', 'Equipe', 'Cliente', 'Serviço', 'Valor', 'Comissão', 'Status'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{h}</th>
+                {['Data', 'Técnico', 'Equipe', 'Cliente', 'Serviço', 'Valor', 'Comissão', 'Status', ''].map((h, i) => (
+                  <th key={i} className="text-left px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -613,6 +689,15 @@ export default function RelatorioComissoes() {
                         {lanc.status}
                       </span>
                     </td>
+                    <td className="px-3 py-3">
+                      <button
+                        onClick={() => handleDeletarLancamento(lanc)}
+                        className="p-1 rounded hover:bg-red-500/20 text-gray-600 hover:text-red-400 transition-colors"
+                        title="Remover lançamento"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -621,6 +706,61 @@ export default function RelatorioComissoes() {
         </CardContent>
       </Card>
 
+      {/* Modal adicionar lançamento manual */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar Lançamento de Comissão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Técnico *</Label>
+              <select
+                className="w-full border border-gray-200 rounded-md h-10 px-3 text-sm bg-white"
+                value={novoLanc.tecnico_id}
+                onChange={e => setNovoLanc(f => ({ ...f, tecnico_id: e.target.value }))}
+              >
+                <option value="">Selecione o técnico</option>
+                {tecnicos.map(t => (
+                  <option key={t.tecnico_id} value={t.tecnico_id}>{t.tecnico_nome} — {t.equipe_nome}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Cliente *</Label>
+              <Input placeholder="Nome do cliente" value={novoLanc.cliente_nome} onChange={e => setNovoLanc(f => ({ ...f, cliente_nome: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Tipo de Serviço</Label>
+              <Input placeholder="Ex: Limpeza de 9k, Instalação de 12k..." value={novoLanc.tipo_servico} onChange={e => setNovoLanc(f => ({ ...f, tipo_servico: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-gray-500 mb-1 block">Valor do Serviço (R$) *</Label>
+                <Input type="number" placeholder="200.00" value={novoLanc.valor_servico} onChange={e => setNovoLanc(f => ({ ...f, valor_servico: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 mb-1 block">Comissão (15%)</Label>
+                <Input
+                  readOnly
+                  className="bg-gray-50 text-emerald-600 font-semibold"
+                  value={novoLanc.valor_servico ? `R$ ${(parseFloat(novoLanc.valor_servico) * 0.15).toFixed(2)}` : 'R$ 0.00'}
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Data do Lançamento</Label>
+              <Input type="date" value={novoLanc.data_geracao} onChange={e => setNovoLanc(f => ({ ...f, data_geracao: e.target.value }))} />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>Cancelar</Button>
+              <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleSalvarLancamento} disabled={salvando}>
+                {salvando ? 'Salvando...' : 'Adicionar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
