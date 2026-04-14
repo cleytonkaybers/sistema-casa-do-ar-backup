@@ -395,10 +395,18 @@ export default function RelatorioComissoes() {
       const agora = novoLanc.data_geracao ? new Date(novoLanc.data_geracao + 'T12:00:00').toISOString() : new Date().toISOString();
       const comissao = valor * 0.15;
 
+      // Buscar um servico_id real para usar como referência (campo obrigatório no schema)
+      let placeholderServicoId = lancamentos.find(l => l.servico_id && l.servico_id.length > 10)?.servico_id;
+      if (!placeholderServicoId) {
+        const servicosList = await base44.entities.Servico.list();
+        placeholderServicoId = servicosList[0]?.id;
+      }
+      if (!placeholderServicoId) { toast.error('Nenhum serviço encontrado para referência'); setSalvando(false); return; }
+
       for (const tec of tecLista) {
         // Criar lançamento — tecnico_id deve ser o email do técnico (usado em MeuFinanceiro)
         await base44.entities.LancamentoFinanceiro.create({
-          servico_id: '-',
+          servico_id: placeholderServicoId,
           tecnico_id: tec.tecnico_id,
           tecnico_nome: tec.tecnico_nome,
           equipe_id: tec.equipe_id || '',
