@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const db = base44.asServiceRole;
     const dateStr = new Date().toISOString().split('T')[0];
 
-    // Buscar todas as 11 entidades em paralelo
+    // Buscar todas as entidades em paralelo (financeiras incluídas)
     const [
       clientes,
       servicos,
@@ -68,6 +68,13 @@ Deno.serve(async (req) => {
       relatoriosGerados,
       manutencoesPreventivas,
       usuarios,
+      lancamentosFinanceiros,
+      pagamentosTecnicos,
+      tecnicoFinanceiro,
+      cheques,
+      emprestimos,
+      agendamentos,
+      tipoServicoValor,
     ] = await Promise.all([
       db.entities.Cliente.list('-created_date'),
       db.entities.Servico.list('-created_date'),
@@ -80,11 +87,18 @@ Deno.serve(async (req) => {
       db.entities.RelatorioGerado.list('-created_date'),
       db.entities.ManutencaoPreventiva.list('-created_date'),
       db.entities.User.list(),
+      db.entities.LancamentoFinanceiro.list('-created_date'),
+      db.entities.PagamentoTecnico.list('-created_date'),
+      db.entities.TecnicoFinanceiro.list(),
+      db.entities.Cheque.list('-created_date'),
+      db.entities.Emprestimo.list('-created_date'),
+      db.entities.Agendamento.list('-created_date'),
+      db.entities.TipoServicoValor.list(),
     ]);
 
     const backup = {
       data_backup: new Date().toISOString(),
-      versao: '1.0',
+      versao: '2.0',
       totais: {
         clientes: clientes.length,
         servicos: servicos.length,
@@ -97,6 +111,13 @@ Deno.serve(async (req) => {
         relatorios_gerados: relatoriosGerados.length,
         manutencoes_preventivas: manutencoesPreventivas.length,
         usuarios: usuarios.length,
+        lancamentos_financeiros: lancamentosFinanceiros.length,
+        pagamentos_tecnicos: pagamentosTecnicos.length,
+        tecnico_financeiro: tecnicoFinanceiro.length,
+        cheques: cheques.length,
+        emprestimos: emprestimos.length,
+        agendamentos: agendamentos.length,
+        tipo_servico_valor: tipoServicoValor.length,
       },
       dados: {
         clientes,
@@ -110,6 +131,13 @@ Deno.serve(async (req) => {
         relatorios_gerados: relatoriosGerados,
         manutencoes_preventivas: manutencoesPreventivas,
         usuarios,
+        lancamentos_financeiros: lancamentosFinanceiros,
+        pagamentos_tecnicos: pagamentosTecnicos,
+        tecnico_financeiro: tecnicoFinanceiro,
+        cheques,
+        emprestimos,
+        agendamentos,
+        tipo_servico_valor: tipoServicoValor,
       },
     };
 

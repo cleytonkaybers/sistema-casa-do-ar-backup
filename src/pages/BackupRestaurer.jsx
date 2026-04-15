@@ -32,6 +32,7 @@ const ENTIDADES = [
   { key: 'cheques',               entity: 'Cheque',                 label: 'Cheques',                        icon: '🏦', categoria: 'Financeiro' },
   { key: 'emprestimos',           entity: 'Emprestimo',             label: 'Empréstimos',                    icon: '🤝', categoria: 'Financeiro' },
   { key: 'manutencaoPreventiva',  entity: 'ManutencaoPreventiva',   label: 'Manutenções Preventivas',         icon: '🛡️', categoria: 'Preventivas' },
+  { key: 'preventivasFuturas',    entity: 'PreventivaFutura',       label: 'Preventivas Futuras',             icon: '📆', categoria: 'Preventivas' },
   { key: 'notificacoes',          entity: 'Notificacao',            label: 'Notificações',                   icon: '🔔', categoria: 'Sistema' },
   { key: 'preferenciasNotif',     entity: 'PreferenciaNotificacao', label: 'Preferências de Notificação',     icon: '⚙️', categoria: 'Sistema' },
   { key: 'configuracaoRelat',     entity: 'ConfiguracaoRelatorio',  label: 'Config. de Relatórios',           icon: '📈', categoria: 'Sistema' },

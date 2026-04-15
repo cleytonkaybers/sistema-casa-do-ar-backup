@@ -27,7 +27,8 @@ import {
   Tag,
   Bell,
   DollarSign,
-  Wrench
+  Wrench,
+  ShieldAlert
 } from 'lucide-react';
 import { format, differenceInDays, startOfMonth, endOfMonth, isWithinInterval, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -93,6 +94,18 @@ export default function Dashboard() {
     queryFn: () => base44.entities.PagamentoCliente.list('-data_conclusao'),
     enabled: isAdmin,
   });
+
+  // Verificar último backup (admin)
+  const { data: ultimosBackups = [] } = useQuery({
+    queryKey: ['ultimo-backup'],
+    queryFn: () => base44.entities.BackupIncremental.list('-data_backup'),
+    enabled: isAdmin,
+  });
+  const ultimoBackup = ultimosBackups[0];
+  const diasSemBackup = ultimoBackup
+    ? Math.floor((Date.now() - new Date(ultimoBackup.data_backup).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  const backupAtrasado = isAdmin && (diasSemBackup === null || diasSemBackup > 7);
 
   // Cards de alerta para admin
   const TIPOS_IGNORADOS = ['Ver defeito', 'Verificar defeito', 'Outro tipo de serviço', 'Serviço avulso'];
@@ -372,6 +385,24 @@ export default function Dashboard() {
           </Button>
         </Link>
       </div>
+
+      {/* Banner backup atrasado */}
+      {backupAtrasado && (
+        <Link to={createPageUrl('BackupRestaurer')} className="block outline-none">
+          <div className="rounded-2xl p-4 border border-red-500/30 bg-red-500/8 hover:bg-red-500/12 transition-all cursor-pointer flex items-center gap-3">
+            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-red-300 font-semibold text-sm">Backup atrasado — </span>
+              <span className="text-red-400/80 text-sm">
+                {diasSemBackup === null
+                  ? 'nenhum backup encontrado. Faça um backup agora para proteger seus dados.'
+                  : `último backup há ${diasSemBackup} dias. Recomendado: a cada 7 dias.`}
+              </span>
+            </div>
+            <span className="text-red-400 text-xs font-medium shrink-0">Fazer backup →</span>
+          </div>
+        </Link>
+      )}
 
       {/* Alertas Admin Modernos (Glass Blocks) */}
       {isAdmin && (semPrecificacao.length > 0 || cobrarHoje.length > 0) && (
