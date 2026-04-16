@@ -1203,10 +1203,24 @@ function PagamentosClientesContent() {
     queryFn: () => base44.entities.Servico.filter({ status: 'concluido' }, '-data_conclusao'),
   });
 
-  const { data: pagamentos = [], isLoading } = useQuery({
+  const { data: pagamentosRaw = [], isLoading } = useQuery({
     queryKey: ['pagamentos-clientes'],
     queryFn: () => base44.entities.PagamentoCliente.list('-data_conclusao'),
   });
+
+  // Remove pagos de semanas anteriores — aparecem apenas em Histórico/Relatórios
+  const pagamentos = useMemo(() => {
+    return pagamentosRaw.filter(p => {
+      if (p.status !== 'pago') return true; // pendentes/parciais/agendados sempre visíveis
+      // Pagos da semana atual: manter
+      if (p.data_conclusao) {
+        try {
+          if (isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana })) return true;
+        } catch {}
+      }
+      return false; // pago de semana anterior → ocultar da lista principal
+    });
+  }, [pagamentosRaw, inicioSemana, fimSemana]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.PagamentoCliente.create(data),
@@ -1553,7 +1567,7 @@ function PagamentosClientesContent() {
     else if (relFiltro === 'personalizado' && relDataInicio && relDataFim) {
       inicio = new Date(relDataInicio); fim = new Date(relDataFim + 'T23:59:59');
     }
-    return pagamentos.filter(p => {
+    return pagamentosRaw.filter(p => {
       const matchCliente = !relCliente || p.cliente_nome?.toLowerCase().includes(relCliente.toLowerCase());
       let matchData = true;
       if (inicio && fim && p.data_conclusao) {
@@ -1899,7 +1913,7 @@ function PagamentosClientesContent() {
       <EditarValorModal open={!!editarModal} onClose={() => setEditarModal(null)} pagamento={editarModal} onSave={handleEditarValor} />
       <HistoricoModal open={!!historicoModal} onClose={() => setHistoricoModal(null)} pagamento={historicoModal} />
       <DetalhesClienteModal open={!!detalhesModal} onClose={() => setDetalhesModal(null)} pagamento={detalhesModal} />
-      <RelatorioClientesPagamentoModal isOpen={abrirRelatorio} onClose={() => setAbrirRelatorio(false)} pagamentos={pagamentos} servicos={servicosConcluidos} />
+      <RelatorioClientesPagamentoModal isOpen={abrirRelatorio} onClose={() => setAbrirRelatorio(false)} pagamentos={pagamentosRaw} servicos={servicosConcluidos} />
       <CompromissoClientePDF isOpen={!!compartilharModal} onClose={() => setCompartilharModal(null)} pagamento={compartilharModal} />
     </div>
   );
