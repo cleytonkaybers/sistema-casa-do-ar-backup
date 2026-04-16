@@ -1258,10 +1258,6 @@ function PagamentosClientesContent() {
     // Aguarda pagamentos estarem carregados (evita criar duplicatas na montagem)
     const idsRegistrados = new Set(pagamentos.map(p => p.atendimento_id).filter(Boolean));
 
-    // Limita a 60 dias para evitar rate limit ao criar em massa
-    const limite60Dias = new Date();
-    limite60Dias.setDate(limite60Dias.getDate() - 60);
-
     const novos = atendimentos.filter(a => {
       if (idsRegistrados.has(a.id)) return false;
       if (criandoIds.current.has(a.id)) return false;
@@ -1270,7 +1266,8 @@ function PagamentosClientesContent() {
       const dataRef = a.data_conclusao || a.created_date;
       if (!dataRef) return false;
       try {
-        return parseISO(dataRef) >= limite60Dias;
+        const data = parseISO(dataRef);
+        return isWithinInterval(data, { start: inicioSemana, end: fimSemana });
       } catch { return false; }
     });
 
