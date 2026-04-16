@@ -34,9 +34,9 @@ export function DashboardAdminSkeleton() {
         <CardHeader className="pb-3 px-4 sm:px-5 pt-4 sm:pt-5 border-b border-white/5">
           <Skeleton className="h-4 w-32 bg-white/10 rounded" />
         </CardHeader>
-        <CardContent className="p-0 divide-y divide-white/5">
+        <CardContent className="p-0">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3">
+            <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/5">
               <Skeleton className="h-3 w-28 bg-white/10 rounded" />
               <Skeleton className="h-4 w-16 bg-white/10 rounded" />
             </div>
