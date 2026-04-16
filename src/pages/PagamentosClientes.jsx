@@ -1567,10 +1567,17 @@ function PagamentosClientesContent() {
   const totalSemana = pagsSemana.reduce((s, p) => s + (p.valor_total || 0), 0);
   const totalPendencias = pagsPendencias.reduce((s, p) => s + Math.max(0, (p.valor_total || 0) - (p.valor_pago || 0)), 0);
 
-  // Detectar serviços com preço padrão (1.0) que precisam ajuste
+  // Detectar serviços com preço padrão (1.0) apenas da semana atual
   const pagsComPrecoDefault = useMemo(() =>
-    pagamentos.filter(p => p.valor_total === 1.0 && p.status !== 'pago' && !TIPOS_IGNORADOS.includes(p.tipo_servico))
-  , [pagamentos]);
+    pagamentos.filter(p => {
+      if (p.valor_total !== 1.0) return false;
+      if (p.status === 'pago') return false;
+      if (TIPOS_IGNORADOS.includes(p.tipo_servico)) return false;
+      if (!p.data_conclusao) return false;
+      try { return isWithinInterval(parseISO(p.data_conclusao), { start: inicioSemana, end: fimSemana }); }
+      catch { return false; }
+    })
+  , [pagamentos, inicioSemana, fimSemana]);
 
   // Recebido na semana: soma via historico_pagamentos (data real do recebimento)
   // Fallback: se o registro tem valor_pago mas historico vazio, usa updated_date ou data_pagamento_completo
