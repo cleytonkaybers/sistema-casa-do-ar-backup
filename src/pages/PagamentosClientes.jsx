@@ -1265,10 +1265,7 @@ function PagamentosClientesContent() {
       if (TIPOS_IGNORADOS.includes(a.tipo_servico)) return false;
       const dataRef = a.data_conclusao || a.created_date;
       if (!dataRef) return false;
-      try {
-        const data = parseISO(dataRef);
-        return isWithinInterval(data, { start: inicioSemana, end: fimSemana });
-      } catch { return false; }
+      return true;
     });
 
     novos.forEach(a => {
