@@ -823,7 +823,7 @@ function HistoricoModal({ open, onClose, pagamento }) {
 }
 
 // Card compacto estilo tabela com expansão
-function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, alertaDinheiro, onDismissAlerta }) {
+function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, alertaDinheiro, onDismissAlerta, onMarcarPago }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [expandido, setExpandido] = useState(false);
@@ -967,6 +967,15 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
               <button onClick={() => onPagar(pag)} className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-semibold whitespace-nowrap">
                 Pagar
               </button>
+              {isAdmin && isParcial && pct >= 90 && onMarcarPago && (
+                <button
+                  onClick={() => { if (confirm(`Marcar "${pag.cliente_nome}" como pago (${formatCurrency(pag.valor_total)})?`)) onMarcarPago(pag); }}
+                  className="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-800 text-white rounded font-semibold whitespace-nowrap"
+                  title="Forçar status pago (diferença por arredondamento)"
+                >
+                  ✓ Quitar
+                </button>
+              )}
             </>
           )}
           <button onClick={() => onDelete(pag)} className="p-1.5 rounded text-red-500 hover:bg-red-50 flex-shrink-0" title="Excluir">
@@ -1032,7 +1041,7 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
   );
 }
 
-function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, emptyMsg, alertasDinheiro = [], onDismissAlerta }) {
+function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, emptyMsg, alertasDinheiro = [], onDismissAlerta, onMarcarPago }) {
   return (
     <div className="space-y-2">
       {lista.length === 0 ? (
@@ -1043,7 +1052,7 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete
       ) : lista.map(p => {
         const alertaDinheiro = alertasDinheiro.find(n => n.cliente_nome?.trim().toLowerCase() === (p.cliente_nome || '').trim().toLowerCase() && !n.lida);
         return (
-          <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} onAgendarData={onAgendarData} alertaDinheiro={alertaDinheiro} onDismissAlerta={onDismissAlerta} />
+          <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} onAgendarData={onAgendarData} alertaDinheiro={alertaDinheiro} onDismissAlerta={onDismissAlerta} onMarcarPago={onMarcarPago} />
         );
       })}
     </div>
@@ -1408,7 +1417,34 @@ function PagamentosClientesContent() {
     toast.success('📅 Data de pagamento agendada!');
   };
 
-  // TIPOS_SEM_COBRANCA is now consolidated with TIPOS_IGNORADOS at top
+  // Forçar pagamento total (admin) — para casos onde valor_pago ficou ligeiramente abaixo de valor_total
+  const handleMarcarPago = async (pag) => {
+    const records = pag._records?.length > 0 ? pag._records : [pag];
+    const agora = new Date().toISOString();
+    const dataStr = format(new Date(), 'dd/MM/yyyy');
+    try {
+      for (const rec of records) {
+        const saldoRec = calcularSaldo(rec.valor_total, rec.valor_pago);
+        if (saldoRec <= 0.01) continue; // já pago, pular
+        const novoHistorico = [
+          ...(rec.historico_pagamentos || []),
+          { valor: saldoRec, data: dataStr, observacao: '✅ Marcado como pago manualmente' },
+        ];
+        await updateMutation.mutateAsync({
+          id: rec.id,
+          data: {
+            valor_pago: rec.valor_total,
+            status: 'pago',
+            historico_pagamentos: novoHistorico,
+            data_pagamento_completo: agora,
+          },
+        });
+      }
+      toast.success('✅ Pagamento marcado como pago!');
+    } catch (err) {
+      toast.error('Erro ao marcar como pago');
+    }
+  };
 
   const pagsFiltrados = useMemo(() =>
     pagamentos.filter(p =>
@@ -1720,6 +1756,7 @@ function PagamentosClientesContent() {
               onDetalhes={setDetalhesModal}
               onAgendarData={setAgendarDataModal}
               onDelete={handleDelete}
+              onMarcarPago={handleMarcarPago}
               alertasDinheiro={alertasDinheiro}
               onDismissAlerta={handleDismissAlerta}
               emptyMsg="Nenhum serviço nesta semana"
@@ -1748,6 +1785,7 @@ function PagamentosClientesContent() {
                 onDetalhes={setDetalhesModal}
                 onAgendarData={setAgendarDataModal}
                 onDelete={handleDelete}
+                onMarcarPago={handleMarcarPago}
                 alertasDinheiro={alertasDinheiro}
                 onDismissAlerta={handleDismissAlerta}
                 emptyMsg="Nenhuma pendência encontrada"
