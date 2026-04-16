@@ -823,7 +823,7 @@ function HistoricoModal({ open, onClose, pagamento }) {
 }
 
 // Card compacto estilo tabela com expansão
-function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, alertaDinheiro, onDismissAlerta, onMarcarPago }) {
+function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, alertaDinheiro, onDismissAlerta, onMarcarPago, onReverterPendente }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [expandido, setExpandido] = useState(false);
@@ -978,6 +978,15 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
               )}
             </>
           )}
+          {isPago && onReverterPendente && (
+            <button
+              onClick={() => { if (confirm(`Reverter "${pag.cliente_nome}" para pendente?`)) onReverterPendente(pag); }}
+              className="px-2 py-1 text-xs bg-orange-500 hover:bg-orange-600 text-white rounded font-semibold whitespace-nowrap"
+              title="Reverter para pendente"
+            >
+              ↩ Pendente
+            </button>
+          )}
           <button onClick={() => onDelete(pag)} className="p-1.5 rounded text-red-500 hover:bg-red-50 flex-shrink-0" title="Excluir">
             <Trash2 className="w-4 h-4" />
           </button>
@@ -1041,7 +1050,7 @@ function LinhaTabela({ pag, onPagar, onEditarValor, onHistorico, onDelete, onDet
   );
 }
 
-function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, emptyMsg, alertasDinheiro = [], onDismissAlerta, onMarcarPago }) {
+function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete, onDetalhes, onDefinirPreco, onAgendarData, emptyMsg, alertasDinheiro = [], onDismissAlerta, onMarcarPago, onReverterPendente }) {
   return (
     <div className="space-y-2">
       {lista.length === 0 ? (
@@ -1052,7 +1061,7 @@ function TabelaPagamentos({ lista, onPagar, onEditarValor, onHistorico, onDelete
       ) : lista.map(p => {
         const alertaDinheiro = alertasDinheiro.find(n => n.cliente_nome?.trim().toLowerCase() === (p.cliente_nome || '').trim().toLowerCase() && !n.lida);
         return (
-          <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} onAgendarData={onAgendarData} alertaDinheiro={alertaDinheiro} onDismissAlerta={onDismissAlerta} onMarcarPago={onMarcarPago} />
+          <LinhaTabela key={p.id} pag={p} onPagar={onPagar} onEditarValor={onEditarValor} onHistorico={onHistorico} onDelete={onDelete} onDetalhes={onDetalhes} onDefinirPreco={onDefinirPreco} onAgendarData={onAgendarData} alertaDinheiro={alertaDinheiro} onDismissAlerta={onDismissAlerta} onMarcarPago={onMarcarPago} onReverterPendente={onReverterPendente} />
         );
       })}
     </div>
@@ -1398,6 +1407,23 @@ function PagamentosClientesContent() {
       valor_pago: totalPagoAtualizado,
       historico_pagamentos: recordsParaModal.flatMap(r => r.historico_pagamentos || []),
     });
+  };
+
+  const handleReverterPendente = async (pag) => {
+    const records = pag._records?.length > 0 ? pag._records : [pag];
+    for (const rec of records) {
+      await updateMutation.mutateAsync({
+        id: rec.id,
+        data: {
+          valor_pago: 0,
+          status: 'pendente',
+          historico_pagamentos: [],
+          data_pagamento_completo: null,
+          data_pagamento_agendado: null,
+        },
+      });
+    }
+    toast.success('↩ Pagamento revertido para pendente!');
   };
 
   const handleEditarValor = async (pag, novoValor) => {
@@ -1757,6 +1783,7 @@ function PagamentosClientesContent() {
               onAgendarData={setAgendarDataModal}
               onDelete={handleDelete}
               onMarcarPago={handleMarcarPago}
+              onReverterPendente={handleReverterPendente}
               alertasDinheiro={alertasDinheiro}
               onDismissAlerta={handleDismissAlerta}
               emptyMsg="Nenhum serviço nesta semana"
@@ -1786,6 +1813,7 @@ function PagamentosClientesContent() {
                 onAgendarData={setAgendarDataModal}
                 onDelete={handleDelete}
                 onMarcarPago={handleMarcarPago}
+                onReverterPendente={handleReverterPendente}
                 alertasDinheiro={alertasDinheiro}
                 onDismissAlerta={handleDismissAlerta}
                 emptyMsg="Nenhuma pendência encontrada"
@@ -1852,6 +1880,7 @@ function PagamentosClientesContent() {
             onDetalhes={setDetalhesModal}
             onAgendarData={setAgendarDataModal}
             onDelete={handleDelete}
+            onReverterPendente={handleReverterPendente}
             emptyMsg="Nenhum registro no período selecionado"
           />
         </div>
